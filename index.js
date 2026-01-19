@@ -8,8 +8,10 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages
+  ],
+  partials: ['CHANNEL'] // Para recibir DMs
 });
 
 // IDs del servidor y roles
@@ -26,7 +28,7 @@ client.once('ready', async () => {
   const commands = [
     new SlashCommandBuilder()
       .setName('verificar')
-      .setDescription('Inicia el proceso de verificación')
+      .setDescription('Inicia el proceso de verificación en DM')
       .toJSON()
   ];
 
@@ -40,8 +42,17 @@ client.once('ready', async () => {
 });
 
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand()) return;
-  if (interaction.commandName !== 'verificar') return;
+  if (!interaction.isCommand() || interaction.commandName !== 'verificar') return;
+
+  // Intentar mandar DM al usuario
+  let dmChannel;
+  try {
+    dmChannel = await interaction.user.createDM();
+  } catch (e) {
+    return interaction.reply({ content: '❌ No pude abrir tu DM. Revisa tu configuración de privacidad.', ephemeral: true });
+  }
+
+  await interaction.reply({ content: '📩 Te envié un DM para iniciar la verificación.', ephemeral: true });
 
   const preguntas = [
     { key: 'nombreOOC', text: '✏️ ¿Cuál es tu Nombre OOC?' },
@@ -53,25 +64,25 @@ client.on('interactionCreate', async interaction => {
   ];
 
   const respuestas = {};
-  let i = 0;
+  let index = 0;
 
-  await interaction.reply({ content: preguntas[i].text });
+  dmChannel.send(preguntas[index].text);
 
-  const collector = interaction.channel.createMessageCollector({
+  const collector = dmChannel.createMessageCollector({
     filter: m => m.author.id === interaction.user.id,
     time: 300000 // 5 minutos
   });
 
   collector.on('collect', async m => {
-    respuestas[preguntas[i].key] = m.content.trim();
-    i++;
+    respuestas[preguntas[index].key] = m.content.trim();
+    index++;
 
-    if (i < preguntas.length) {
-      m.reply(preguntas[i].text);
+    if (index < preguntas.length) {
+      dmChannel.send(preguntas[index].text);
     } else {
       collector.stop();
 
-      // Crear embed
+      // Embed al staff
       const embed = new EmbedBuilder()
         .setTitle('📌 Solicitud de Verificación')
         .setDescription(`Usuario: <@${interaction.user.id}>`)
@@ -96,21 +107,45 @@ client.on('interactionCreate', async interaction => {
           .setStyle(ButtonStyle.Danger)
       );
 
-      const staffChannel = interaction.guild.channels.cache.get(CHANNEL_VERIFICACIONES);
-      if (!staffChannel) return interaction.followUp({ content: '❌ No se encontró el canal de verificaciones.' });
+      const guild = client.guilds.cache.get(GUILD_ID);
+      const staffChannel = guild.channels.cache.get(CHANNEL_VERIFICACIONES);
+      if (!staffChannel) return dmChannel.send('❌ No se encontró el canal de verificaciones en el servidor.');
 
       const mensajeStaff = await staffChannel.send({ embeds: [embed], components: [row] });
-      await interaction.followUp({ content: '✅ Tu solicitud fue enviada al staff.' });
+      dmChannel.send('✅ Tu solicitud fue enviada al staff.');
 
       // Collector de botones
       const filterBtn = i => ['aceptar', 'rechazar'].includes(i.customId) && i.user.id !== interaction.user.id;
-      const collectorBtn = mensajeStaff.createMessageComponentCollector({ filter: filterBtn, max: 1, time: 600000 }); // 10 min
+      const collectorBtn = mensajeStaff.createMessageComponentCollector({ filter: filterBtn, max: 1, time: 600000 });
 
       collectorBtn.on('collect', async i => {
-        const member = interaction.guild.members.cache.get(interaction.user.id);
+        const member = guild.members.cache.get(interaction.user.id);
         if (i.customId === 'aceptar') {
           if (member) {
             try {
+              if (member.manageable) await member.setNickname(`${respuestas.nombreIC} ${respuestas.apellidoIC}`);
+              const rolVerificado = guild.roles.cache.get(ROL_VERIFICADO);
+              const rolCivil = guild.roles.cache.get(ROL_CIUDADANO);
+              const rolNoVerificado = guild.roles.cache.get(ROL_NO_VERIFICADO);
+
+              if (rolVerificado && member.roles.highest.position < rolVerificado.position) await member.roles.add(rolVerificado).catch(console.log);
+              if (rolCivil && member.roles.highest.position < rolCivil.position) await member.roles.add(rolCivil).catch(console.log);
+              if (rolNoVerificado && member.roles.highest.position > rolNoVerificado.position) await member.roles.remove(rolNoVerificado).catch(console.log);
+
+            } catch (e) {
+              console.log('Error al cambiar roles/apodo:', e);
+            }
+          }
+          await i.update({ content: '✅ Solicitud aceptada.', embeds: [], components: [] });
+        } else {
+          await i.update({ content: '❌ Solicitud rechazada.', embeds: [], components: [] });
+        }
+      });
+    }
+  });
+});
+
+client.login(process.env.TOKEN);            try {
               if (member.manageable) await member.setNickname(`${respuestas.nombreIC} ${respuestas.apellidoIC}`);
               
               const rolVerificado = interaction.guild.roles.cache.get(ROL_VERIFICADO);
