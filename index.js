@@ -1,7 +1,4 @@
-const { 
-  Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder,
-  EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder
-} = require('discord.js');
+const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder } = require('discord.js');
 
 const client = new Client({
   intents: [
@@ -16,13 +13,15 @@ const client = new Client({
 const GUILD_ID = '1345956472986796183';
 const ROL_PERMITIDO = '1451018445998260266'; // puede crear DNI
 const ROL_DNI = '1451018398874996966'; // rol que se da al crear DNI
+const CHANNEL_VERIFICACIONES = '1452365736927301764';
 
-// Guardar los DNI en memoria
+// Guardar DNI en memoria
 const DNIs = new Map();
 
 client.once('ready', async () => {
   console.log(`✅ Bot conectado como ${client.user.tag}`);
 
+  // Registrar comandos
   const commands = [
     new SlashCommandBuilder()
       .setName('crearDNI')
@@ -31,7 +30,7 @@ client.once('ready', async () => {
     new SlashCommandBuilder()
       .setName('verDNI')
       .setDescription('Ver DNI de un usuario')
-      .addUserOption(option => 
+      .addUserOption(option =>
         option.setName('usuario')
               .setDescription('Usuario a consultar')
               .setRequired(true)
@@ -55,7 +54,6 @@ client.on('interactionCreate', async interaction => {
 
   // ==================== CREAR DNI ====================
   if (interaction.commandName === 'crearDNI') {
-
     if (!member.roles.cache.has(ROL_PERMITIDO)) {
       return interaction.reply({ content: '❌ No tienes permiso para crear DNI.', ephemeral: true });
     }
@@ -63,8 +61,9 @@ client.on('interactionCreate', async interaction => {
     const preguntas = [
       { key: 'nombre', text: '✏️ Ingresa el nombre:' },
       { key: 'apellido', text: '✏️ Ingresa el apellido:' },
-      { key: 'edad', text: '🎂 Ingresa la edad:' },
-      { key: 'fechaNac', text: '📅 Ingresa la fecha de nacimiento (DD/MM/AAAA):' }
+      { key: 'edad', text: '🎂 Ingresa la edad (solo números):' },
+      { key: 'fechaNac', text: '📅 Ingresa la fecha de nacimiento (DD/MM/AAAA):' },
+      { key: 'tipoSangre', text: '💉 Ingresa el tipo de sangre (A+, A-, B+, B-, AB+, AB-, O+, O-):' }
     ];
 
     const respuestas = {};
@@ -78,7 +77,23 @@ client.on('interactionCreate', async interaction => {
     });
 
     collector.on('collect', async m => {
-      respuestas[preguntas[index].key] = m.content.trim();
+      const key = preguntas[index].key;
+      let respuesta = m.content.trim();
+
+      // Validar tipo de sangre
+      if (key === 'tipoSangre') {
+        const tipos = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        if (!tipos.includes(respuesta.toUpperCase())) {
+          return m.reply('❌ Tipo de sangre inválido, escribe uno de estos: A+, A-, B+, B-, AB+, AB-, O+, O-');
+        }
+      }
+
+      // Validar edad
+      if (key === 'edad' && isNaN(respuesta)) {
+        return m.reply('❌ Edad inválida, solo números.');
+      }
+
+      respuestas[key] = respuesta;
       index++;
 
       if (index < preguntas.length) {
@@ -86,31 +101,63 @@ client.on('interactionCreate', async interaction => {
       } else {
         collector.stop();
 
-        // Preguntar tipo de sangre con menú
-        const tiposSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-        const row = new ActionRowBuilder().addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId('tipoSangre')
-            .setPlaceholder('Selecciona el tipo de sangre')
-            .addOptions(
-              tiposSangre.map(tipo => ({ label: tipo, value: tipo }))
-            )
-        );
+        // Generar ID aleatorio
+        const numeroID = Math.floor(Math.random() * 900000 + 100000);
 
-        const msg = await interaction.followUp({ content: '💉 Selecciona el tipo de sangre:', components: [row], ephemeral: true });
+        // Guardar DNI
+        DNIs.set(member.id, { ...respuestas, numeroID });
 
-        const menuCollector = msg.createMessageComponentCollector({ time: 60000, max: 1 });
+        // Embed bonito
+        const embed = new EmbedBuilder()
+          .setTitle('🆔 DNI Ciudadano')
+          .setDescription(`DNI creado por <@${member.id}>`)
+          .addFields(
+            { name: 'Nombre', value: respuestas.nombre, inline: true },
+            { name: 'Apellido', value: respuestas.apellido, inline: true },
+            { name: 'Edad', value: respuestas.edad, inline: true },
+            { name: 'Fecha de nacimiento', value: respuestas.fechaNac, inline: true },
+            { name: 'Tipo de sangre', value: respuestas.tipoSangre.toUpperCase(), inline: true },
+            { name: 'Número de ID', value: numeroID.toString(), inline: true }
+          )
+          .setColor('Green')
+          .setTimestamp();
 
-        menuCollector.on('collect', async i => {
-          respuestas.tipoSangre = i.values[0];
-          await i.update({ content: '✅ Tipo de sangre seleccionado.', components: [] });
+        await interaction.followUp({ embeds: [embed], ephemeral: false });
 
-          // Generar número de ID aleatorio
-          const numeroID = Math.floor(Math.random() * 900000 + 100000);
+        // Dar rol de DNI
+        const rolDni = interaction.guild.roles.cache.get(ROL_DNI);
+        if (rolDni) {
+          try { await member.roles.add(rolDni); } catch (e) { console.log('Error al dar rol DNI', e); }
+        }
+      }
+    });
+  }
 
-          // Guardar DNI
-          DNIs.set(member.id, {
-            nombre: respuestas.nombre,
+  // ==================== VER DNI ====================
+  if (interaction.commandName === 'verDNI') {
+    const usuario = interaction.options.getUser('usuario');
+    const dni = DNIs.get(usuario.id);
+
+    if (!dni) return interaction.reply({ content: '❌ Este usuario no tiene DNI.', ephemeral: true });
+
+    const embed = new EmbedBuilder()
+      .setTitle(`🆔 DNI de ${usuario.username}`)
+      .addFields(
+        { name: 'Nombre', value: dni.nombre, inline: true },
+        { name: 'Apellido', value: dni.apellido, inline: true },
+        { name: 'Edad', value: dni.edad, inline: true },
+        { name: 'Fecha de nacimiento', value: dni.fechaNac, inline: true },
+        { name: 'Tipo de sangre', value: dni.tipoSangre.toUpperCase(), inline: true },
+        { name: 'Número de ID', value: dni.numeroID.toString(), inline: true }
+      )
+      .setColor('Blue')
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+});
+
+client.login(process.env.TOKEN);            nombre: respuestas.nombre,
             apellido: respuestas.apellido,
             edad: respuestas.edad,
             fechaNac: respuestas.fechaNac,
