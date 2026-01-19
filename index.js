@@ -54,10 +54,16 @@ client.on('interactionCreate', async interaction => {
 
   // ==================== CREAR DNI ====================
   if (interaction.commandName === 'crearDNI') {
+    // Asegurarse de que sea en un guild
+    if (!interaction.guild) {
+      return interaction.reply({ content: '❌ Este comando solo puede usarse en el servidor.', ephemeral: true });
+    }
+
     if (!member.roles.cache.has(ROL_PERMITIDO)) {
       return interaction.reply({ content: '❌ No tienes permiso para crear DNI.', ephemeral: true });
     }
 
+    // Preguntas
     const preguntas = [
       { key: 'nombre', text: '✏️ Ingresa el nombre:' },
       { key: 'apellido', text: '✏️ Ingresa el apellido:' },
@@ -69,48 +75,168 @@ client.on('interactionCreate', async interaction => {
     const respuestas = {};
     let index = 0;
 
-    await interaction.reply({ content: preguntas[index].text, ephemeral: true });
+    // Enviar primera pregunta visible en el canal donde se ejecutó
+    try {
+      await interaction.reply({ content: preguntas[index].text, ephemeral: false });
+    } catch (err) {
+      console.error('Error reply initial:', err);
+      return;
+    }
 
-    const collector = interaction.channel.createMessageCollector({
-      filter: m => m.author.id === member.id,
-      time: 300000
-    });
+    const channel = interaction.channel;
+    if (!channel) return; // por seguridad
+
+    const filter = m => m.author.id === member.id && m.channelId === channel.id;
+
+    const collector = channel.createMessageCollector({ filter, time: 300000 }); // 5 minutos
 
     collector.on('collect', async m => {
-      const key = preguntas[index].key;
-      let respuesta = m.content.trim();
+      try {
+        const key = preguntas[index].key;
+        let respuesta = m.content.trim();
 
-      // Validar tipo de sangre
-      if (key === 'tipoSangre') {
-        const tipos = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-        if (!tipos.includes(respuesta.toUpperCase())) {
-          return m.reply('❌ Tipo de sangre inválido, escribe uno de estos: A+, A-, B+, B-, AB+, AB-, O+, O-');
+        // Validar tipo de sangre
+        if (key === 'tipoSangre') {
+          const tipos = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+          respuesta = respuesta.toUpperCase();
+          if (!tipos.includes(respuesta)) {
+            await m.reply('❌ Tipo de sangre inválido. Escribe uno de: A+, A-, B+, B-, AB+, AB-, O+, O-');
+            return;
+          }
         }
+
+        // Validar edad
+        if (key === 'edad') {
+          const edadNum = parseInt(respuesta, 10);
+          if (Number.isNaN(edadNum) || edadNum < 0 || edadNum > 150) {
+            await m.reply('❌ Edad inválida. Escribe un número válido entre 0 y 150.');
+            return;
+          }
+          respuesta = edadNum.toString();
+        }
+
+        // Validar fecha de nacimiento (DD/MM/AAAA)
+        if (key === 'fechaNac') {
+          const re = /^\d{2}\/\d{2}\/\d{4}$/;
+          if (!re.test(respuesta)) {
+            await m.reply('❌ Formato inválido. Usa DD/MM/AAAA (ej: 31/12/1990).');
+            return;
+          }
+          // validación simple de día/mes (no años bisiestos avanzados)
+          const [dd, mm, yyyy] = respuesta.split('/').map(x => parseInt(x, 10));
+          if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 1900 || yyyy > new Date().getFullYear()) {
+            await m.reply('❌ Fecha inválida. Revisa día, mes y año.');
+            return;
+          }
+        }
+
+        respuestas[key] = respuesta;
+        index++;
+
+        if (index < preguntas.length) {
+          await channel.send(preguntas[index].text);
+        } else {
+          collector.stop('completed');
+        }
+      } catch (err) {
+        console.error('Error en collect handler:', err);
+        collector.stop('error');
+      }
+    });
+
+    collector.on('end', async (collected, reason) => {
+      if (reason === 'time') {
+        try {
+          await channel.send(`<@${member.id}> ⏰ Se agotó el tiempo para completar el DNI. Vuelve a ejecutar el comando si quieres intentarlo de nuevo.`);
+        } catch (e) { console.error(e); }
+        return;
       }
 
-      // Validar edad
-      if (key === 'edad' && isNaN(respuesta)) {
-        return m.reply('❌ Edad inválida, solo números.');
+      if (reason === 'error') {
+        try {
+          await channel.send(`<@${member.id}> ❌ Ocurrió un error durante la creación del DNI.`);
+        } catch (e) { console.error(e); }
+        return;
       }
 
-      respuestas[key] = respuesta;
-      index++;
-
+      // Si no se completaron todas las respuestas
       if (index < preguntas.length) {
-        m.reply(preguntas[index].text);
-      } else {
-        collector.stop();
+        try {
+          await channel.send(`<@${member.id}> ❌ No completaste todas las preguntas. Vuelve a intentarlo.`);
+        } catch (e) { console.error(e); }
+        return;
+      }
 
-        // Generar ID aleatorio
-        const numeroID = Math.floor(Math.random() * 900000 + 100000);
+      // Generar ID aleatorio
+      const numeroID = Math.floor(Math.random() * 900000 + 100000);
 
-        // Guardar DNI
-        DNIs.set(member.id, { ...respuestas, numeroID });
+      // Guardar DNI
+      DNIs.set(member.id, { ...respuestas, numeroID });
 
-        // Embed bonito
-        const embed = new EmbedBuilder()
-          .setTitle('🆔 DNI Ciudadano')
-          .setDescription(`DNI creado por <@${member.id}>`)
+      // Embed bonito
+      const embed = new EmbedBuilder()
+        .setTitle('🆔 DNI Ciudadano')
+        .setDescription(`DNI creado por <@${member.id}>`)
+        .addFields(
+          { name: 'Nombre', value: respuestas.nombre || 'N/A', inline: true },
+          { name: 'Apellido', value: respuestas.apellido || 'N/A', inline: true },
+          { name: 'Edad', value: respuestas.edad || 'N/A', inline: true },
+          { name: 'Fecha de nacimiento', value: respuestas.fechaNac || 'N/A', inline: true },
+          { name: 'Tipo de sangre', value: (respuestas.tipoSangre || 'N/A').toUpperCase(), inline: true },
+          { name: 'Número de ID', value: numeroID.toString(), inline: true }
+        )
+        .setColor('Green')
+        .setTimestamp();
+
+      try {
+        // Enviar embed al canal de verificaciones si existe, sino en el mismo canal
+        const canalVerif = interaction.guild.channels.cache.get(CHANNEL_VERIFICACIONES);
+        if (canalVerif) {
+          await canalVerif.send({ embeds: [embed] });
+        } else {
+          await channel.send({ embeds: [embed] });
+        }
+      } catch (e) {
+        console.error('Error al enviar embed:', e);
+      }
+
+      // Dar rol de DNI
+      try {
+        const rolDni = interaction.guild.roles.cache.get(ROL_DNI);
+        if (rolDni) {
+          await member.roles.add(rolDni);
+        }
+      } catch (e) {
+        console.log('Error al dar rol DNI', e);
+      }
+    });
+  }
+
+  // ==================== VER DNI ====================
+  if (interaction.commandName === 'verDNI') {
+    const usuario = interaction.options.getUser('usuario');
+    const dni = DNIs.get(usuario.id);
+
+    if (!dni) return interaction.reply({ content: '❌ Este usuario no tiene DNI.', ephemeral: true });
+
+    const embed = new EmbedBuilder()
+      .setTitle(`🆔 DNI de ${usuario.username}`)
+      .addFields(
+        { name: 'Nombre', value: dni.nombre || 'N/A', inline: true },
+        { name: 'Apellido', value: dni.apellido || 'N/A', inline: true },
+        { name: 'Edad', value: dni.edad || 'N/A', inline: true },
+        { name: 'Fecha de nacimiento', value: dni.fechaNac || 'N/A', inline: true },
+        { name: 'Tipo de sangre', value: (dni.tipoSangre || 'N/A').toUpperCase(), inline: true },
+        { name: 'Número de ID', value: dni.numeroID.toString(), inline: true }
+      )
+      .setColor('Blue')
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+});
+
+client.login(process.env.TOKEN);          .setDescription(`DNI creado por <@${member.id}>`)
           .addFields(
             { name: 'Nombre', value: respuestas.nombre, inline: true },
             { name: 'Apellido', value: respuestas.apellido, inline: true },
