@@ -1,34 +1,28 @@
 const { 
   Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder,
-  ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder
+  EmbedBuilder
 } = require('discord.js');
+const fetch = require('node-fetch');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.DirectMessages
-  ],
-  partials: ['CHANNEL'] // Para recibir DMs
+    GatewayIntentBits.MessageContent
+  ]
 });
 
-// IDs del servidor y roles
+// IDs de tu servidor
 const GUILD_ID = '1345956472986796183';
 const CHANNEL_VERIFICACIONES = '1452365736927301764';
-const ROL_CIUDADANO = '1451018397352595579';
-const ROL_VERIFICADO = '1451018445998260266';
-const ROL_NO_VERIFICADO = '1451018447482916904';
 
 client.once('ready', async () => {
   console.log(`✅ Bot conectado como ${client.user.tag}`);
 
-  // Registrar comando /verificar
   const commands = [
     new SlashCommandBuilder()
       .setName('verificar')
-      .setDescription('Inicia el proceso de verificación en DM')
+      .setDescription('Inicia la verificación (solo embed para staff)')
       .toJSON()
   ];
 
@@ -44,73 +38,82 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand() || interaction.commandName !== 'verificar') return;
 
-  // Intentar mandar DM al usuario
-  let dmChannel;
-  try {
-    dmChannel = await interaction.user.createDM();
-  } catch (e) {
-    return interaction.reply({ content: '❌ No pude abrir tu DM. Revisa tu configuración de privacidad.', ephemeral: true });
-  }
-
-  await interaction.reply({ content: '📩 Te envié un DM para iniciar la verificación.', ephemeral: true });
+  await interaction.reply({ content: '📩 Te enviaré las preguntas aquí, responde paso a paso:', ephemeral: true });
 
   const preguntas = [
-    { key: 'nombreOOC', text: '✏️ ¿Cuál es tu Nombre OOC?' },
-    { key: 'edadOOC', text: '🎂 ¿Cuál es tu Edad OOC?' },
-    { key: 'nombreIC', text: '📝 ¿Cuál es tu Nombre IC?' },
-    { key: 'apellidoIC', text: '📝 ¿Cuál es tu Apellido IC?' },
-    { key: 'edadIC', text: '🎂 ¿Cuál es tu Edad IC?' },
-    { key: 'aceptaReglas', text: '✅ ¿Aceptas las reglas? (Si/No)' }
+    { key: 'nombreOOC', text: '✏️ Nombre OOC:' },
+    { key: 'edadOOC', text: '🎂 Edad OOC:' },
+    { key: 'nombreIC', text: '📝 Nombre IC:' },
+    { key: 'apellidoIC', text: '📝 Apellido IC:' },
+    { key: 'edadIC', text: '🎂 Edad IC:' },
+    { key: 'aceptaReglas', text: '✅ Acepta reglas (Si/No):' },
+    { key: 'userRoblox', text: '🌐 Usuario de Roblox:' }
   ];
 
   const respuestas = {};
   let index = 0;
 
-  dmChannel.send(preguntas[index].text);
+  const askQuestion = async () => {
+    if (index < preguntas.length) {
+      await interaction.followUp({ content: preguntas[index].text, ephemeral: true });
+    } else {
+      sendToStaff();
+    }
+  };
 
-  const collector = dmChannel.createMessageCollector({
+  const collector = interaction.channel.createMessageCollector({
     filter: m => m.author.id === interaction.user.id,
-    time: 300000 // 5 minutos
+    time: 300000
   });
 
-  collector.on('collect', async m => {
+  collector.on('collect', m => {
     respuestas[preguntas[index].key] = m.content.trim();
     index++;
+    askQuestion();
+  });
 
-    if (index < preguntas.length) {
-      dmChannel.send(preguntas[index].text);
-    } else {
-      collector.stop();
+  const sendToStaff = async () => {
+    collector.stop();
 
-      // Embed al staff
-      const embed = new EmbedBuilder()
-        .setTitle('📌 Solicitud de Verificación')
-        .setDescription(`Usuario: <@${interaction.user.id}>`)
-        .addFields(
-          { name: 'Nombre OOC', value: respuestas.nombreOOC, inline: true },
-          { name: 'Edad OOC', value: respuestas.edadOOC, inline: true },
-          { name: 'Nombre IC', value: respuestas.nombreIC, inline: true },
-          { name: 'Apellido IC', value: respuestas.apellidoIC, inline: true },
-          { name: 'Edad IC', value: respuestas.edadIC, inline: true },
-          { name: 'Acepta reglas', value: respuestas.aceptaReglas, inline: true }
-        )
-        .setColor('Blue');
+    // Obtener avatar de Roblox
+    let avatarUrl = 'https://www.roblox.com/headshot-thumbnail/image?userId=1&width=150&height=150&format=png';
+    try {
+      const res = await fetch(`https://api.roblox.com/users/get-by-username?username=${respuestas.userRoblox}`);
+      const data = await res.json();
+      if (data && data.Id) {
+        avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${data.Id}&width=150&height=150&format=png`;
+      }
+    } catch (e) {
+      console.log('No se pudo obtener avatar de Roblox', e);
+    }
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('aceptar')
-          .setLabel('Aceptar')
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId('rechazar')
-          .setLabel('Rechazar')
-          .setStyle(ButtonStyle.Danger)
-      );
+    const embed = new EmbedBuilder()
+      .setTitle('📌 Solicitud de Verificación')
+      .setDescription(`Usuario: <@${interaction.user.id}>`)
+      .addFields(
+        { name: 'Nombre OOC', value: respuestas.nombreOOC, inline: true },
+        { name: 'Edad OOC', value: respuestas.edadOOC, inline: true },
+        { name: 'Nombre IC', value: respuestas.nombreIC, inline: true },
+        { name: 'Apellido IC', value: respuestas.apellidoIC, inline: true },
+        { name: 'Edad IC', value: respuestas.edadIC, inline: true },
+        { name: 'Acepta reglas', value: respuestas.aceptaReglas, inline: true },
+        { name: 'Usuario Roblox', value: respuestas.userRoblox, inline: true }
+      )
+      .setThumbnail(avatarUrl)
+      .setColor('Blue');
 
-      const guild = client.guilds.cache.get(GUILD_ID);
-      const staffChannel = guild.channels.cache.get(CHANNEL_VERIFICACIONES);
-      if (!staffChannel) return dmChannel.send('❌ No se encontró el canal de verificaciones en el servidor.');
+    const staffChannel = interaction.guild.channels.cache.get(CHANNEL_VERIFICACIONES);
+    if (!staffChannel) return interaction.followUp({ content: '❌ No se encontró el canal de verificaciones.', ephemeral: true });
 
+    await staffChannel.send({ embeds: [embed] });
+    await interaction.followUp({ content: '✅ Tu solicitud fue enviada al staff.', ephemeral: true });
+  };
+
+  // Inicia la primera pregunta
+  askQuestion();
+});
+
+client.login(process.env.TOKEN);
       const mensajeStaff = await staffChannel.send({ embeds: [embed], components: [row] });
       dmChannel.send('✅ Tu solicitud fue enviada al staff.');
 
