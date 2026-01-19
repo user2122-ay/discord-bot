@@ -1,18 +1,17 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const fetch = require('node-fetch'); // para avatar de Roblox
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
 });
 
 // ID del servidor
-const GUILD_ID = '1345956472986796183'; // reemplaza con el ID real de tu servidor
+const GUILD_ID = '1345956472986796183'; // tu servidor
 
 // IDs de tu servidor
-const CHANNEL_VERIFICACIONES = '1452365736927301764'; // canal donde el staff ve las verificaciones
-const ROL_CIUDADANO = '1451018397352595579';           // rol Civil
-const ROL_VERIFICADO = '1451018445998260266';          // rol Verificado
-const ROL_NO_VERIFICADO = '1451018447482916904';            // reemplaza con tu rol No Verificado
+const CHANNEL_VERIFICACIONES = '1452365736927301764'; // canal de verificaciones
+const ROL_CIUDADANO = '1451018397352595579';          // rol Civil
+const ROL_VERIFICADO = '1451018445998260266';         // rol Verificado
+const ROL_NO_VERIFICADO = '1451018447482916904';      // rol No Verificado
 
 client.once('ready', async () => {
   console.log(`✅ Bot conectado como ${client.user.tag}`);
@@ -39,7 +38,7 @@ client.on('interactionCreate', async interaction => {
 
   if (interaction.commandName === 'verificar') {
     await interaction.reply({
-      content: 'Por favor responde las siguientes preguntas separadas por comas: Nombre OOC, Edad OOC, Nombre IC, Apellido IC, Edad IC, Si/No acepta reglas, Usuario de Roblox',
+      content: 'Por favor responde las siguientes preguntas separadas por comas: Nombre OOC, Edad OOC, Nombre IC, Apellido IC, Edad IC, Si/No acepta reglas',
       ephemeral: true
     });
 
@@ -48,23 +47,11 @@ client.on('interactionCreate', async interaction => {
 
     collector.on('collect', async m => {
       const respuestas = m.content.split(',').map(r => r.trim());
-      if (respuestas.length < 7) {
+      if (respuestas.length < 6) {
         return interaction.followUp({ content: '❌ Debes responder todas las preguntas separadas por comas.', ephemeral: true });
       }
 
-      const [nombreOOC, edadOOC, nombreIC, apellidoIC, edadIC, reglas, userRoblox] = respuestas;
-
-      // Avatar Roblox
-      let avatarUrl = 'https://www.roblox.com/headshot-thumbnail/image?userId=1&width=150&height=150&format=png';
-      try {
-        const res = await fetch(`https://api.roblox.com/users/get-by-username?username=${userRoblox}`);
-        const data = await res.json();
-        if (data && data.Id) {
-          avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${data.Id}&width=150&height=150&format=png`;
-        }
-      } catch (e) {
-        console.log('No se pudo obtener avatar de Roblox', e);
-      }
+      const [nombreOOC, edadOOC, nombreIC, apellidoIC, edadIC, reglas] = respuestas;
 
       // Embed para staff
       const embed = new EmbedBuilder()
@@ -76,10 +63,8 @@ client.on('interactionCreate', async interaction => {
           { name: 'Nombre IC', value: nombreIC, inline: true },
           { name: 'Apellido IC', value: apellidoIC, inline: true },
           { name: 'Edad IC', value: edadIC, inline: true },
-          { name: 'Acepta reglas', value: reglas, inline: true },
-          { name: 'Usuario Roblox', value: userRoblox, inline: true }
+          { name: 'Acepta reglas', value: reglas, inline: true }
         )
-        .setThumbnail(avatarUrl)
         .setColor('Blue');
 
       // Botones de aceptación/rechazo
@@ -109,7 +94,7 @@ client.on('interactionCreate', async interaction => {
           const member = interaction.guild.members.cache.get(interaction.user.id);
           if (member) {
             try {
-              await member.setNickname(`${nombreIC} ${apellidoIC} || ${userRoblox}`);
+              await member.setNickname(`${nombreIC} ${apellidoIC}`);
               const rolVerificado = interaction.guild.roles.cache.get(ROL_VERIFICADO);
               const rolCivil = interaction.guild.roles.cache.get(ROL_CIUDADANO);
               const rolNoVerificado = interaction.guild.roles.cache.get(ROL_NO_VERIFICADO);
