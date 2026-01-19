@@ -1,116 +1,51 @@
-const { 
-  Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder,
-  EmbedBuilder
-} = require('discord.js');
-const fetch = require('node-fetch');
+const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
+const Canvas = require('canvas');
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
-});
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('dni')
+        .setDescription('Muestra el DNI de un ciudadano')
+        .addUserOption(option => 
+            option.setName('usuario')
+                .setDescription('El usuario del que quieres ver el DNI')
+                .setRequired(true)),
+    async execute(interaction) {
+        const user = interaction.options.getUser('usuario');
+        
+        // Creamos el lienzo (Canvas)
+        const canvas = Canvas.createCanvas(700, 400);
+        const ctx = canvas.getContext('2d');
 
-// IDs de tu servidor
-const GUILD_ID = '1345956472986796183';
-const CHANNEL_VERIFICACIONES = '1452365736927301764';
+        // Fondo (puedes subir el logo o un fondo personalizado)
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-client.once('ready', async () => {
-  console.log(`✅ Bot conectado como ${client.user.tag}`);
+        // Cabecera
+        ctx.fillStyle = '#1e3a8a'; // Azul oscuro LSRP
+        ctx.fillRect(0, 0, canvas.width, 80);
 
-  const commands = [
-    new SlashCommandBuilder()
-      .setName('verificar')
-      .setDescription('Inicia la verificación (solo embed para staff)')
-      .toJSON()
-  ];
+        // Texto
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('ESTADO DE LOS SANTOS', 120, 45);
+        ctx.font = '15px sans-serif';
+        ctx.fillText('DOCUMENTO DE IDENTIDAD', 120, 70);
 
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-  try {
-    await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body: commands });
-    console.log('✅ Comando /verificar registrado correctamente');
-  } catch (error) {
-    console.error(error);
-  }
-});
+        // Información ficticia (aquí conectarías con tu DB)
+        ctx.font = '20px sans-serif';
+        ctx.fillText(`NOMBRE: ${user.username.toUpperCase()}`, 250, 150);
+        ctx.fillText(`ID: ${Math.floor(Math.random() * 900000)}`, 250, 190);
+        ctx.fillText('NACIONALIDAD: LOS SANTOS', 250, 230);
 
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand() || interaction.commandName !== 'verificar') return;
+        // Avatar del usuario
+        const avatar = await Canvas.loadImage(user.displayAvatarURL({ extension: 'jpg' }));
+        ctx.drawImage(avatar, 50, 110, 150, 180);
 
-  await interaction.reply({ content: '📩 Te enviaré las preguntas aquí, responde paso a paso:', ephemeral: true });
-
-  const preguntas = [
-    { key: 'nombreOOC', text: '✏️ Nombre OOC:' },
-    { key: 'edadOOC', text: '🎂 Edad OOC:' },
-    { key: 'nombreIC', text: '📝 Nombre IC:' },
-    { key: 'apellidoIC', text: '📝 Apellido IC:' },
-    { key: 'edadIC', text: '🎂 Edad IC:' },
-    { key: 'aceptaReglas', text: '✅ Acepta reglas (Si/No):' },
-    { key: 'userRoblox', text: '🌐 Usuario de Roblox:' }
-  ];
-
-  const respuestas = {};
-  let index = 0;
-
-  const askQuestion = async () => {
-    if (index < preguntas.length) {
-      await interaction.followUp({ content: preguntas[index].text, ephemeral: true });
-    } else {
-      sendToStaff();
-    }
-  };
-
-  const collector = interaction.channel.createMessageCollector({
-    filter: m => m.author.id === interaction.user.id,
-    time: 300000
-  });
-
-  collector.on('collect', m => {
-    respuestas[preguntas[index].key] = m.content.trim();
-    index++;
-    askQuestion();
-  });
-
-  const sendToStaff = async () => {
-    collector.stop();
-
-    // Obtener avatar de Roblox
-    let avatarUrl = 'https://www.roblox.com/headshot-thumbnail/image?userId=1&width=150&height=150&format=png';
-    try {
-      const res = await fetch(`https://api.roblox.com/users/get-by-username?username=${respuestas.userRoblox}`);
-      const data = await res.json();
-      if (data && data.Id) {
-        avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${data.Id}&width=150&height=150&format=png`;
-      }
-    } catch (e) {
-      console.log('No se pudo obtener avatar de Roblox', e);
-    }
-
-    const embed = new EmbedBuilder()
-      .setTitle('📌 Solicitud de Verificación')
-      .setDescription(`Usuario: <@${interaction.user.id}>`)
-      .addFields(
-        { name: 'Nombre OOC', value: respuestas.nombreOOC, inline: true },
-        { name: 'Edad OOC', value: respuestas.edadOOC, inline: true },
-        { name: 'Nombre IC', value: respuestas.nombreIC, inline: true },
-        { name: 'Apellido IC', value: respuestas.apellidoIC, inline: true },
-        { name: 'Edad IC', value: respuestas.edadIC, inline: true },
-        { name: 'Acepta reglas', value: respuestas.aceptaReglas, inline: true },
-        { name: 'Usuario Roblox', value: respuestas.userRoblox, inline: true }
-      )
-      .setThumbnail(avatarUrl)
-      .setColor('Blue');
-
-    const staffChannel = interaction.guild.channels.cache.get(CHANNEL_VERIFICACIONES);
-    if (!staffChannel) return interaction.followUp({ content: '❌ No se encontró el canal de verificaciones.', ephemeral: true });
-
-    await staffChannel.send({ embeds: [embed] });
-    await interaction.followUp({ content: '✅ Tu solicitud fue enviada al staff.', ephemeral: true });
-  };
-
-  // Inicia la primera pregunta
-  askQuestion();
+        const attachment = new AttachmentBuilder(await canvas.toBuffer(), { name: 'dni-lsrp.png' });
+        
+        await interaction.reply({ files: [attachment] });
+    },
+};  askQuestion();
 });
 
 client.login(process.env.TOKEN);
