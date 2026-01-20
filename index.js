@@ -1,24 +1,164 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const {
+  Client,
+  GatewayIntentBits,
+  SlashCommandBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  EmbedBuilder
+} = require('discord.js');
 
+const mongoose = require('mongoose');
+const DNI = require('./models/DNI');
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
+
+/* ================== MONGODB ================== */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('🟢 MongoDB conectado'))
+  .catch(err => console.error('🔴 Error MongoDB:', err));
+
+/* ================== READY ================== */
 client.once('ready', async () => {
-  console.log('🧹 Limpiando comandos slash antiguos...');
+  console.log(`🤖 Bot conectado como ${client.user.tag}`);
 
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+  const commands = [
+    new SlashCommandBuilder()
+      .setName('crear-dni')
+      .setDescription('Crear tu DNI de Los Santos RP'),
 
-  try {
-    // BORRAR COMANDOS GLOBALES
-    await rest.put(
-      Routes.applicationCommands(client.user.id),
-      { body: [] }
+    new SlashCommandBuilder()
+      .setName('ver-dni')
+      .setDescription('Ver el DNI de un usuario')
+      .addUserOption(opt =>
+        opt.setName('usuario')
+          .setDescription('Usuario a consultar')
+          .setRequired(true)
+      )
+  ];
+
+  await client.application.commands.set(commands);
+  console.log('✅ Comandos registrados');
+});
+
+/* ================== INTERACCIONES ================== */
+client.on('interactionCreate', async interaction => {
+
+  /* ===== /crear-dni ===== */
+  if (interaction.isChatInputCommand() && interaction.commandName === 'crear-dni') {
+
+    const modal = new ModalBuilder()
+      .setCustomId('dniModal')
+      .setTitle('Crear DNI - Los Santos RP');
+
+    const nombre = new TextInputBuilder()
+      .setCustomId('nombreIC')
+      .setLabel('Nombre IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const apellido = new TextInputBuilder()
+      .setCustomId('apellidoIC')
+      .setLabel('Apellido IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const edad = new TextInputBuilder()
+      .setCustomId('edadIC')
+      .setLabel('Edad IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const fecha = new TextInputBuilder()
+      .setCustomId('fechaNacimiento')
+      .setLabel('Fecha de nacimiento IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const sangre = new TextInputBuilder()
+      .setCustomId('tipoSangre')
+      .setLabel('Tipo de sangre (O+, O-, A+, A-)')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(nombre),
+      new ActionRowBuilder().addComponents(apellido),
+      new ActionRowBuilder().addComponents(edad),
+      new ActionRowBuilder().addComponents(fecha),
+      new ActionRowBuilder().addComponents(sangre)
     );
 
-    console.log('✅ Comandos globales borrados');
+    await interaction.showModal(modal);
+  }
 
-  } catch (error) {
-    console.error(error);
+  /* ===== MODAL ===== */
+  if (interaction.isModalSubmit() && interaction.customId === 'dniModal') {
+
+    const numeroDNI = Math.floor(10000000 + Math.random() * 90000000).toString();
+
+    const data = {
+      discordId: interaction.user.id,
+      nombreIC: interaction.fields.getTextInputValue('nombreIC'),
+      apellidoIC: interaction.fields.getTextInputValue('apellidoIC'),
+      edadIC: interaction.fields.getTextInputValue('edadIC'),
+      fechaNacimiento: interaction.fields.getTextInputValue('fechaNacimiento'),
+      tipoSangre: interaction.fields.getTextInputValue('tipoSangre'),
+      numeroDNI
+    };
+
+    await DNI.findOneAndUpdate(
+      { discordId: interaction.user.id },
+      data,
+      { upsert: true }
+    );
+
+    const embed = new EmbedBuilder()
+      .setTitle('🪪 DNI CREADO')
+      .setColor('#2ecc71')
+      .addFields(
+        { name: 'Nombre IC', value: `${data.nombreIC} ${data.apellidoIC}` },
+        { name: 'Edad IC', value: data.edadIC },
+        { name: 'Nacimiento', value: data.fechaNacimiento },
+        { name: 'Tipo de Sangre', value: data.tipoSangre },
+        { name: 'Número DNI', value: data.numeroDNI }
+      )
+      .setFooter({ text: 'Los Santos RP' });
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  /* ===== /ver-dni ===== */
+  if (interaction.isChatInputCommand() && interaction.commandName === 'ver-dni') {
+
+    const user = interaction.options.getUser('usuario');
+    const dni = await DNI.findOne({ discordId: user.id });
+
+    if (!dni) {
+      return interaction.reply({
+        content: '❌ Ese usuario no tiene DNI.',
+        ephemeral: true
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('🪪 DNI - Los Santos RP')
+      .setColor('#3498db')
+      .addFields(
+        { name: 'Titular', value: user.tag },
+        { name: 'Nombre IC', value: `${dni.nombreIC} ${dni.apellidoIC}` },
+        { name: 'Edad IC', value: dni.edadIC.toString() },
+        { name: 'Nacimiento', value: dni.fechaNacimiento },
+        { name: 'Tipo de Sangre', value: dni.tipoSangre },
+        { name: 'Número DNI', value: dni.numeroDNI }
+      );
+
+    await interaction.reply({ embeds: [embed] });
   }
 });
 
