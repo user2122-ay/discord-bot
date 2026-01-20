@@ -1,36 +1,45 @@
 require('dotenv').config();
 
-const { 
-  Client, 
-  GatewayIntentBits, 
-  REST, 
-  Routes, 
-  SlashCommandBuilder, 
-  EmbedBuilder 
+const {
+  Client,
+  GatewayIntentBits,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  EmbedBuilder
 } = require('discord.js');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
+// Slash command /dni
 const commands = [
   new SlashCommandBuilder()
     .setName('dni')
     .setDescription('Crear DNI de Los Santos RP')
     .addStringOption(o =>
-      o.setName('nombre').setDescription('Nombre').setRequired(true)
+      o.setName('nombre_ic')
+        .setDescription('Nombre IC')
+        .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('apellido').setDescription('Apellido').setRequired(true)
+      o.setName('apellido_ic')
+        .setDescription('Apellido IC')
+        .setRequired(true)
     )
     .addIntegerOption(o =>
-      o.setName('edad').setDescription('Edad').setRequired(true)
+      o.setName('edad_ic')
+        .setDescription('Edad IC')
+        .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('fecha').setDescription('Fecha de nacimiento').setRequired(true)
+      o.setName('fecha_nacimiento')
+        .setDescription('Fecha de nacimiento')
+        .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName('sangre')
+      o.setName('tipo_sangre')
         .setDescription('Tipo de sangre')
         .setRequired(true)
         .addChoices(
@@ -48,33 +57,46 @@ const commands = [
 ];
 
 client.once('ready', async () => {
-  console.log(`Bot listo como ${client.user.tag}`);
+  console.log(`✅ Bot encendido como ${client.user.tag}`);
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
-  await rest.put(
-    Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
-    { body: commands }
-  );
-
-  console.log('Comando /dni registrado');
+  try {
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
+      { body: commands }
+    );
+    console.log('✅ Comando /dni registrado correctamente');
+  } catch (error) {
+    console.error('❌ Error al registrar el comando:', error);
+  }
 });
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === 'dni') {
+    const nombreIC = interaction.options.getString('nombre_ic');
+    const apellidoIC = interaction.options.getString('apellido_ic');
+    const edadIC = interaction.options.getInteger('edad_ic');
+    const fecha = interaction.options.getString('fecha_nacimiento');
+    const sangre = interaction.options.getString('tipo_sangre');
+
+    const numeroDNI = Math.floor(100000 + Math.random() * 900000);
+
     const embed = new EmbedBuilder()
-      .setTitle('🪪 DNI — Los Santos RP')
+      .setTitle('🪪 Documento Nacional de Identidad')
       .setColor(0x1e90ff)
+      .setThumbnail(interaction.user.displayAvatarURL())
       .addFields(
-        { name: 'Nombre', value: interaction.options.getString('nombre'), inline: true },
-        { name: 'Apellido', value: interaction.options.getString('apellido'), inline: true },
-        { name: 'Edad', value: String(interaction.options.getInteger('edad')), inline: true },
-        { name: 'Fecha Nac.', value: interaction.options.getString('fecha'), inline: true },
-        { name: 'Sangre', value: interaction.options.getString('sangre'), inline: true },
-        { name: 'DNI', value: String(Math.floor(100000 + Math.random() * 900000)), inline: true }
+        { name: '👤 Nombre IC', value: nombreIC, inline: true },
+        { name: '👤 Apellido IC', value: apellidoIC, inline: true },
+        { name: '🎂 Edad IC', value: String(edadIC), inline: true },
+        { name: '📅 Fecha de Nacimiento', value: fecha, inline: true },
+        { name: '🩸 Tipo de Sangre', value: sangre, inline: true },
+        { name: '🆔 Número de DNI', value: String(numeroDNI), inline: true }
       )
+      .setFooter({ text: 'Gobierno de Los Santos RP' })
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed] });
