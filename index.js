@@ -1,97 +1,102 @@
 const { 
   Client, 
   GatewayIntentBits, 
-  SlashCommandBuilder, 
   REST, 
   Routes, 
+  SlashCommandBuilder, 
   EmbedBuilder 
-} = require("discord.js");
+} = require('discord.js');
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
+  intents: [GatewayIntentBits.Guilds]
 });
 
-const GUILD_ID = "TU_GUILD_ID";
-const ROL_PERMITIDO = "1451018445998260266";
-const ROL_DNI = "1451018398874996966";
+const GUILD_ID = 'PON_AQUI_EL_ID_DE_TU_SERVIDOR';
 
-client.once("ready", async () => {
-  console.log(`✅ Bot encendido como ${client.user.tag}`);
+// 🔹 Comando Slash
+const commands = [
+  new SlashCommandBuilder()
+    .setName('dni')
+    .setDescription('Crear DNI de Los Santos RP')
+    .addStringOption(opt =>
+      opt.setName('nombre')
+        .setDescription('Nombre')
+        .setRequired(true)
+    )
+    .addStringOption(opt =>
+      opt.setName('apellido')
+        .setDescription('Apellido')
+        .setRequired(true)
+    )
+    .addIntegerOption(opt =>
+      opt.setName('edad')
+        .setDescription('Edad')
+        .setRequired(true)
+    )
+    .addStringOption(opt =>
+      opt.setName('fecha_nacimiento')
+        .setDescription('Fecha de nacimiento')
+        .setRequired(true)
+    )
+    .addStringOption(opt =>
+      opt.setName('sangre')
+        .setDescription('Tipo de sangre')
+        .setRequired(true)
+        .addChoices(
+          { name: 'O+', value: 'O+' },
+          { name: 'O-', value: 'O-' },
+          { name: 'A+', value: 'A+' },
+          { name: 'A-', value: 'A-' },
+          { name: 'B+', value: 'B+' },
+          { name: 'B-', value: 'B-' },
+          { name: 'AB+', value: 'AB+' },
+          { name: 'AB-', value: 'AB-' }
+        )
+    )
+    .toJSON()
+];
 
-  const commands = [
-    new SlashCommandBuilder()
-      .setName("creardni")
-      .setDescription("Crear DNI de Los Santos RP")
-      .addStringOption(o => o.setName("nombre").setDescription("Nombre").setRequired(true))
-      .addStringOption(o => o.setName("apellido").setDescription("Apellido").setRequired(true))
-      .addIntegerOption(o => o.setName("edad").setDescription("Edad").setRequired(true))
-      .addStringOption(o => o.setName("fecha").setDescription("Fecha nacimiento DD/MM/AAAA").setRequired(true))
-      .addStringOption(o =>
-        o.setName("sangre")
-          .setDescription("Tipo de sangre")
-          .setRequired(true)
-          .addChoices(
-            { name: "O+", value: "O+" },
-            { name: "O-", value: "O-" },
-            { name: "A+", value: "A+" },
-            { name: "A-", value: "A-" },
-            { name: "B+", value: "B+" },
-            { name: "B-", value: "B-" },
-            { name: "AB+", value: "AB+" },
-            { name: "AB-", value: "AB-" }
-          )
-      )
-      .toJSON()
-  ];
+client.once('ready', async () => {
+  console.log(`✅ Bot conectado como ${client.user.tag}`);
 
-  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
-  await rest.put(
-    Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-    { body: commands }
-  );
+  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
-  console.log("✅ Comando /creardni registrado");
+  try {
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+      { body: commands }
+    );
+    console.log('✅ Comando /dni registrado');
+  } catch (error) {
+    console.error('❌ Error registrando comando:', error);
+  }
 });
 
-client.on("interactionCreate", async interaction => {
-  if (!interaction.isCommand()) return;
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === "creardni") {
-    if (!interaction.member.roles.cache.has(ROL_PERMITIDO)) {
-      return interaction.reply({ content: "❌ No tienes permisos.", ephemeral: true });
-    }
-
-    const nombre = interaction.options.getString("nombre");
-    const apellido = interaction.options.getString("apellido");
-    const edad = interaction.options.getInteger("edad");
-    const fecha = interaction.options.getString("fecha");
-    const sangre = interaction.options.getString("sangre");
+  if (interaction.commandName === 'dni') {
+    const nombre = interaction.options.getString('nombre');
+    const apellido = interaction.options.getString('apellido');
+    const edad = interaction.options.getInteger('edad');
+    const fecha = interaction.options.getString('fecha_nacimiento');
+    const sangre = interaction.options.getString('sangre');
 
     const idDNI = Math.floor(100000 + Math.random() * 900000);
 
     const embed = new EmbedBuilder()
-      .setTitle("🆔 DNI - Los Santos RP")
-      .setColor("DarkBlue")
+      .setTitle('🪪 DNI — Los Santos RP')
+      .setColor(0x1e90ff)
+      .setThumbnail(interaction.user.displayAvatarURL())
       .addFields(
-        { name: "Nombre", value: nombre, inline: true },
-        { name: "Apellido", value: apellido, inline: true },
-        { name: "Edad", value: edad.toString(), inline: true },
-        { name: "Fecha Nacimiento", value: fecha, inline: true },
-        { name: "Tipo de Sangre", value: sangre, inline: true },
-        { name: "ID DNI", value: idDNI.toString(), inline: true }
+        { name: '👤 Nombre', value: `${nombre} ${apellido}`, inline: true },
+        { name: '🎂 Edad', value: `${edad}`, inline: true },
+        { name: '🩸 Tipo de Sangre', value: sangre, inline: true },
+        { name: '📅 Fecha de Nacimiento', value: fecha, inline: true },
+        { name: '🆔 Número de DNI', value: `${idDNI}`, inline: true }
       )
-      .setFooter({ text: "Los Santos Spanish RP" })
+      .setFooter({ text: 'Gobierno de Los Santos' })
       .setTimestamp();
-
-    // Dar rol DNI
-    const rol = interaction.guild.roles.cache.get(ROL_DNI);
-    if (rol) {
-      try {
-        await interaction.member.roles.add(rol);
-      } catch (e) {
-        console.log("Error dando rol:", e);
-      }
-    }
 
     await interaction.reply({ embeds: [embed] });
   }
