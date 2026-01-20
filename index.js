@@ -1,48 +1,72 @@
-const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
-const Canvas = require('canvas');
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+
+function generarID() {
+  return Math.floor(100000 + Math.random() * 900000);
+}
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('dni')
-        .setDescription('Muestra el DNI de un ciudadano')
-        .addUserOption(option => 
-            option.setName('usuario')
-                .setDescription('El usuario del que quieres ver el DNI')
-                .setRequired(true)),
-    async execute(interaction) {
-        const user = interaction.options.getUser('usuario');
-        
-        // Creamos el lienzo (Canvas)
-        const canvas = Canvas.createCanvas(700, 400);
-        const ctx = canvas.getContext('2d');
+  data: new SlashCommandBuilder()
+    .setName("creardni")
+    .setDescription("Crear DNI de Los Santos RP")
+    .addStringOption(option =>
+      option.setName("nombre")
+        .setDescription("Nombre del ciudadano")
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName("apellido")
+        .setDescription("Apellido del ciudadano")
+        .setRequired(true)
+    )
+    .addIntegerOption(option =>
+      option.setName("edad")
+        .setDescription("Edad")
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName("fecha_nacimiento")
+        .setDescription("Fecha de nacimiento (DD/MM/AAAA)")
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName("sangre")
+        .setDescription("Tipo de sangre")
+        .setRequired(true)
+        .addChoices(
+          { name: "O+", value: "O+" },
+          { name: "O-", value: "O-" },
+          { name: "A+", value: "A+" },
+          { name: "A-", value: "A-" },
+          { name: "B+", value: "B+" },
+          { name: "B-", value: "B-" },
+          { name: "AB+", value: "AB+" },
+          { name: "AB-", value: "AB-" }
+        )
+    ),
 
-        // Fondo (puedes subir el logo o un fondo personalizado)
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+  async execute(interaction) {
+    const nombre = interaction.options.getString("nombre");
+    const apellido = interaction.options.getString("apellido");
+    const edad = interaction.options.getInteger("edad");
+    const nacimiento = interaction.options.getString("fecha_nacimiento");
+    const sangre = interaction.options.getString("sangre");
 
-        // Cabecera
-        ctx.fillStyle = '#1e3a8a'; // Azul oscuro LSRP
-        ctx.fillRect(0, 0, canvas.width, 80);
+    const dniID = generarID();
 
-        // Texto
-        ctx.font = 'bold 30px sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('ESTADO DE LOS SANTOS', 120, 45);
-        ctx.font = '15px sans-serif';
-        ctx.fillText('DOCUMENTO DE IDENTIDAD', 120, 70);
+    const embed = new EmbedBuilder()
+      .setTitle("🪪 DNI OFICIAL — LOS SANTOS RP")
+      .setColor(0x1E90FF)
+      .setThumbnail(interaction.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 Nombre", value: `${nombre} ${apellido}`, inline: false },
+        { name: "🎂 Edad", value: `${edad} años`, inline: true },
+        { name: "📅 Fecha de nacimiento", value: nacimiento, inline: true },
+        { name: "🩸 Tipo de sangre", value: sangre, inline: true },
+        { name: "🆔 Número de DNI", value: `LS-${dniID}`, inline: false }
+      )
+      .setFooter({ text: "Gobierno de Los Santos | Documento RP" })
+      .setTimestamp();
 
-        // Información ficticia (aquí conectarías con tu DB)
-        ctx.font = '20px sans-serif';
-        ctx.fillText(`NOMBRE: ${user.username.toUpperCase()}`, 250, 150);
-        ctx.fillText(`ID: ${Math.floor(Math.random() * 900000)}`, 250, 190);
-        ctx.fillText('NACIONALIDAD: LOS SANTOS', 250, 230);
-
-        // Avatar del usuario
-        const avatar = await Canvas.loadImage(user.displayAvatarURL({ extension: 'jpg' }));
-        ctx.drawImage(avatar, 50, 110, 150, 180);
-
-        const attachment = new AttachmentBuilder(await canvas.toBuffer(), { name: 'dni-lsrp.png' });
-        
-        await interaction.reply({ files: [attachment] });
-    },
+    await interaction.reply({ embeds: [embed] });
+  }
 };
