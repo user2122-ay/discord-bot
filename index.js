@@ -1,172 +1,48 @@
-const { 
-  Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder,
-  EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder
-} = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
+const Canvas = require('canvas');
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
-});
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('dni')
+        .setDescription('Muestra el DNI de un ciudadano')
+        .addUserOption(option => 
+            option.setName('usuario')
+                .setDescription('El usuario del que quieres ver el DNI')
+                .setRequired(true)),
+    async execute(interaction) {
+        const user = interaction.options.getUser('usuario');
+        
+        // Creamos el lienzo (Canvas)
+        const canvas = Canvas.createCanvas(700, 400);
+        const ctx = canvas.getContext('2d');
 
-// Roles y servidor
-const GUILD_ID = '1345956472986796183';
-const ROL_PERMITIDO = '1451018445998260266'; // puede crear DNI
-const ROL_DNI = '1451018398874996966'; // rol que se da al crear DNI
+        // Fondo (puedes subir el logo o un fondo personalizado)
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// Guardar los DNI en memoria
-const DNIs = new Map();
+        // Cabecera
+        ctx.fillStyle = '#1e3a8a'; // Azul oscuro LSRP
+        ctx.fillRect(0, 0, canvas.width, 80);
 
-client.once('ready', async () => {
-  console.log(`✅ Bot conectado como ${client.user.tag}`);
+        // Texto
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('ESTADO DE LOS SANTOS', 120, 45);
+        ctx.font = '15px sans-serif';
+        ctx.fillText('DOCUMENTO DE IDENTIDAD', 120, 70);
 
-  const commands = [
-    new SlashCommandBuilder()
-      .setName('crearDNI')
-      .setDescription('Crea un DNI para un ciudadano')
-      .toJSON(),
-    new SlashCommandBuilder()
-      .setName('verDNI')
-      .setDescription('Ver DNI de un usuario')
-      .addUserOption(option => 
-        option.setName('usuario')
-              .setDescription('Usuario a consultar')
-              .setRequired(true)
-      )
-      .toJSON()
-  ];
+        // Información ficticia (aquí conectarías con tu DB)
+        ctx.font = '20px sans-serif';
+        ctx.fillText(`NOMBRE: ${user.username.toUpperCase()}`, 250, 150);
+        ctx.fillText(`ID: ${Math.floor(Math.random() * 900000)}`, 250, 190);
+        ctx.fillText('NACIONALIDAD: LOS SANTOS', 250, 230);
 
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-  try {
-    await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body: commands });
-    console.log('✅ Comandos de DNI registrados correctamente');
-  } catch (error) {
-    console.error(error);
-  }
-});
+        // Avatar del usuario
+        const avatar = await Canvas.loadImage(user.displayAvatarURL({ extension: 'jpg' }));
+        ctx.drawImage(avatar, 50, 110, 150, 180);
 
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand()) return;
-
-  const member = interaction.member;
-
-  // ==================== CREAR DNI ====================
-  if (interaction.commandName === 'crearDNI') {
-
-    if (!member.roles.cache.has(ROL_PERMITIDO)) {
-      return interaction.reply({ content: '❌ No tienes permiso para crear DNI.', ephemeral: true });
-    }
-
-    const preguntas = [
-      { key: 'nombre', text: '✏️ Ingresa el nombre:' },
-      { key: 'apellido', text: '✏️ Ingresa el apellido:' },
-      { key: 'edad', text: '🎂 Ingresa la edad:' },
-      { key: 'fechaNac', text: '📅 Ingresa la fecha de nacimiento (DD/MM/AAAA):' }
-    ];
-
-    const respuestas = {};
-    let index = 0;
-
-    await interaction.reply({ content: preguntas[index].text, ephemeral: true });
-
-    const collector = interaction.channel.createMessageCollector({
-      filter: m => m.author.id === member.id,
-      time: 300000
-    });
-
-    collector.on('collect', async m => {
-      respuestas[preguntas[index].key] = m.content.trim();
-      index++;
-
-      if (index < preguntas.length) {
-        m.reply(preguntas[index].text);
-      } else {
-        collector.stop();
-
-        // Preguntar tipo de sangre con menú
-        const tiposSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-        const row = new ActionRowBuilder().addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId('tipoSangre')
-            .setPlaceholder('Selecciona el tipo de sangre')
-            .addOptions(
-              tiposSangre.map(tipo => ({ label: tipo, value: tipo }))
-            )
-        );
-
-        const msg = await interaction.followUp({ content: '💉 Selecciona el tipo de sangre:', components: [row], ephemeral: true });
-
-        const menuCollector = msg.createMessageComponentCollector({ time: 60000, max: 1 });
-
-        menuCollector.on('collect', async i => {
-          respuestas.tipoSangre = i.values[0];
-          await i.update({ content: '✅ Tipo de sangre seleccionado.', components: [] });
-
-          // Generar número de ID aleatorio
-          const numeroID = Math.floor(Math.random() * 900000 + 100000);
-
-          // Guardar DNI
-          DNIs.set(member.id, {
-            nombre: respuestas.nombre,
-            apellido: respuestas.apellido,
-            edad: respuestas.edad,
-            fechaNac: respuestas.fechaNac,
-            tipoSangre: respuestas.tipoSangre,
-            numeroID
-          });
-
-          // Crear embed
-          const embed = new EmbedBuilder()
-            .setTitle('🆔 DNI Ciudadano')
-            .setDescription(`DNI creado por <@${member.id}>`)
-            .addFields(
-              { name: 'Nombre', value: respuestas.nombre, inline: true },
-              { name: 'Apellido', value: respuestas.apellido, inline: true },
-              { name: 'Edad', value: respuestas.edad, inline: true },
-              { name: 'Fecha de nacimiento', value: respuestas.fechaNac, inline: true },
-              { name: 'Tipo de sangre', value: respuestas.tipoSangre, inline: true },
-              { name: 'Número de ID', value: numeroID.toString(), inline: true }
-            )
-            .setColor('Green')
-            .setTimestamp();
-
-          await interaction.followUp({ embeds: [embed], ephemeral: false });
-
-          // Dar rol al usuario
-          const rolDni = interaction.guild.roles.cache.get(ROL_DNI);
-          if (rolDni) {
-            try { await member.roles.add(rolDni); } catch (e) { console.log('Error al dar rol DNI', e); }
-          }
-        });
-      }
-    });
-  }
-
-  // ==================== VER DNI ====================
-  if (interaction.commandName === 'verDNI') {
-    const usuario = interaction.options.getUser('usuario');
-    const dni = DNIs.get(usuario.id);
-
-    if (!dni) return interaction.reply({ content: '❌ Este usuario no tiene DNI.', ephemeral: true });
-
-    const embed = new EmbedBuilder()
-      .setTitle(`🆔 DNI de ${usuario.username}`)
-      .addFields(
-        { name: 'Nombre', value: dni.nombre, inline: true },
-        { name: 'Apellido', value: dni.apellido, inline: true },
-        { name: 'Edad', value: dni.edad, inline: true },
-        { name: 'Fecha de nacimiento', value: dni.fechaNac, inline: true },
-        { name: 'Tipo de sangre', value: dni.tipoSangre, inline: true },
-        { name: 'Número de ID', value: dni.numeroID.toString(), inline: true }
-      )
-      .setColor('Blue')
-      .setTimestamp();
-
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-  }
-});
-
-client.login(process.env.TOKEN);
+        const attachment = new AttachmentBuilder(await canvas.toBuffer(), { name: 'dni-lsrp.png' });
+        
+        await interaction.reply({ files: [attachment] });
+    },
+};
