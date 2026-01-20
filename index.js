@@ -1,152 +1,167 @@
-require('dotenv').config();
+    require('dotenv').config();
 
 const {
   Client,
   GatewayIntentBits,
-  REST,
-  Routes,
   SlashCommandBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
   EmbedBuilder
 } = require('discord.js');
 
+const mongoose = require('mongoose');
+const DNI = require('./models/DNI');
+
+// ===== CLIENTE =====
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-// 🗂️ Memoria de DNIs (temporal)
-const dniDB = new Map();
+// ===== CONEXIÓN MONGODB =====
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('🟢 MongoDB conectado correctamente'))
+  .catch(err => console.error('🔴 Error MongoDB:', err));
 
-// Slash commands
-const commands = [
-  new SlashCommandBuilder()
-    .setName('dni')
-    .setDescription('Crear DNI de Los Santos RP')
-    .addStringOption(o =>
-      o.setName('nombre_ic')
-        .setDescription('Nombre IC')
-        .setRequired(true)
-    )
-    .addStringOption(o =>
-      o.setName('apellido_ic')
-        .setDescription('Apellido IC')
-        .setRequired(true)
-    )
-    .addIntegerOption(o =>
-      o.setName('edad_ic')
-        .setDescription('Edad IC')
-        .setRequired(true)
-    )
-    .addStringOption(o =>
-      o.setName('fecha_nacimiento')
-        .setDescription('Fecha de nacimiento')
-        .setRequired(true)
-    )
-    .addStringOption(o =>
-      o.setName('tipo_sangre')
-        .setDescription('Tipo de sangre')
-        .setRequired(true)
-        .addChoices(
-          { name: 'O+', value: 'O+' },
-          { name: 'O-', value: 'O-' },
-          { name: 'A+', value: 'A+' },
-          { name: 'A-', value: 'A-' },
-          { name: 'B+', value: 'B+' },
-          { name: 'B-', value: 'B-' },
-          { name: 'AB+', value: 'AB+' },
-          { name: 'AB-', value: 'AB-' }
-        )
-    )
-    .toJSON(),
-
-  new SlashCommandBuilder()
-    .setName('verdni')
-    .setDescription('Ver el DNI de un usuario')
-    .addUserOption(o =>
-      o.setName('usuario')
-        .setDescription('Usuario del que quieres ver el DNI')
-        .setRequired(true)
-    )
-    .toJSON()
-];
-
+// ===== READY =====
 client.once('ready', async () => {
-  console.log(`✅ Bot encendido como ${client.user.tag}`);
+  console.log(`🤖 Bot encendido como ${client.user.tag}`);
 
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+  const commands = [
+    new SlashCommandBuilder()
+      .setName('crear-dni')
+      .setDescription('Crear tu DNI de Los Santos RP'),
 
-  await rest.put(
-    Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
-    { body: commands }
-  );
+    new SlashCommandBuilder()
+      .setName('ver-dni')
+      .setDescription('Ver el DNI de un usuario')
+      .addUserOption(opt =>
+        opt.setName('usuario')
+          .setDescription('Usuario a consultar')
+          .setRequired(true)
+      )
+  ];
 
-  console.log('✅ Comandos /dni y /verdni registrados');
+  await client.application.commands.set(commands);
+  console.log('✅ Comandos registrados');
 });
 
+// ===== INTERACCIONES =====
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
 
-  // 🪪 CREAR DNI
-  if (interaction.commandName === 'dni') {
-    const data = {
-      userId: interaction.user.id,
-      nombre: interaction.options.getString('nombre_ic'),
-      apellido: interaction.options.getString('apellido_ic'),
-      edad: interaction.options.getInteger('edad_ic'),
-      fecha: interaction.options.getString('fecha_nacimiento'),
-      sangre: interaction.options.getString('tipo_sangre'),
-      dni: Math.floor(100000 + Math.random() * 900000),
-      avatar: interaction.user.displayAvatarURL()
-    };
+  // ===== /crear-dni =====
+  if (interaction.isChatInputCommand() && interaction.commandName === 'crear-dni') {
 
-    dniDB.set(interaction.user.id, data);
+    const modal = new ModalBuilder()
+      .setCustomId('dniModal')
+      .setTitle('DNI — Los Santos RP');
 
-    const embed = new EmbedBuilder()
-      .setTitle('🪪 Documento Nacional de Identidad')
-      .setColor(0x1e90ff)
-      .setThumbnail(data.avatar)
-      .addFields(
-        { name: '👤 Nombre IC', value: data.nombre, inline: true },
-        { name: '👤 Apellido IC', value: data.apellido, inline: true },
-        { name: '🎂 Edad IC', value: String(data.edad), inline: true },
-        { name: '📅 Fecha de Nacimiento', value: data.fecha, inline: true },
-        { name: '🩸 Tipo de Sangre', value: data.sangre, inline: true },
-        { name: '🆔 Número de DNI', value: String(data.dni), inline: true }
-      )
-      .setFooter({ text: 'Gobierno de Los Santos RP' })
-      .setTimestamp();
+    const nombre = new TextInputBuilder()
+      .setCustomId('nombreIC')
+      .setLabel('Nombre IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
 
-    await interaction.reply({ embeds: [embed] });
+    const apellido = new TextInputBuilder()
+      .setCustomId('apellidoIC')
+      .setLabel('Apellido IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const edad = new TextInputBuilder()
+      .setCustomId('edadIC')
+      .setLabel('Edad IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const fecha = new TextInputBuilder()
+      .setCustomId('fechaNacimiento')
+      .setLabel('Fecha de nacimiento IC')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const sangre = new TextInputBuilder()
+      .setCustomId('tipoSangre')
+      .setLabel('Tipo de sangre (O+, O-, A+, A-, B+, B-, AB+, AB-)')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(nombre),
+      new ActionRowBuilder().addComponents(apellido),
+      new ActionRowBuilder().addComponents(edad),
+      new ActionRowBuilder().addComponents(fecha),
+      new ActionRowBuilder().addComponents(sangre)
+    );
+
+    await interaction.showModal(modal);
   }
 
-  // 🔍 VER DNI
-  if (interaction.commandName === 'verdni') {
-    const user = interaction.options.getUser('usuario');
-    const data = dniDB.get(user.id);
+  // ===== MODAL SUBMIT =====
+  if (interaction.isModalSubmit() && interaction.customId === 'dniModal') {
 
-    if (!data) {
+    const numeroDNI = Math.floor(10000000 + Math.random() * 90000000).toString();
+
+    const data = {
+      discordId: interaction.user.id,
+      nombreIC: interaction.fields.getTextInputValue('nombreIC'),
+      apellidoIC: interaction.fields.getTextInputValue('apellidoIC'),
+      edadIC: interaction.fields.getTextInputValue('edadIC'),
+      fechaNacimiento: interaction.fields.getTextInputValue('fechaNacimiento'),
+      tipoSangre: interaction.fields.getTextInputValue('tipoSangre'),
+      numeroDNI
+    };
+
+    await DNI.findOneAndUpdate(
+      { discordId: interaction.user.id },
+      data,
+      { upsert: true }
+    );
+
+    const embed = new EmbedBuilder()
+      .setTitle('🪪 DNI CREADO')
+      .setColor('#2ecc71')
+      .addFields(
+        { name: 'Nombre IC', value: `${data.nombreIC} ${data.apellidoIC}` },
+        { name: 'Edad IC', value: data.edadIC },
+        { name: 'Nacimiento', value: data.fechaNacimiento },
+        { name: 'Tipo de sangre', value: data.tipoSangre },
+        { name: 'Número DNI', value: data.numeroDNI }
+      )
+      .setFooter({ text: 'Los Santos Spanish RP' });
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  // ===== /ver-dni =====
+  if (interaction.isChatInputCommand() && interaction.commandName === 'ver-dni') {
+
+    const user = interaction.options.getUser('usuario');
+    const dni = await DNI.findOne({ discordId: user.id });
+
+    if (!dni) {
       return interaction.reply({
-        content: '❌ Ese usuario no tiene un DNI registrado.',
+        content: '❌ Ese usuario no tiene DNI registrado.',
         ephemeral: true
       });
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('🪪 DNI Registrado')
-      .setColor(0x2ecc71)
-      .setThumbnail(data.avatar)
-      .setDescription(`DNI de <@${user.id}>`)
+      .setTitle('🪪 DNI — Los Santos RP')
+      .setColor('#3498db')
       .addFields(
-        { name: '👤 Nombre IC', value: data.nombre, inline: true },
-        { name: '👤 Apellido IC', value: data.apellido, inline: true },
-        { name: '🎂 Edad IC', value: String(data.edad), inline: true },
-        { name: '📅 Fecha de Nacimiento', value: data.fecha, inline: true },
-        { name: '🩸 Tipo de Sangre', value: data.sangre, inline: true },
-        { name: '🆔 Número de DNI', value: String(data.dni), inline: true }
-      )
-      .setTimestamp();
+        { name: 'Titular', value: user.tag },
+        { name: 'Nombre IC', value: `${dni.nombreIC} ${dni.apellidoIC}` },
+        { name: 'Edad IC', value: dni.edadIC.toString() },
+        { name: 'Nacimiento', value: dni.fechaNacimiento },
+        { name: 'Tipo de sangre', value: dni.tipoSangre },
+        { name: 'Número DNI', value: dni.numeroDNI }
+      );
 
     await interaction.reply({ embeds: [embed] });
   }
 });
 
+// ===== LOGIN =====
 client.login(process.env.TOKEN);
