@@ -13,7 +13,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-const GUILD_ID = 'PON_AQUI_EL_ID_DE_TU_SERVIDOR';
+const GUILD_ID = '1463192289974157334';
 
 // 📂 cargar o crear archivo DNI
 let dniData = {};
