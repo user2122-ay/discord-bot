@@ -1,35 +1,20 @@
-require("dotenv").config();
-const fs = require("fs");
-const { Client, Collection, GatewayIntentBits } = require("discord.js");
+const { REST, Routes } = require("discord.js");
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
-});
+client.once("ready", async () => {
+  console.log(`✅ Bot conectado como ${client.user.tag}`);
 
-client.commands = new Collection();
+  const commands = [];
+  client.commands.forEach(cmd => commands.push(cmd.data.toJSON()));
 
-const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  client.commands.set(command.data.name, command);
-}
-
-client.once("ready", () => {
-  console.log(`✅ Bot encendido como ${client.user.tag}`);
-});
-
-client.on("interactionCreate", async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
+  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
   try {
-    await command.execute(interaction);
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, '1463192289974157334'),
+      { body: commands }
+    );
+    console.log('✅ Comandos registrados');
   } catch (e) {
     console.error(e);
-    await interaction.reply({ content: "❌ Error al ejecutar el comando", ephemeral: true });
   }
 });
-
-client.login(process.env.TOKEN);
