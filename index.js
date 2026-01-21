@@ -144,7 +144,10 @@ client.on('interactionCreate', async interaction => {
     const embed = new EmbedBuilder()
       .setTitle('🗳️ VOTACIÓN ABIERTA')
       .setColor('Orange')
-      .setDescription('Reaccione para votar')
+      .setDescription('Se abre oficialmente la votación para decidir la apertura del servidor de ER:LC.
+Los miembros habilitados podrán emitir su voto mediante las reacciones correspondientes.
+La votación estará disponible por tiempo limitado.
+Se solicita votar con responsabilidad.')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
       .setFooter({ text: 'Staff de Los Santos RP' });
 
@@ -163,6 +166,9 @@ client.on('interactionCreate', async interaction => {
     const embed = new EmbedBuilder()
       .setTitle('🛑 VOTACIÓN CERRADA')
       .setColor('Red')
+      .setDescription('La votación para la apertura del servidor de ER:LC ha sido cerrada.
+Agradecemos a todos los que participaron.
+El resultado será anunciado a continuación.')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
       .setFooter({ text: 'Staff de Los Santos RP' });
 
@@ -177,7 +183,11 @@ client.on('interactionCreate', async interaction => {
     const embed = new EmbedBuilder()
       .setTitle('🏛️ SESIÓN ABIERTA')
       .setColor('Green')
-      .setDescription('📌 Código de sesión: **LSSANTOS**')
+      .setDescription('Tras el resultado de la votación, el servidor de Emergency Response: Liberty County queda oficialmente abierto para rolear.
+Todas las normativas del servidor están activas.
+Se solicita rol serio, respeto y cooperación con el staff.
+¡Buen rol para todos!
+      📌 Código de sesión: **LSSANTOS**')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
       .setFooter({ text: 'Staff de Los Santos RP' });
 
@@ -192,6 +202,9 @@ client.on('interactionCreate', async interaction => {
     const embed = new EmbedBuilder()
       .setTitle('🔒 SESIÓN CERRADA')
       .setColor('DarkRed')
+      .setDescription('El servidor de ER:LC queda cerrado por el momento.
+Agradecemos la participación y el buen rol de todos los usuarios.
+Cualquier novedad será comunicada por los canales oficiales.')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
       .setFooter({ text: 'Staff de Los Santos RP' });
 
