@@ -146,7 +146,7 @@ client.on('interactionCreate', async interaction => {
       .setColor('Orange')
       .setDescription('Reaccione para votar')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
-      .setFooter({ text: 'Gobierno de Los Santos RP' });
+      .setFooter({ text: 'Staff de Los Santos RP' });
 
     const msg = await interaction.reply({
       content: '<@&1463192290314162342>',
@@ -164,7 +164,7 @@ client.on('interactionCreate', async interaction => {
       .setTitle('🛑 VOTACIÓN CERRADA')
       .setColor('Red')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
-      .setFooter({ text: 'Gobierno de Los Santos RP' });
+      .setFooter({ text: 'Staff de Los Santos RP' });
 
     return interaction.reply({
       content: '<@&1463192290314162342>',
@@ -179,7 +179,7 @@ client.on('interactionCreate', async interaction => {
       .setColor('Green')
       .setDescription('📌 Código de sesión: **LSSANTOS**')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
-      .setFooter({ text: 'Gobierno de Los Santos RP' });
+      .setFooter({ text: 'Staff de Los Santos RP' });
 
     return interaction.reply({
       content: '<@&1463192290314162342>',
@@ -193,7 +193,7 @@ client.on('interactionCreate', async interaction => {
       .setTitle('🔒 SESIÓN CERRADA')
       .setColor('DarkRed')
       .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
-      .setFooter({ text: 'Gobierno de Los Santos RP' });
+      .setFooter({ text: 'Staff de Los Santos RP' });
 
     return interaction.reply({
       content: '<@&1463192290314162342>',
