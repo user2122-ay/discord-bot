@@ -20,6 +20,30 @@ module.exports = {
         "La votación estará disponible por tiempo limitado.\n\n" +
         "Se solicita votar con responsabilidad.";
       color = 0xf1c40f;
+
+      // Embed
+      const embed = new EmbedBuilder()
+        .setTitle("📢 Gobierno de Los Santos RP")
+        .setDescription(desc)
+        .setColor(color)
+        .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+        .setFooter({
+          text: `Moderador: ${interaction.user.tag}`,
+          iconURL: interaction.user.displayAvatarURL({ dynamic: true })
+        })
+        .setTimestamp();
+
+      // Enviar embed y ping al rol
+      const mensaje = await interaction.reply({ 
+        content: "<@&1463192290314162342>", 
+        embeds: [embed], 
+        fetchReply: true 
+      });
+
+      // Añadir reacciones
+      await mensaje.react("✅");
+      await mensaje.react("❌");
+      return;
     }
 
     if (interaction.options.getSubcommand() === "cerrar_votacion") {
@@ -47,6 +71,7 @@ module.exports = {
       color = 0x95a5a6;
     }
 
+    // Embed general para los otros subcomandos
     const embed = new EmbedBuilder()
       .setTitle("📢 Gobierno de Los Santos RP")
       .setDescription(desc)
