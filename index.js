@@ -14,7 +14,7 @@ const client = new Client({
 });
 
 // 🔴 CAMBIA ESTE ID
-const GUILD_ID = 'PON_AQUI_EL_ID_DE_TU_SERVIDOR';
+const GUILD_ID = '1463192289974157334';
 
 // 📂 DNI DATA
 let dniData = {};
