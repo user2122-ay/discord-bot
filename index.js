@@ -1,4 +1,4 @@
-  const {
+const {
   Client,
   GatewayIntentBits,
   REST,
@@ -13,43 +13,27 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-// 🔴 PON AQUÍ EL ID DE TU SERVIDOR
-const GUILD_ID = '1463192289974157334';
+// 🔴 CAMBIA ESTE ID
+const GUILD_ID = 'PON_AQUI_EL_ID_DE_TU_SERVIDOR';
 
-// 📂 Cargar datos del DNI
+// 📂 DNI DATA
 let dniData = {};
 if (fs.existsSync('./dniData.json')) {
   dniData = JSON.parse(fs.readFileSync('./dniData.json', 'utf8'));
 }
 
-// 🔌 Bot listo
 client.once('ready', async () => {
   console.log(`✅ Bot encendido como ${client.user.tag}`);
 
   const commands = [
+    // 🆔 CREAR DNI
     new SlashCommandBuilder()
       .setName('creardni')
       .setDescription('Crear DNI de Los Santos RP')
-      .addStringOption(o =>
-        o.setName('nombre')
-          .setDescription('Nombre IC')
-          .setRequired(true)
-      )
-      .addStringOption(o =>
-        o.setName('apellido')
-          .setDescription('Apellido IC')
-          .setRequired(true)
-      )
-      .addIntegerOption(o =>
-        o.setName('edad')
-          .setDescription('Edad IC')
-          .setRequired(true)
-      )
-      .addStringOption(o =>
-        o.setName('fecha')
-          .setDescription('Fecha de nacimiento (DD/MM/AAAA)')
-          .setRequired(true)
-      )
+      .addStringOption(o => o.setName('nombre').setDescription('Nombre IC').setRequired(true))
+      .addStringOption(o => o.setName('apellido').setDescription('Apellido IC').setRequired(true))
+      .addIntegerOption(o => o.setName('edad').setDescription('Edad IC').setRequired(true))
+      .addStringOption(o => o.setName('fecha').setDescription('Fecha nacimiento').setRequired(true))
       .addStringOption(o =>
         o.setName('sangre')
           .setDescription('Tipo de sangre')
@@ -66,44 +50,48 @@ client.once('ready', async () => {
           )
       ),
 
+    // 👀 VER DNI
     new SlashCommandBuilder()
       .setName('verdni')
       .setDescription('Ver DNI de un usuario')
       .addUserOption(o =>
         o.setName('usuario')
-          .setDescription('Usuario a consultar')
+          .setDescription('Usuario')
           .setRequired(true)
-      )
-  ].map(cmd => cmd.toJSON());
+      ),
+
+    // 🗳️ VOTACIÓN
+    new SlashCommandBuilder().setName('abrirvotacion').setDescription('Abrir votación oficial'),
+    new SlashCommandBuilder().setName('cerrarvotacion').setDescription('Cerrar votación oficial'),
+
+    // 🏛️ SESIÓN
+    new SlashCommandBuilder().setName('abrirsesion').setDescription('Abrir sesión del gobierno'),
+    new SlashCommandBuilder().setName('cerrarsesion').setDescription('Cerrar sesión del gobierno')
+  ].map(c => c.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+  await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body: commands });
 
-  await rest.put(
-    Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-    { body: commands }
-  );
-
-  console.log('✅ Comandos registrados correctamente');
+  console.log('✅ Comandos registrados');
 });
 
-// 🎮 Interacciones
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   // 🆔 CREAR DNI
   if (interaction.commandName === 'creardni') {
-    const userId = interaction.user.id;
+    const id = interaction.user.id;
+    const fecha = new Date().toLocaleDateString('es-ES');
+    const dni = `LS-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    const dniNumero = `LS-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    dniData[userId] = {
+    dniData[id] = {
       nombre: interaction.options.getString('nombre'),
       apellido: interaction.options.getString('apellido'),
-      edadIC: interaction.options.getInteger('edad'),
-      fechaNacimiento: interaction.options.getString('fecha'),
+      edad: interaction.options.getInteger('edad'),
+      fechaNac: interaction.options.getString('fecha'),
       sangre: interaction.options.getString('sangre'),
-      dni: dniNumero,
-      fechaCreacion: new Date().toLocaleDateString('es-ES')
+      dni,
+      fecha
     };
 
     fs.writeFileSync('./dniData.json', JSON.stringify(dniData, null, 2));
@@ -113,50 +101,104 @@ client.on('interactionCreate', async interaction => {
       .setColor(0x1e90ff)
       .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
       .addFields(
-        { name: '👤 Nombre IC', value: dniData[userId].nombre, inline: true },
-        { name: '👤 Apellido IC', value: dniData[userId].apellido, inline: true },
-        { name: '🎂 Edad IC', value: `${dniData[userId].edadIC}`, inline: true },
-        { name: '📅 Fecha de Nacimiento', value: dniData[userId].fechaNacimiento, inline: true },
-        { name: '🩸 Tipo de Sangre', value: dniData[userId].sangre, inline: true },
-        { name: '🆔 Número de DNI', value: `**${dniData[userId].dni}**`, inline: false }
+        { name: '👤 Nombre IC', value: dniData[id].nombre, inline: true },
+        { name: '👤 Apellido IC', value: dniData[id].apellido, inline: true },
+        { name: '🎂 Edad IC', value: `${dniData[id].edad}`, inline: true },
+        { name: '📅 Nacimiento', value: dniData[id].fechaNac, inline: true },
+        { name: '🩸 Sangre', value: dniData[id].sangre, inline: true },
+        { name: '🆔 DNI', value: `**${dniData[id].dni}**`, inline: false }
       )
       .setFooter({
-        text: `Gobierno de Los Santos RP | ${dniData[userId].fechaCreacion}`,
+        text: `Gobierno de Los Santos RP | ${fecha}`,
         iconURL: interaction.user.displayAvatarURL({ dynamic: true })
       });
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.reply({ embeds: [embed] });
   }
 
   // 👀 VER DNI
   if (interaction.commandName === 'verdni') {
-    const usuario = interaction.options.getUser('usuario');
-    const data = dniData[usuario.id];
-
-    if (!data) {
-      return interaction.reply({
-        content: '❌ Ese usuario no tiene DNI registrado.',
-        ephemeral: true
-      });
-    }
+    const user = interaction.options.getUser('usuario');
+    const data = dniData[user.id];
+    if (!data) return interaction.reply({ content: '❌ No tiene DNI.', ephemeral: true });
 
     const embed = new EmbedBuilder()
       .setTitle('🆔 Documento Nacional de Identidad')
       .setColor(0x2ecc71)
-      .setThumbnail(usuario.displayAvatarURL({ dynamic: true }))
+      .setThumbnail(user.displayAvatarURL({ dynamic: true }))
       .addFields(
         { name: '👤 Nombre IC', value: data.nombre, inline: true },
         { name: '👤 Apellido IC', value: data.apellido, inline: true },
-        { name: '🎂 Edad IC', value: `${data.edadIC}`, inline: true },
-        { name: '📅 Fecha de Nacimiento', value: data.fechaNacimiento, inline: true },
-        { name: '🩸 Tipo de Sangre', value: data.sangre, inline: true },
-        { name: '🆔 Número de DNI', value: `**${data.dni}**`, inline: false }
+        { name: '🎂 Edad IC', value: `${data.edad}`, inline: true },
+        { name: '📅 Nacimiento', value: data.fechaNac, inline: true },
+        { name: '🩸 Sangre', value: data.sangre, inline: true },
+        { name: '🆔 DNI', value: `**${data.dni}**`, inline: false }
       )
-      .setFooter({
-        text: `Gobierno de Los Santos RP | ${data.fechaCreacion}`
-      });
+      .setFooter({ text: `Gobierno de Los Santos RP | ${data.fecha}` });
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.reply({ embeds: [embed] });
+  }
+
+  // 🗳️ ABRIR VOTACIÓN
+  if (interaction.commandName === 'abrirvotacion') {
+    const embed = new EmbedBuilder()
+      .setTitle('🗳️ VOTACIÓN ABIERTA')
+      .setColor('Orange')
+      .setDescription('Reaccione para votar')
+      .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
+      .setFooter({ text: 'Gobierno de Los Santos RP' });
+
+    const msg = await interaction.reply({
+      content: '<@&1463192290314162342>',
+      embeds: [embed],
+      fetchReply: true
+    });
+
+    await msg.react('✅');
+    await msg.react('❌');
+  }
+
+  // ❌ CERRAR VOTACIÓN
+  if (interaction.commandName === 'cerrarvotacion') {
+    const embed = new EmbedBuilder()
+      .setTitle('🛑 VOTACIÓN CERRADA')
+      .setColor('Red')
+      .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
+      .setFooter({ text: 'Gobierno de Los Santos RP' });
+
+    return interaction.reply({
+      content: '<@&1463192290314162342>',
+      embeds: [embed]
+    });
+  }
+
+  // 🏛️ ABRIR SESIÓN
+  if (interaction.commandName === 'abrirsesion') {
+    const embed = new EmbedBuilder()
+      .setTitle('🏛️ SESIÓN ABIERTA')
+      .setColor('Green')
+      .setDescription('📌 Código de sesión: **LSSANTOS**')
+      .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
+      .setFooter({ text: 'Gobierno de Los Santos RP' });
+
+    return interaction.reply({
+      content: '<@&1463192290314162342>',
+      embeds: [embed]
+    });
+  }
+
+  // 🔒 CERRAR SESIÓN
+  if (interaction.commandName === 'cerrarsesion') {
+    const embed = new EmbedBuilder()
+      .setTitle('🔒 SESIÓN CERRADA')
+      .setColor('DarkRed')
+      .addFields({ name: '👮 Moderador', value: `<@${interaction.user.id}>` })
+      .setFooter({ text: 'Gobierno de Los Santos RP' });
+
+    return interaction.reply({
+      content: '<@&1463192290314162342>',
+      embeds: [embed]
+    });
   }
 });
 
