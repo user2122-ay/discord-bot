@@ -117,18 +117,24 @@ client.on('interactionCreate', async interaction => {
       });
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle('🆔 DNI DE LOS SANTOS')
-      .setColor('Green')
-      .addFields(
-        { name: 'Nombre IC', value: data.nombre, inline: true },
-        { name: 'Apellido IC', value: data.apellido, inline: true },
-        { name: 'Edad IC', value: `${data.edadIC}`, inline: true },
-        { name: 'Fecha Nacimiento', value: data.fechaNacimiento, inline: true },
-        { name: 'Tipo de Sangre', value: data.sangre, inline: true },
-        { name: 'DNI', value: data.dni, inline: false }
-      )
-      .setFooter({ text: `Solicitado por ${interaction.user.username}` });
+    const fecha = new Date().toLocaleDateString('es-ES');
+
+const embed = new EmbedBuilder()
+  .setTitle('🆔 Documento Nacional de Identidad')
+  .setColor(0x1e90ff)
+  .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+  .addFields(
+    { name: '👤 Nombre IC', value: dniData[userId].nombre, inline: true },
+    { name: '👤 Apellido IC', value: dniData[userId].apellido, inline: true },
+    { name: '🎂 Edad IC', value: `${dniData[userId].edadIC}`, inline: true },
+    { name: '📅 Fecha de Nacimiento', value: dniData[userId].fechaNacimiento, inline: true },
+    { name: '🩸 Tipo de Sangre', value: dniData[userId].sangre, inline: true },
+    { name: '🆔 Número de DNI', value: `**${dniData[userId].dni}**`, inline: false }
+  )
+  .setFooter({
+    text: `Gobierno de Los Santos RP | ${fecha}`,
+    iconURL: interaction.user.displayAvatarURL({ dynamic: true })
+  });
 
     await interaction.reply({ embeds: [embed] });
   }
