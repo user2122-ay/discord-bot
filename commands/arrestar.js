@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const fs = require("fs");
+const path = require("path");
 
 // ROLES AUTORIZADOS
 const ROLES_AUTORIZADOS = [
@@ -6,6 +8,8 @@ const ROLES_AUTORIZADOS = [
   "1463192290381271043",
   "1463192290381271046"
 ];
+
+const filePath = path.join(__dirname, "..", "arrestos.json");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,6 +25,11 @@ module.exports = {
         .setDescription("Motivo del arresto")
         .setRequired(true)
     )
+    .addStringOption(o =>
+      o.setName("lugar")
+        .setDescription("Lugar del arresto")
+        .setRequired(true)
+    )
     .addAttachmentOption(o =>
       o.setName("imagen")
         .setDescription("Imagen del arresto (obligatoria)")
@@ -28,7 +37,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // 🔒 Verificar rol
+    // Verificar rol
     const tieneRol = interaction.member.roles.cache.some(r =>
       ROLES_AUTORIZADOS.includes(r.id)
     );
@@ -42,7 +51,28 @@ module.exports = {
 
     const usuario = interaction.options.getUser("usuario");
     const motivo = interaction.options.getString("motivo");
+    const lugar = interaction.options.getString("lugar");
     const imagen = interaction.options.getAttachment("imagen");
+
+    // Leer JSON de arrestos
+    let data = {};
+    try {
+      data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    } catch { data = {}; }
+
+    if (!data[usuario.id]) data[usuario.id] = [];
+
+    const arresto = {
+      moderador: interaction.user.id,
+      motivo,
+      lugar,
+      imagen: imagen.url,
+      fecha: new Date().toISOString()
+    };
+
+    data[usuario.id].push(arresto);
+
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
     const embed = new EmbedBuilder()
       .setTitle("🚔 Arresto Registrado")
@@ -51,7 +81,8 @@ module.exports = {
       .addFields(
         { name: "👤 Arrestado", value: `<@${usuario.id}>`, inline: true },
         { name: "👮 Arrestado por", value: `<@${interaction.user.id}>`, inline: true },
-        { name: "📄 Motivo", value: motivo }
+        { name: "📄 Motivo", value: motivo },
+        { name: "📍 Lugar", value: lugar }
       )
       .setImage(imagen.url)
       .setFooter({
