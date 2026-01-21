@@ -23,7 +23,7 @@ module.exports = {
 
       // Embed
       const embed = new EmbedBuilder()
-        .setTitle("📢 Gobierno de Los Santos RP")
+        .setTitle("📢 Staff de Los Santos RP")
         .setDescription(desc)
         .setColor(color)
         .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
@@ -73,7 +73,7 @@ module.exports = {
 
     // Embed general para los otros subcomandos
     const embed = new EmbedBuilder()
-      .setTitle("📢 Gobierno de Los Santos RP")
+      .setTitle("📢 Staff de Los Santos RP")
       .setDescription(desc)
       .setColor(color)
       .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
