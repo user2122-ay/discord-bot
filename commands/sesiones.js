@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
+const ROL_AUTORIZADO = "1463192290423083324";
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("sesion")
@@ -10,6 +12,15 @@ module.exports = {
     .addSubcommand(s => s.setName("cerrar").setDescription("Cerrar sesión")),
 
   async execute(interaction) {
+
+    // 🔒 VERIFICACIÓN DE ROL
+    if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
+      return interaction.reply({
+        content: "⛔ **No tienes permisos para usar este comando.**",
+        ephemeral: true
+      });
+    }
+
     let desc = "";
     let color = 0x3498db;
 
@@ -21,7 +32,6 @@ module.exports = {
         "Se solicita votar con responsabilidad.";
       color = 0xf1c40f;
 
-      // Embed
       const embed = new EmbedBuilder()
         .setTitle("📢 Staff de Los Santos RP")
         .setDescription(desc)
@@ -33,14 +43,12 @@ module.exports = {
         })
         .setTimestamp();
 
-      // Enviar embed y ping al rol
-      const mensaje = await interaction.reply({ 
-        content: "<@&1463192290314162342>", 
-        embeds: [embed], 
-        fetchReply: true 
+      const mensaje = await interaction.reply({
+        content: "<@&1463192290314162342>",
+        embeds: [embed],
+        fetchReply: true
       });
 
-      // Añadir reacciones
       await mensaje.react("✅");
       await mensaje.react("❌");
       return;
@@ -71,7 +79,6 @@ module.exports = {
       color = 0x95a5a6;
     }
 
-    // Embed general para los otros subcomandos
     const embed = new EmbedBuilder()
       .setTitle("📢 Staff de Los Santos RP")
       .setDescription(desc)
