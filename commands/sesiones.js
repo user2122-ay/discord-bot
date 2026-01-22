@@ -1,6 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
+// 🔒 Rol que PUEDE USAR el comando (STAFF)
 const ROL_AUTORIZADO = "1463192290423083324";
+
+// 📢 Rol al que SE HACE PING
+const ROL_PING = "1463192290314162342";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,7 +17,7 @@ module.exports = {
 
   async execute(interaction) {
 
-    // 🔒 VERIFICACIÓN DE ROL
+    // 🔒 VERIFICAR ROL STAFF
     if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
       return interaction.reply({
         content: "⛔ **No tienes permisos para usar este comando.**",
@@ -44,8 +48,9 @@ module.exports = {
         .setTimestamp();
 
       const mensaje = await interaction.reply({
-        content: "<@&1463192290314162342>",
+        content: `<@&${ROL_PING}>`,
         embeds: [embed],
+        allowedMentions: { roles: [ROL_PING] }, // ✅ PING REAL
         fetchReply: true
       });
 
@@ -91,8 +96,9 @@ module.exports = {
       .setTimestamp();
 
     await interaction.reply({
-      content: "<@&1463192290314162342>",
-      embeds: [embed]
+      content: `<@&${ROL_PING}>`,
+      embeds: [embed],
+      allowedMentions: { roles: [ROL_PING] } // ✅ PING REAL
     });
   }
 };
