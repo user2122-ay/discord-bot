@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("entorno")
-    .setDescription("Reportar entorno para rol")
+    .setDescription("Reportar un entorno de rol")
     .addStringOption(option =>
       option
         .setName("lugar")
@@ -16,17 +16,25 @@ module.exports = {
         .setDescription("Acción que ocurre en el entorno")
         .setRequired(true)
     )
-    .addStringOption(option =>
+    .addAttachmentOption(option =>
       option
         .setName("imagen")
-        .setDescription("Imagen del entorno (URL)")
+        .setDescription("Imagen del entorno (adjunta desde tu galería)")
         .setRequired(true)
     ),
 
   async execute(interaction) {
     const lugar = interaction.options.getString("lugar");
     const accion = interaction.options.getString("accion");
-    const imagen = interaction.options.getString("imagen");
+    const imagen = interaction.options.getAttachment("imagen");
+
+    // Validar que sea imagen
+    if (!imagen.contentType?.startsWith("image/")) {
+      return interaction.reply({
+        content: "❌ El archivo adjunto debe ser una **imagen**.",
+        ephemeral: true
+      });
+    }
 
     const embed = new EmbedBuilder()
       .setTitle("🌍 Entorno de Rol")
@@ -35,7 +43,7 @@ module.exports = {
         { name: "📍 Lugar", value: lugar },
         { name: "⚠️ Acción", value: accion }
       )
-      .setImage(imagen)
+      .setImage(imagen.url)
       .setFooter({
         text: `Reportado por ${interaction.user.tag}`,
         iconURL: interaction.user.displayAvatarURL({ dynamic: true })
