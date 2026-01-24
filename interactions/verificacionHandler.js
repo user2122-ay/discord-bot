@@ -1,3 +1,7 @@
+module.exports = async (interaction) => {
+  console.log("🟡 Interacción recibida:", interaction.type, interaction.customId);
+
+  // resto del código...
 const {
   ModalBuilder,
   TextInputBuilder,
