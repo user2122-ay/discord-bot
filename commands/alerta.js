@@ -1,15 +1,19 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
-const ROL_STAFF = "1463192290423083324"; // Rol autorizado
-const ROL_PING = "1463192290314162342";  // Rol a pingear
+// 🔒 Rol que PUEDE usar el comando
+const ROL_AUTORIZADO = "1463192290423083324";
+
+// 🔔 Rol al que se le hace PING
+const ROL_PING = "1463192290314162342";
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("alerta")
-    .setDescription("Emitir una alerta de seguridad RP")
-    .addStringOption(o =>
-      o.setName("nivel")
-        .setDescription("Nivel de alerta")
+    .setDescription("Emitir una alerta de seguridad")
+    .addStringOption(option =>
+      option
+        .setName("tipo")
+        .setDescription("Tipo de alerta")
         .setRequired(true)
         .addChoices(
           { name: "🟢 Alerta Verde", value: "verde" },
@@ -17,55 +21,55 @@ module.exports = {
           { name: "🔴 Alerta Roja", value: "roja" }
         )
     )
-    .addStringOption(o =>
-      o.setName("razon")
+    .addStringOption(option =>
+      option
+        .setName("razon")
         .setDescription("Razón de la alerta")
         .setRequired(true)
     ),
 
   async execute(interaction) {
 
-    // 🔒 Verificación de rol
-    if (!interaction.member.roles.cache.has(ROL_STAFF)) {
+    // 🔒 VERIFICAR ROL
+    if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
       return interaction.reply({
-        content: "⛔ **No tienes permisos para usar este comando.**",
+        content: "⛔ No tienes permisos para usar este comando.",
         ephemeral: true
       });
     }
 
-    const nivel = interaction.options.getString("nivel");
+    const tipo = interaction.options.getString("tipo");
     const razon = interaction.options.getString("razon");
 
-    let titulo = "";
-    let color = 0x3498db;
-    let descripcion = "";
+    let color;
+    let titulo;
+    let descripcion;
 
-    if (nivel === "verde") {
-      titulo = "🟢 ALERTA VERDE";
+    if (tipo === "verde") {
       color = 0x2ecc71;
+      titulo = "🟢 ALERTA VERDE";
       descripcion =
-        "🔫 **Armamento permitido:**\n" +
-        "• Pistolas básicas (Beretta M9, Glock)\n\n";
+        "🔫 **Solo armas cortas permitidas**\n" +
+        "• Beretta\n• Glock\n\n" +
+        `📌 **Razón:** ${razon}`;
     }
 
-    if (nivel === "amarilla") {
-      titulo = "🟡 ALERTA AMARILLA";
+    if (tipo === "amarilla") {
       color = 0xf1c40f;
+      titulo = "🟡 ALERTA AMARILLA";
       descripcion =
-        "🔫 **Armamento permitido:**\n" +
-        "• Armas semi-automáticas\n\n";
+        "🔫 **Armas semi-automáticas permitidas**\n\n" +
+        `📌 **Razón:** ${razon}`;
     }
 
-    if (nivel === "roja") {
-      titulo = "🔴 ALERTA ROJA";
+    if (tipo === "roja") {
       color = 0xe74c3c;
+      titulo = "🔴 ALERTA ROJA";
       descripcion =
-        "🔫 **Armamento permitido:**\n" +
-        "• Todo tipo de armas\n" +
-        "🚫 *Excepto armas prohibidas por la administración*\n\n";
+        "🚨 **Se permite todo tipo de armas**\n" +
+        "❌ *Excepto las prohibidas por la administración*\n\n" +
+        `📌 **Razón:** ${razon}`;
     }
-
-    descripcion += `📌 **Razón:**\n${razon}`;
 
     const embed = new EmbedBuilder()
       .setTitle(titulo)
@@ -73,14 +77,18 @@ module.exports = {
       .setColor(color)
       .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
       .setFooter({
-        text: `Emitida por: ${interaction.user.tag}`,
+        text: `Emitido por: ${interaction.user.tag}`,
         iconURL: interaction.user.displayAvatarURL({ dynamic: true })
       })
       .setTimestamp();
 
+    // ✅ AQUÍ ESTÁ LA PARTE DEL PING (YA ARREGLADA)
     await interaction.reply({
       content: `<@&${ROL_PING}>`,
-      embeds: [embed]
+      embeds: [embed],
+      allowedMentions: {
+        roles: [ROL_PING]
+      }
     });
   }
 };
