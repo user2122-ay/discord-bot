@@ -1,21 +1,32 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
+} = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("verificacion")
-    .setDescription("Enviar mensaje de verificación"),
+    .setDescription("Panel de verificación del servidor"),
 
   async execute(interaction) {
+
     const embed = new EmbedBuilder()
       .setTitle("✅ Verificación | Los Santos RP")
       .setDescription(
         "Para poder acceder al servidor debes completar la verificación.\n\n" +
-        "📌 Presiona el botón **Verificarse** y responde correctamente.\n" +
-        "⚠️ Mentir o troll = rechazo automático."
+        "📌 Responde con sinceridad\n" +
+        "📌 El staff revisará tu solicitud\n\n" +
+        "Presiona el botón para comenzar ⬇️"
       )
       .setColor(0x3498db)
-      .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
-      .setFooter({ text: "Gobierno de Los Santos RP" });
+      .setFooter({
+        text: "Gobierno de Los Santos RP",
+        iconURL: interaction.guild.iconURL({ dynamic: true })
+      })
+      .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -24,6 +35,9 @@ module.exports = {
         .setStyle(ButtonStyle.Success)
     );
 
-    await interaction.reply({ embeds: [embed], components: [row] });
+    await interaction.reply({
+      embeds: [embed],
+      components: [row]
+    });
   }
 };
