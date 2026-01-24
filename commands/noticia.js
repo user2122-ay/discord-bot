@@ -70,10 +70,13 @@ module.exports = {
       embed.setImage(imagenes.url);
     }
 
-    // 📢 Enviar con ping
+    // 📢 ENVIAR CON PING REAL
     await interaction.reply({
       content: `<@&${ROL_PING}>`,
-      embeds: [embed]
+      embeds: [embed],
+      allowedMentions: {
+        roles: [ROL_PING]
+      }
     });
   }
 };
