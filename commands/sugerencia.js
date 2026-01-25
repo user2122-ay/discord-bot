@@ -1,8 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔧 CONFIGURACIÓN
-const CANAL_SUGERENCIAS = "1463192291501019319";
-const ROL_PING = "1463192290314162342";
+const CANAL_SUGERENCIAS = "1463192291211477011";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -39,13 +38,9 @@ module.exports = {
       });
     }
 
-    // 📤 Enviar sugerencia
+    // 📤 Enviar sugerencia (SIN ping)
     const mensaje = await canal.send({
-      content: `<@&${ROL_PING}>`,
-      embeds: [embed],
-      allowedMentions: {
-        roles: [ROL_PING]
-      }
+      embeds: [embed]
     });
 
     // 👍👎 Reacciones automáticas
@@ -54,7 +49,7 @@ module.exports = {
 
     // ✅ Confirmación al usuario
     await interaction.reply({
-      content: "✅ Tu sugerencia fue enviada y abierta a votación.",
+      content: "✅ Tu sugerencia fue enviada correctamente.",
       ephemeral: true
     });
   }
