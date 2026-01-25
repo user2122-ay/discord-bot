@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔧 CONFIGURACIÓN
 const CANAL_DEEPWEB = "1465098377120452628";
-const LOGO_URL = "https://media.discordapp.net/stickers/1465099204404842608.png";
+const LOGO_URL = "https://cdn.discordapp.com/attachments/1463192290469085257/1465099204182413353/images_1769377256855.jpg";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,22 +26,18 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle("🕶️ Deep Web | Mensaje Anónimo")
+      .setTitle("🕶️ Deep Web")
       .setDescription(mensajeDW)
       .setColor(0x000000)
       .setThumbnail(LOGO_URL)
       .setFooter({
-        text: "Fuente anónima • Deep Web",
+        text: "Mensaje anónimo • Deep Web"
       })
       .setTimestamp();
 
-    const msg = await canal.send({
+    await canal.send({
       embeds: [embed]
     });
-
-    // 👍👎 Reacciones (opcional pero queda 🔥)
-    await msg.react("👍");
-    await msg.react("👎");
 
     await interaction.reply({
       content: "🕶️ Tu mensaje fue enviado de forma anónima.",
