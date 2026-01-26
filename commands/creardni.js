@@ -2,6 +2,9 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
+// 🧾 ROL QUE SE DA AL CREAR DNI
+const ROL_DNI = "1463192290360295645";
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("creardni")
@@ -27,20 +30,17 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // Ruta segura al archivo en la raíz del proyecto
     const filePath = path.join(__dirname, "..", "dniData.json");
 
-    // Leer JSON de forma segura
     let data = {};
     try {
       data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    } catch (err) {
+    } catch {
       data = {};
     }
 
     const dni = Math.floor(10000000 + Math.random() * 90000000);
 
-    // Guardar los datos del usuario
     data[interaction.user.id] = {
       nombre: interaction.options.getString("nombre"),
       apellido: interaction.options.getString("apellido"),
@@ -50,10 +50,13 @@ module.exports = {
       dni
     };
 
-    // Escribir JSON actualizado
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
-    // Embed bonito
+    // ✅ AÑADIR ROL AUTOMÁTICAMENTE
+    if (!interaction.member.roles.cache.has(ROL_DNI)) {
+      await interaction.member.roles.add(ROL_DNI).catch(() => {});
+    }
+
     const embed = new EmbedBuilder()
       .setTitle("🪪 Documento Nacional de Identidad")
       .setColor(0x3498db)
