@@ -1,10 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔒 Rol que PUEDE USAR el comando (STAFF)
-const ROL_AUTORIZADO = "1463192290423083324";
+const ROL_AUTORIZADO = "1472649851526316195";
 
 // 📢 Rol al que SE HACE PING
-const ROL_PING = "1463192290314162342";
+const ROL_PING = "1472647022887702609";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -72,7 +72,7 @@ module.exports = {
         "🟢 **Tras el resultado de la votación, el servidor de ER:LC queda oficialmente abierto para rolear.**\n\n" +
         "Todas las normativas del servidor están activas.\n" +
         "Se solicita rol serio, respeto y cooperación con el staff.\n\n" +
-        "📌 **Código:** `LSSANTOS`\n\n" +
+        "📌 **Código:** `CODIGO`\n\n" +
         "¡Buen rol para todos!";
     }
 
@@ -85,7 +85,7 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle("📢 Staff de Los Santos RP")
+      .setTitle("📢 Staff de MIAMI HISPANO RP")
       .setDescription(desc)
       .setColor(color)
       .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
