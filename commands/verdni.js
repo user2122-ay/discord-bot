@@ -18,7 +18,7 @@ module.exports = {
     const d = data[user.id];
 
     const embed = new EmbedBuilder()
-      .setTitle("🪪 DNI - Los Santos RP")
+      .setTitle("🪪 DNI - MIAMI HISPANO RP")
       .setColor(0x2ecc71)
       .setThumbnail(user.displayAvatarURL({ dynamic: true }))
       .addFields(
@@ -30,7 +30,7 @@ module.exports = {
         { name: "🆔 DNI", value: `${d.dni}`, inline: true }
       )
       .setFooter({
-        text: `Gobierno de Los Santos RP | ${new Date().toLocaleDateString()}`,
+        text: `MIAMI HISPANO RP | ${new Date().toLocaleDateString()}`,
         iconURL: interaction.guild.iconURL({ dynamic: true })
       })
       .setTimestamp();
