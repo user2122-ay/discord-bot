@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // 🧾 ROL QUE SE DA AL CREAR DNI
-const ROL_DNI = "1463192290360295645";
+const ROL_DNI = "1472647022887702609";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -70,7 +70,7 @@ module.exports = {
         { name: "🆔 DNI", value: `${dni}`, inline: true }
       )
       .setFooter({
-        text: `Gobierno de Los Santos RP | ${new Date().toLocaleDateString()}`,
+        text: `MIAMI HISPANO RP | ${new Date().toLocaleDateString()}`,
         iconURL: interaction.guild.iconURL({ dynamic: true })
       })
       .setTimestamp();
