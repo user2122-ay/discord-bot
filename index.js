@@ -3,7 +3,10 @@ const fs = require("fs");
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require("discord.js");
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers // 🔥 Necesario para roles y ranking
+  ]
 });
 
 // 📦 Collection de comandos
