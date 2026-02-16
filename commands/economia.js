@@ -20,275 +20,188 @@ function saveData(data) {
     fs.writeFileSync(dataPath, JSON.stringify(data, null, 4));
 }
 
-module.exports = {
+function ensureUser(data, userId) {
+    if (!data.users[userId]) {
+        data.users[userId] = { efectivo: 0, banco: 0, lastClaim: 0 };
+    }
+}
+
+/* ===================================================== */
+/* =================== BALANCE ========================== */
+/* ===================================================== */
+
+module.exports.balance = {
     data: new SlashCommandBuilder()
-        .setName("economia")
-        .setDescription("Sistema financiero del servidor")
-        .addSubcommand(sub =>
-            sub.setName("balance")
-            .setDescription("Ver tu dinero"))
-        .addSubcommand(sub =>
-            sub.setName("cobrar")
-            .setDescription("Cobrar tu sueldo"))
-        .addSubcommand(sub =>
-            sub.setName("transferir")
-            .setDescription("Transferir dinero a otro usuario")
-            .addUserOption(o =>
-                o.setName("usuario")
-                .setDescription("Usuario a transferir")
-                .setRequired(true))
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                .setDescription("Cantidad a transferir")
-                .setRequired(true)))
-        .addSubcommand(sub =>
-            sub.setName("añadir-dinero")
-            .setDescription("Añadir dinero a un usuario")
-            .addUserOption(o =>
-                o.setName("usuario")
-                .setDescription("Usuario")
-                .setRequired(true))
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                .setDescription("Cantidad")
-                .setRequired(true)))
-        .addSubcommand(sub =>
-            sub.setName("restar-dinero")
-            .setDescription("Restar dinero a un usuario")
-            .addUserOption(o =>
-                o.setName("usuario")
-                .setDescription("Usuario")
-                .setRequired(true))
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                .setDescription("Cantidad")
-                .setRequired(true)))
-        .addSubcommand(sub =>
-            sub.setName("depositar")
-            .setDescription("Depositar dinero al banco")
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                .setDescription("Cantidad")
-                .setRequired(true)))
-        .addSubcommand(sub =>
-            sub.setName("retirar")
-            .setDescription("Retirar dinero del banco")
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                .setDescription("Cantidad")
-                .setRequired(true))),
+        .setName("balance")
+        .setDescription("Ver tu dinero"),
 
     async execute(interaction) {
 
         const data = loadData();
-        const sub = interaction.options.getSubcommand();
         const userId = interaction.user.id;
 
-        if (!data.users[userId]) {
-            data.users[userId] = {
-                efectivo: 0,
-                banco: 0,
-                lastClaim: 0
-            };
-        }
+        ensureUser(data, userId);
+        saveData(data);
 
         const user = data.users[userId];
 
-        /* ================= BALANCE ================= */
+        const embed = new EmbedBuilder()
+            .setColor("#0099ff")
+            .setTitle("🏦┃ESTADO FINANCIERO")
+            .addFields(
+                { name: "💵 Efectivo", value: `\`\`\`$${user.efectivo}\`\`\``, inline: true },
+                { name: "🏦 Banco", value: `\`\`\`$${user.banco}\`\`\``, inline: true },
+                { name: "📊 Total", value: `\`\`\`$${user.efectivo + user.banco}\`\`\`` }
+            )
+            .setTimestamp();
 
-        if (sub === "balance") {
+        interaction.reply({ embeds: [embed] });
+    }
+};
 
-            const embed = new EmbedBuilder()
-                .setColor("#0099ff")
-                .setAuthor({ 
-                    name: `Cuenta bancaria de ${interaction.user.username}`,
-                    iconURL: interaction.user.displayAvatarURL()
-                })
-                .setTitle("🏦┃ESTADO FINANCIERO")
-                .setDescription("━━━━━━━━━━━━━━━━━━")
-                .addFields(
-                    { name: "💵 Efectivo", value: `\`\`\`$${user.efectivo}\`\`\``, inline: true },
-                    { name: "🏦 Banco", value: `\`\`\`$${user.banco}\`\`\``, inline: true },
-                    { name: "📊 Patrimonio Total", value: `\`\`\`$${user.efectivo + user.banco}\`\`\`` }
-                )
-                .setFooter({ text: "Sistema Financiero Oficial" })
-                .setTimestamp();
+/* ===================================================== */
+/* =================== AÑADIR SUELDO ==================== */
+/* ===================================================== */
 
-            return interaction.reply({ embeds: [embed] });
+module.exports["añadir-sueldo"] = {
+    data: new SlashCommandBuilder()
+        .setName("añadir-sueldo")
+        .setDescription("Asignar sueldo a un rol")
+        .addRoleOption(o =>
+            o.setName("rol")
+            .setDescription("Rol")
+            .setRequired(true))
+        .addIntegerOption(o =>
+            o.setName("cantidad")
+            .setDescription("Cantidad")
+            .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    async execute(interaction) {
+
+        const data = loadData();
+        const rol = interaction.options.getRole("rol");
+        const cantidad = interaction.options.getInteger("cantidad");
+
+        data.roles[rol.id] = cantidad;
+        saveData(data);
+
+        const embed = new EmbedBuilder()
+            .setColor("#f1c40f")
+            .setTitle("💼┃SUELDO ASIGNADO")
+            .addFields(
+                { name: "📛 Rol", value: `${rol}`, inline: true },
+                { name: "💰 Sueldo cada 6 días", value: `\`\`\`$${cantidad}\`\`\`` }
+            )
+            .setTimestamp();
+
+        interaction.reply({ embeds: [embed] });
+    }
+};
+
+/* ===================================================== */
+/* =================== COBRAR =========================== */
+/* ===================================================== */
+
+module.exports.cobrar = {
+    data: new SlashCommandBuilder()
+        .setName("cobrar")
+        .setDescription("Cobrar tu sueldo"),
+
+    async execute(interaction) {
+
+        const data = loadData();
+        const userId = interaction.user.id;
+
+        ensureUser(data, userId);
+
+        const user = data.users[userId];
+        const cooldown = 6 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+
+        if (now - user.lastClaim < cooldown) {
+            return interaction.reply({ content: "⏳ Aún no puedes cobrar (6 días).", ephemeral: true });
         }
 
-        /* ================= COBRAR ================= */
+        let sueldoTotal = 0;
 
-        if (sub === "cobrar") {
-
-            const now = Date.now();
-            const cooldown = 6 * 24 * 60 * 60 * 1000;
-
-            if (now - user.lastClaim < cooldown) {
-                const restante = Math.ceil((cooldown - (now - user.lastClaim)) / (1000 * 60 * 60 * 24));
-                return interaction.reply({ content: `⏳ Debes esperar ${restante} día(s) más.`, ephemeral: true });
+        interaction.member.roles.cache.forEach(role => {
+            if (data.roles[role.id]) {
+                sueldoTotal += data.roles[role.id];
             }
+        });
 
-            let sueldoTotal = 0;
+        if (sueldoTotal <= 0)
+            return interaction.reply({ content: "❌ No tienes rol con sueldo.", ephemeral: true });
 
-            interaction.member.roles.cache.forEach(role => {
-                if (data.roles[role.id]) {
-                    sueldoTotal += data.roles[role.id];
-                }
-            });
+        const impuesto = Math.floor(sueldoTotal * 0.10);
+        const final = sueldoTotal - impuesto;
 
-            if (sueldoTotal <= 0)
-                return interaction.reply({ content: "❌ No tienes un rol con sueldo asignado.", ephemeral: true });
+        user.efectivo += final;
+        user.lastClaim = now;
 
-            const impuesto = Math.floor(sueldoTotal * 0.10);
-            const final = sueldoTotal - impuesto;
+        saveData(data);
 
-            user.efectivo += final;
-            user.lastClaim = now;
+        const embed = new EmbedBuilder()
+            .setColor("#00ff88")
+            .setTitle("💼┃NÓMINA PROCESADA")
+            .addFields(
+                { name: "💰 Bruto", value: `\`\`\`$${sueldoTotal}\`\`\``, inline: true },
+                { name: "🏛️ Impuesto 10%", value: `\`\`\`-$${impuesto}\`\`\``, inline: true },
+                { name: "💵 Recibido", value: `\`\`\`$${final}\`\`\`` }
+            )
+            .setTimestamp();
 
-            saveData(data);
+        interaction.reply({ embeds: [embed] });
+    }
+};
 
-            const embed = new EmbedBuilder()
-                .setColor("#00ff88")
-                .setAuthor({ 
-                    name: `${interaction.user.username} ha cobrado su sueldo`,
-                    iconURL: interaction.user.displayAvatarURL()
-                })
-                .setTitle("💼┃NÓMINA PROCESADA")
-                .setDescription("━━━━━━━━━━━━━━━━━━")
-                .addFields(
-                    { name: "💰 Sueldo bruto", value: `\`\`\`$${sueldoTotal}\`\`\``, inline: true },
-                    { name: "🏛️ Impuestos (10%)", value: `\`\`\`-$${impuesto}\`\`\``, inline: true },
-                    { name: "💵 Total recibido", value: `\`\`\`$${final}\`\`\``, inline: true }
-                )
-                .setFooter({ text: "Próximo cobro en 6 días" })
-                .setTimestamp();
+/* ===================================================== */
+/* =================== TOP DINERO ======================= */
+/* ===================================================== */
 
-            return interaction.reply({ embeds: [embed] });
+module.exports["top-dinero"] = {
+    data: new SlashCommandBuilder()
+        .setName("top-dinero")
+        .setDescription("Ranking de los más ricos"),
+
+    async execute(interaction) {
+
+        const data = loadData();
+
+        const usersArray = Object.entries(data.users)
+            .map(([id, user]) => ({
+                id,
+                total: (user.efectivo || 0) + (user.banco || 0)
+            }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 10);
+
+        if (!usersArray.length)
+            return interaction.reply({ content: "❌ No hay datos.", ephemeral: true });
+
+        let description = "━━━━━━━━━━━━━━━━━━\n\n";
+
+        for (let i = 0; i < usersArray.length; i++) {
+
+            const userData = usersArray[i];
+            const member = await interaction.guild.members.fetch(userData.id).catch(() => null);
+            const name = member ? member.user.username : "Usuario";
+
+            let medal = "🏅";
+            if (i === 0) medal = "🥇";
+            if (i === 1) medal = "🥈";
+            if (i === 2) medal = "🥉";
+
+            description += `${medal} **${i + 1}. ${name}**\n💰 $${userData.total}\n\n`;
         }
 
-        /* ================= TRANSFERIR ================= */
+        const embed = new EmbedBuilder()
+            .setColor("#ffd700")
+            .setTitle("🏆┃RANKING ECONÓMICO")
+            .setDescription(description)
+            .setTimestamp();
 
-        if (sub === "transferir") {
-
-            const target = interaction.options.getUser("usuario");
-            const cantidad = interaction.options.getInteger("cantidad");
-
-            if (cantidad <= 0)
-                return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
-
-            if (user.efectivo < cantidad)
-                return interaction.reply({ content: "❌ No tienes suficiente dinero.", ephemeral: true });
-
-            if (!data.users[target.id]) {
-                data.users[target.id] = { efectivo: 0, banco: 0, lastClaim: 0 };
-            }
-
-            user.efectivo -= cantidad;
-            data.users[target.id].efectivo += cantidad;
-
-            saveData(data);
-
-            const embed = new EmbedBuilder()
-                .setColor("#00ffcc")
-                .setTitle("💸┃TRANSFERENCIA EXITOSA")
-                .setDescription("━━━━━━━━━━━━━━━━━━")
-                .addFields(
-                    { name: "👤 Remitente", value: `${interaction.user}`, inline: true },
-                    { name: "📥 Destinatario", value: `${target}`, inline: true },
-                    { name: "💰 Cantidad", value: `\`\`\`$${cantidad}\`\`\`` }
-                )
-                .setTimestamp();
-
-            return interaction.reply({ embeds: [embed] });
-        }
-
-        /* ================= AÑADIR / RESTAR ================= */
-
-        if (sub === "añadir-dinero" || sub === "restar-dinero") {
-
-            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator))
-                return interaction.reply({ content: "❌ Solo administradores.", ephemeral: true });
-
-            const target = interaction.options.getUser("usuario");
-            const cantidad = interaction.options.getInteger("cantidad");
-
-            if (!data.users[target.id]) {
-                data.users[target.id] = { efectivo: 0, banco: 0, lastClaim: 0 };
-            }
-
-            if (sub === "añadir-dinero") {
-                data.users[target.id].efectivo += cantidad;
-            } else {
-                data.users[target.id].efectivo -= cantidad;
-            }
-
-            saveData(data);
-
-            const embed = new EmbedBuilder()
-                .setColor(sub === "añadir-dinero" ? "#3498db" : "#ff4444")
-                .setTitle(sub === "añadir-dinero" ? "💼┃AJUSTE FINANCIERO" : "🚨┃SANCIÓN ECONÓMICA")
-                .addFields(
-                    { name: "👤 Usuario", value: `${target}`, inline: true },
-                    { name: "💰 Cantidad", value: `\`\`\`$${cantidad}\`\`\`` }
-                )
-                .setFooter({ text: `Acción realizada por ${interaction.user.tag}` })
-                .setTimestamp();
-
-            return interaction.reply({ embeds: [embed] });
-        }
-
-        /* ================= BANCO ================= */
-
-        if (sub === "depositar") {
-
-            const cantidad = interaction.options.getInteger("cantidad");
-
-            if (user.efectivo < cantidad)
-                return interaction.reply({ content: "❌ No tienes suficiente efectivo.", ephemeral: true });
-
-            const impuestoBanco = Math.floor(cantidad * 0.05);
-            const final = cantidad - impuestoBanco;
-
-            user.efectivo -= cantidad;
-            user.banco += final;
-
-            saveData(data);
-
-            const embed = new EmbedBuilder()
-                .setColor("#2ecc71")
-                .setTitle("🏦┃DEPÓSITO CONFIRMADO")
-                .addFields(
-                    { name: "💰 Depositado", value: `\`\`\`$${final}\`\`\`` },
-                    { name: "🏛️ Comisión (5%)", value: `\`\`\`-$${impuestoBanco}\`\`\`` }
-                )
-                .setTimestamp();
-
-            return interaction.reply({ embeds: [embed] });
-        }
-
-        if (sub === "retirar") {
-
-            const cantidad = interaction.options.getInteger("cantidad");
-
-            if (user.banco < cantidad)
-                return interaction.reply({ content: "❌ No tienes suficiente dinero en banco.", ephemeral: true });
-
-            user.banco -= cantidad;
-            user.efectivo += cantidad;
-
-            saveData(data);
-
-            const embed = new EmbedBuilder()
-                .setColor("#27ae60")
-                .setTitle("💵┃RETIRO COMPLETADO")
-                .addFields(
-                    { name: "💰 Cantidad retirada", value: `\`\`\`$${cantidad}\`\`\`` }
-                )
-                .setTimestamp();
-
-            return interaction.reply({ embeds: [embed] });
-        }
-
+        interaction.reply({ embeds: [embed] });
     }
 };
