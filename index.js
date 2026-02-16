@@ -15,19 +15,19 @@ const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith("
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
 
-  // 🔥 Si el archivo exporta varios comandos (array)
-  if (Array.isArray(command)) {
-    for (const cmd of command) {
+  // 🔥 Si el archivo exporta VARIOS comandos (como economia.js)
+  if (typeof command === "object" && !command.data) {
+    for (const key in command) {
+      const cmd = command[key];
       if (cmd?.data?.name) {
         client.commands.set(cmd.data.name, cmd);
       }
     }
-  } 
+  }
+
   // 🔥 Si exporta un solo comando
-  else {
-    if (command?.data?.name) {
-      client.commands.set(command.data.name, command);
-    }
+  else if (command?.data?.name) {
+    client.commands.set(command.data.name, command);
   }
 }
 
