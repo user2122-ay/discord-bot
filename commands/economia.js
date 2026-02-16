@@ -13,7 +13,20 @@ function loadData() {
     if (!fs.existsSync(dataPath)) {
         fs.writeFileSync(dataPath, JSON.stringify({ users: {}, roles: {} }, null, 4));
     }
-    return JSON.parse(fs.readFileSync(dataPath));
+
+    const raw = fs.readFileSync(dataPath, "utf8");
+    let data;
+
+    try {
+        data = JSON.parse(raw);
+    } catch {
+        data = { users: {}, roles: {} };
+    }
+
+    if (!data.users) data.users = {};
+    if (!data.roles) data.roles = {};
+
+    return data;
 }
 
 function saveData(data) {
@@ -26,9 +39,7 @@ function ensureUser(data, userId) {
     }
 }
 
-/* ===================================================== */
-/* =================== BALANCE ========================== */
-/* ===================================================== */
+/* ================= BALANCE ================= */
 
 module.exports.balance = {
     data: new SlashCommandBuilder()
@@ -55,13 +66,11 @@ module.exports.balance = {
             )
             .setTimestamp();
 
-        interaction.reply({ embeds: [embed] });
+        return interaction.reply({ embeds: [embed] });
     }
 };
 
-/* ===================================================== */
-/* =================== AÑADIR SUELDO ==================== */
-/* ===================================================== */
+/* ================= AÑADIR SUELDO ================= */
 
 module.exports["añadir-sueldo"] = {
     data: new SlashCommandBuilder()
@@ -83,6 +92,8 @@ module.exports["añadir-sueldo"] = {
         const rol = interaction.options.getRole("rol");
         const cantidad = interaction.options.getInteger("cantidad");
 
+        if (!data.roles) data.roles = {};
+
         data.roles[rol.id] = cantidad;
         saveData(data);
 
@@ -95,13 +106,11 @@ module.exports["añadir-sueldo"] = {
             )
             .setTimestamp();
 
-        interaction.reply({ embeds: [embed] });
+        return interaction.reply({ embeds: [embed] });
     }
 };
 
-/* ===================================================== */
-/* =================== COBRAR =========================== */
-/* ===================================================== */
+/* ================= COBRAR ================= */
 
 module.exports.cobrar = {
     data: new SlashCommandBuilder()
@@ -125,14 +134,17 @@ module.exports.cobrar = {
 
         let sueldoTotal = 0;
 
+        if (!data.roles) data.roles = {};
+
         interaction.member.roles.cache.forEach(role => {
             if (data.roles[role.id]) {
                 sueldoTotal += data.roles[role.id];
             }
         });
 
-        if (sueldoTotal <= 0)
+        if (sueldoTotal <= 0) {
             return interaction.reply({ content: "❌ No tienes rol con sueldo.", ephemeral: true });
+        }
 
         const impuesto = Math.floor(sueldoTotal * 0.10);
         const final = sueldoTotal - impuesto;
@@ -152,13 +164,11 @@ module.exports.cobrar = {
             )
             .setTimestamp();
 
-        interaction.reply({ embeds: [embed] });
+        return interaction.reply({ embeds: [embed] });
     }
 };
 
-/* ===================================================== */
-/* =================== TOP DINERO ======================= */
-/* ===================================================== */
+/* ================= TOP DINERO ================= */
 
 module.exports["top-dinero"] = {
     data: new SlashCommandBuilder()
@@ -169,6 +179,8 @@ module.exports["top-dinero"] = {
 
         const data = loadData();
 
+        if (!data.users) data.users = {};
+
         const usersArray = Object.entries(data.users)
             .map(([id, user]) => ({
                 id,
@@ -177,8 +189,9 @@ module.exports["top-dinero"] = {
             .sort((a, b) => b.total - a.total)
             .slice(0, 10);
 
-        if (!usersArray.length)
+        if (!usersArray.length) {
             return interaction.reply({ content: "❌ No hay datos.", ephemeral: true });
+        }
 
         let description = "━━━━━━━━━━━━━━━━━━\n\n";
 
@@ -202,6 +215,6 @@ module.exports["top-dinero"] = {
             .setDescription(description)
             .setTimestamp();
 
-        interaction.reply({ embeds: [embed] });
+        return interaction.reply({ embeds: [embed] });
     }
 };
