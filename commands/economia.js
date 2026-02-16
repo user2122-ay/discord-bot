@@ -92,21 +92,21 @@ module.exports["añadir-sueldo"] = {
         const rol = interaction.options.getRole("rol");
         const cantidad = interaction.options.getInteger("cantidad");
 
-        if (!data.roles) data.roles = {};
-
         data.roles[rol.id] = cantidad;
         saveData(data);
 
-        const embed = new EmbedBuilder()
-            .setColor("#f1c40f")
-            .setTitle("💼┃SUELDO ASIGNADO")
-            .addFields(
-                { name: "📛 Rol", value: `${rol}`, inline: true },
-                { name: "💰 Sueldo cada 6 días", value: `\`\`\`$${cantidad}\`\`\`` }
-            )
-            .setTimestamp();
-
-        return interaction.reply({ embeds: [embed] });
+        return interaction.reply({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor("#f1c40f")
+                    .setTitle("💼┃SUELDO ASIGNADO")
+                    .addFields(
+                        { name: "📛 Rol", value: `${rol}`, inline: true },
+                        { name: "💰 Sueldo cada 6 días", value: `\`\`\`$${cantidad}\`\`\`` }
+                    )
+                    .setTimestamp()
+            ]
+        });
     }
 };
 
@@ -128,13 +128,10 @@ module.exports.cobrar = {
         const cooldown = 6 * 24 * 60 * 60 * 1000;
         const now = Date.now();
 
-        if (now - user.lastClaim < cooldown) {
+        if (now - user.lastClaim < cooldown)
             return interaction.reply({ content: "⏳ Aún no puedes cobrar (6 días).", ephemeral: true });
-        }
 
         let sueldoTotal = 0;
-
-        if (!data.roles) data.roles = {};
 
         interaction.member.roles.cache.forEach(role => {
             if (data.roles[role.id]) {
@@ -142,9 +139,8 @@ module.exports.cobrar = {
             }
         });
 
-        if (sueldoTotal <= 0) {
+        if (sueldoTotal <= 0)
             return interaction.reply({ content: "❌ No tienes rol con sueldo.", ephemeral: true });
-        }
 
         const impuesto = Math.floor(sueldoTotal * 0.10);
         const final = sueldoTotal - impuesto;
@@ -154,17 +150,19 @@ module.exports.cobrar = {
 
         saveData(data);
 
-        const embed = new EmbedBuilder()
-            .setColor("#00ff88")
-            .setTitle("💼┃NÓMINA PROCESADA")
-            .addFields(
-                { name: "💰 Bruto", value: `\`\`\`$${sueldoTotal}\`\`\``, inline: true },
-                { name: "🏛️ Impuesto 10%", value: `\`\`\`-$${impuesto}\`\`\``, inline: true },
-                { name: "💵 Recibido", value: `\`\`\`$${final}\`\`\`` }
-            )
-            .setTimestamp();
-
-        return interaction.reply({ embeds: [embed] });
+        return interaction.reply({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor("#00ff88")
+                    .setTitle("💼┃NÓMINA PROCESADA")
+                    .addFields(
+                        { name: "💰 Bruto", value: `\`\`\`$${sueldoTotal}\`\`\``, inline: true },
+                        { name: "🏛️ Impuesto 10%", value: `\`\`\`-$${impuesto}\`\`\``, inline: true },
+                        { name: "💵 Recibido", value: `\`\`\`$${final}\`\`\`` }
+                    )
+                    .setTimestamp()
+            ]
+        });
     }
 };
 
@@ -179,8 +177,6 @@ module.exports["top-dinero"] = {
 
         const data = loadData();
 
-        if (!data.users) data.users = {};
-
         const usersArray = Object.entries(data.users)
             .map(([id, user]) => ({
                 id,
@@ -189,9 +185,8 @@ module.exports["top-dinero"] = {
             .sort((a, b) => b.total - a.total)
             .slice(0, 10);
 
-        if (!usersArray.length) {
+        if (!usersArray.length)
             return interaction.reply({ content: "❌ No hay datos.", ephemeral: true });
-        }
 
         let description = "━━━━━━━━━━━━━━━━━━\n\n";
 
@@ -201,20 +196,169 @@ module.exports["top-dinero"] = {
             const member = await interaction.guild.members.fetch(userData.id).catch(() => null);
             const name = member ? member.user.username : "Usuario";
 
-            let medal = "🏅";
-            if (i === 0) medal = "🥇";
-            if (i === 1) medal = "🥈";
-            if (i === 2) medal = "🥉";
+            let medal = ["🥇","🥈","🥉"][i] || "🏅";
 
             description += `${medal} **${i + 1}. ${name}**\n💰 $${userData.total}\n\n`;
         }
 
-        const embed = new EmbedBuilder()
-            .setColor("#ffd700")
-            .setTitle("🏆┃RANKING ECONÓMICO")
-            .setDescription(description)
-            .setTimestamp();
+        return interaction.reply({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor("#ffd700")
+                    .setTitle("🏆┃RANKING ECONÓMICO")
+                    .setDescription(description)
+                    .setTimestamp()
+            ]
+        });
+    }
+};
 
-        return interaction.reply({ embeds: [embed] });
+/* ================= TRANSFERIR ================= */
+
+module.exports.transferir = {
+    data: new SlashCommandBuilder()
+        .setName("transferir")
+        .setDescription("Transferir dinero a otro usuario")
+        .addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
+        .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
+
+    async execute(interaction) {
+
+        const data = loadData();
+        const sender = interaction.user;
+        const target = interaction.options.getUser("usuario");
+        const cantidad = interaction.options.getInteger("cantidad");
+
+        if (cantidad <= 0)
+            return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+
+        ensureUser(data, sender.id);
+        ensureUser(data, target.id);
+
+        if (data.users[sender.id].efectivo < cantidad)
+            return interaction.reply({ content: "❌ No tienes suficiente efectivo.", ephemeral: true });
+
+        data.users[sender.id].efectivo -= cantidad;
+        data.users[target.id].efectivo += cantidad;
+
+        saveData(data);
+
+        return interaction.reply(`💸 Transferiste $${cantidad} a ${target}`);
+    }
+};
+
+/* ================= DEPOSITAR ================= */
+
+module.exports.depositar = {
+    data: new SlashCommandBuilder()
+        .setName("depositar")
+        .setDescription("Depositar dinero al banco")
+        .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
+
+    async execute(interaction) {
+
+        const data = loadData();
+        const userId = interaction.user.id;
+        const cantidad = interaction.options.getInteger("cantidad");
+
+        ensureUser(data, userId);
+
+        if (cantidad <= 0)
+            return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+
+        if (data.users[userId].efectivo < cantidad)
+            return interaction.reply({ content: "❌ No tienes suficiente efectivo.", ephemeral: true });
+
+        data.users[userId].efectivo -= cantidad;
+        data.users[userId].banco += cantidad;
+
+        saveData(data);
+
+        return interaction.reply(`🏦 Depositaste $${cantidad} al banco.`);
+    }
+};
+
+/* ================= RETIRAR ================= */
+
+module.exports.retirar = {
+    data: new SlashCommandBuilder()
+        .setName("retirar")
+        .setDescription("Retirar dinero del banco")
+        .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
+
+    async execute(interaction) {
+
+        const data = loadData();
+        const userId = interaction.user.id;
+        const cantidad = interaction.options.getInteger("cantidad");
+
+        ensureUser(data, userId);
+
+        if (cantidad <= 0)
+            return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+
+        if (data.users[userId].banco < cantidad)
+            return interaction.reply({ content: "❌ No tienes suficiente en el banco.", ephemeral: true });
+
+        data.users[userId].banco -= cantidad;
+        data.users[userId].efectivo += cantidad;
+
+        saveData(data);
+
+        return interaction.reply(`💵 Retiraste $${cantidad} del banco.`);
+    }
+};
+
+/* ================= AÑADIR DINERO ================= */
+
+module.exports["añadir-dinero"] = {
+    data: new SlashCommandBuilder()
+        .setName("añadir-dinero")
+        .setDescription("Añadir dinero a un usuario")
+        .addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
+        .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    async execute(interaction) {
+
+        const data = loadData();
+        const target = interaction.options.getUser("usuario");
+        const cantidad = interaction.options.getInteger("cantidad");
+
+        ensureUser(data, target.id);
+
+        data.users[target.id].efectivo += cantidad;
+
+        saveData(data);
+
+        return interaction.reply(`💰 Se añadieron $${cantidad} a ${target}`);
+    }
+};
+
+/* ================= QUITAR DINERO ================= */
+
+module.exports["quitar-dinero"] = {
+    data: new SlashCommandBuilder()
+        .setName("quitar-dinero")
+        .setDescription("Quitar dinero a un usuario")
+        .addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
+        .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    async execute(interaction) {
+
+        const data = loadData();
+        const target = interaction.options.getUser("usuario");
+        const cantidad = interaction.options.getInteger("cantidad");
+
+        ensureUser(data, target.id);
+
+        data.users[target.id].efectivo -= cantidad;
+        if (data.users[target.id].efectivo < 0)
+            data.users[target.id].efectivo = 0;
+
+        saveData(data);
+
+        return interaction.reply(`💸 Se quitaron $${cantidad} a ${target}`);
     }
 };
