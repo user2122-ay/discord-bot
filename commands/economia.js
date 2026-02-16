@@ -1,282 +1,294 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
+const { 
+    SlashCommandBuilder, 
+    EmbedBuilder, 
+    PermissionFlagsBits 
+} = require("discord.js");
 
-const ECONOMIA_FILE = './economia.json';
-const SUELDOS_FILE = './sueldos.json';
+const fs = require("fs");
+const path = require("path");
 
-const IMPUESTO = 0.10;
-const BANCO_IMPUESTO = 0.02;
-const COOLDOWN = 6 * 24 * 60 * 60 * 1000;
-const STAFF_ROLE = "1472766576934649979";
+const dataPath = path.join(__dirname, "../economia.json");
 
-function load(file) {
-    if (!fs.existsSync(file)) fs.writeFileSync(file, "{}");
-    return JSON.parse(fs.readFileSync(file));
-}
-
-function save(file, data) {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
-}
-
-function getUser(data, id) {
-    if (!data[id]) {
-        data[id] = {
-            efectivo: 0,
-            banco: 0,
-            lastClaim: 0
-        };
+function loadData() {
+    if (!fs.existsSync(dataPath)) {
+        fs.writeFileSync(dataPath, JSON.stringify({ users: {}, roles: {} }, null, 4));
     }
-    return data[id];
+    return JSON.parse(fs.readFileSync(dataPath));
 }
 
-module.exports = [
+function saveData(data) {
+    fs.writeFileSync(dataPath, JSON.stringify(data, null, 4));
+}
 
-    // ================= COBRAR =================
-    {
-        data: new SlashCommandBuilder()
-            .setName("cobrar")
-            .setDescription("Cobrar sueldo según tu rol"),
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName("economia")
+        .setDescription("Sistema financiero del servidor")
+        .addSubcommand(sub =>
+            sub.setName("balance")
+            .setDescription("Ver tu dinero"))
+        .addSubcommand(sub =>
+            sub.setName("cobrar")
+            .setDescription("Cobrar tu sueldo"))
+        .addSubcommand(sub =>
+            sub.setName("transferir")
+            .setDescription("Transferir dinero a otro usuario")
+            .addUserOption(o =>
+                o.setName("usuario")
+                .setDescription("Usuario a transferir")
+                .setRequired(true))
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                .setDescription("Cantidad a transferir")
+                .setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName("añadir-dinero")
+            .setDescription("Añadir dinero a un usuario")
+            .addUserOption(o =>
+                o.setName("usuario")
+                .setDescription("Usuario")
+                .setRequired(true))
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                .setDescription("Cantidad")
+                .setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName("restar-dinero")
+            .setDescription("Restar dinero a un usuario")
+            .addUserOption(o =>
+                o.setName("usuario")
+                .setDescription("Usuario")
+                .setRequired(true))
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                .setDescription("Cantidad")
+                .setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName("depositar")
+            .setDescription("Depositar dinero al banco")
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                .setDescription("Cantidad")
+                .setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName("retirar")
+            .setDescription("Retirar dinero del banco")
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                .setDescription("Cantidad")
+                .setRequired(true))),
 
-        async execute(interaction) {
+    async execute(interaction) {
 
-            const data = load(ECONOMIA_FILE);
-            const sueldos = load(SUELDOS_FILE);
-            const user = getUser(data, interaction.user.id);
+        const data = loadData();
+        const sub = interaction.options.getSubcommand();
+        const userId = interaction.user.id;
 
-            const ahora = Date.now();
+        if (!data.users[userId]) {
+            data.users[userId] = {
+                efectivo: 0,
+                banco: 0,
+                lastClaim: 0
+            };
+        }
 
-            if (ahora - user.lastClaim < COOLDOWN) {
-                const restante = COOLDOWN - (ahora - user.lastClaim);
-                const dias = Math.ceil(restante / (1000 * 60 * 60 * 24));
+        const user = data.users[userId];
 
-                return interaction.reply({
-                    embeds: [
-                        new EmbedBuilder()
-                            .setColor("Red")
-                            .setTitle("⏳ No puedes cobrar aún")
-                            .setDescription(`Debes esperar **${dias} días**.`)
-                    ],
-                    ephemeral: true
-                });
+        /* ================= BALANCE ================= */
+
+        if (sub === "balance") {
+
+            const embed = new EmbedBuilder()
+                .setColor("#0099ff")
+                .setAuthor({ 
+                    name: `Cuenta bancaria de ${interaction.user.username}`,
+                    iconURL: interaction.user.displayAvatarURL()
+                })
+                .setTitle("🏦┃ESTADO FINANCIERO")
+                .setDescription("━━━━━━━━━━━━━━━━━━")
+                .addFields(
+                    { name: "💵 Efectivo", value: `\`\`\`$${user.efectivo}\`\`\``, inline: true },
+                    { name: "🏦 Banco", value: `\`\`\`$${user.banco}\`\`\``, inline: true },
+                    { name: "📊 Patrimonio Total", value: `\`\`\`$${user.efectivo + user.banco}\`\`\`` }
+                )
+                .setFooter({ text: "Sistema Financiero Oficial" })
+                .setTimestamp();
+
+            return interaction.reply({ embeds: [embed] });
+        }
+
+        /* ================= COBRAR ================= */
+
+        if (sub === "cobrar") {
+
+            const now = Date.now();
+            const cooldown = 6 * 24 * 60 * 60 * 1000;
+
+            if (now - user.lastClaim < cooldown) {
+                const restante = Math.ceil((cooldown - (now - user.lastClaim)) / (1000 * 60 * 60 * 24));
+                return interaction.reply({ content: `⏳ Debes esperar ${restante} día(s) más.`, ephemeral: true });
             }
 
             let sueldoTotal = 0;
 
             interaction.member.roles.cache.forEach(role => {
-                if (sueldos[role.id]) {
-                    sueldoTotal += sueldos[role.id];
+                if (data.roles[role.id]) {
+                    sueldoTotal += data.roles[role.id];
                 }
             });
 
-            if (sueldoTotal === 0) {
-                return interaction.reply({
-                    embeds: [
-                        new EmbedBuilder()
-                            .setColor("Red")
-                            .setTitle("❌ No tienes sueldo asignado")
-                            .setDescription("Tu rol no tiene sueldo configurado.")
-                    ],
-                    ephemeral: true
-                });
-            }
+            if (sueldoTotal <= 0)
+                return interaction.reply({ content: "❌ No tienes un rol con sueldo asignado.", ephemeral: true });
 
-            const impuesto = sueldoTotal * IMPUESTO;
+            const impuesto = Math.floor(sueldoTotal * 0.10);
             const final = sueldoTotal - impuesto;
 
             user.efectivo += final;
-            user.lastClaim = ahora;
+            user.lastClaim = now;
 
-            save(ECONOMIA_FILE, data);
-
-            const embed = new EmbedBuilder()
-                .setColor("Green")
-                .setTitle("💰 Sueldo Cobrado")
-                .addFields(
-                    { name: "Sueldo bruto", value: `$${sueldoTotal}`, inline: true },
-                    { name: "Impuestos (10%)", value: `$${impuesto}`, inline: true },
-                    { name: "Recibido", value: `$${final}`, inline: true }
-                )
-                .setFooter({ text: "MIAMI RP" })
-                .setTimestamp();
-
-            interaction.reply({ embeds: [embed] });
-        }
-    },
-
-    // ================= BALANCE =================
-    {
-        data: new SlashCommandBuilder()
-            .setName("balance")
-            .setDescription("Ver tu dinero"),
-
-        async execute(interaction) {
-
-            const data = load(ECONOMIA_FILE);
-            const user = getUser(data, interaction.user.id);
+            saveData(data);
 
             const embed = new EmbedBuilder()
-                .setColor("Blue")
-                .setTitle("💳 Tu Balance")
+                .setColor("#00ff88")
+                .setAuthor({ 
+                    name: `${interaction.user.username} ha cobrado su sueldo`,
+                    iconURL: interaction.user.displayAvatarURL()
+                })
+                .setTitle("💼┃NÓMINA PROCESADA")
+                .setDescription("━━━━━━━━━━━━━━━━━━")
                 .addFields(
-                    { name: "💵 Efectivo", value: `$${user.efectivo}`, inline: true },
-                    { name: "🏦 Banco", value: `$${user.banco}`, inline: true }
+                    { name: "💰 Sueldo bruto", value: `\`\`\`$${sueldoTotal}\`\`\``, inline: true },
+                    { name: "🏛️ Impuestos (10%)", value: `\`\`\`-$${impuesto}\`\`\``, inline: true },
+                    { name: "💵 Total recibido", value: `\`\`\`$${final}\`\`\``, inline: true }
                 )
+                .setFooter({ text: "Próximo cobro en 6 días" })
                 .setTimestamp();
 
-            interaction.reply({ embeds: [embed] });
+            return interaction.reply({ embeds: [embed] });
         }
-    },
 
-    // ================= DEPOSITAR =================
-    {
-        data: new SlashCommandBuilder()
-            .setName("depositar")
-            .setDescription("Depositar dinero al banco")
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                 .setDescription("Cantidad")
-                 .setRequired(true)
-            ),
+        /* ================= TRANSFERIR ================= */
 
-        async execute(interaction) {
+        if (sub === "transferir") {
 
+            const target = interaction.options.getUser("usuario");
             const cantidad = interaction.options.getInteger("cantidad");
-            const data = load(ECONOMIA_FILE);
-            const user = getUser(data, interaction.user.id);
 
-            if (cantidad <= 0 || user.efectivo < cantidad)
+            if (cantidad <= 0)
                 return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
 
-            const impuestoBanco = cantidad * BANCO_IMPUESTO;
+            if (user.efectivo < cantidad)
+                return interaction.reply({ content: "❌ No tienes suficiente dinero.", ephemeral: true });
+
+            if (!data.users[target.id]) {
+                data.users[target.id] = { efectivo: 0, banco: 0, lastClaim: 0 };
+            }
+
+            user.efectivo -= cantidad;
+            data.users[target.id].efectivo += cantidad;
+
+            saveData(data);
+
+            const embed = new EmbedBuilder()
+                .setColor("#00ffcc")
+                .setTitle("💸┃TRANSFERENCIA EXITOSA")
+                .setDescription("━━━━━━━━━━━━━━━━━━")
+                .addFields(
+                    { name: "👤 Remitente", value: `${interaction.user}`, inline: true },
+                    { name: "📥 Destinatario", value: `${target}`, inline: true },
+                    { name: "💰 Cantidad", value: `\`\`\`$${cantidad}\`\`\`` }
+                )
+                .setTimestamp();
+
+            return interaction.reply({ embeds: [embed] });
+        }
+
+        /* ================= AÑADIR / RESTAR ================= */
+
+        if (sub === "añadir-dinero" || sub === "restar-dinero") {
+
+            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator))
+                return interaction.reply({ content: "❌ Solo administradores.", ephemeral: true });
+
+            const target = interaction.options.getUser("usuario");
+            const cantidad = interaction.options.getInteger("cantidad");
+
+            if (!data.users[target.id]) {
+                data.users[target.id] = { efectivo: 0, banco: 0, lastClaim: 0 };
+            }
+
+            if (sub === "añadir-dinero") {
+                data.users[target.id].efectivo += cantidad;
+            } else {
+                data.users[target.id].efectivo -= cantidad;
+            }
+
+            saveData(data);
+
+            const embed = new EmbedBuilder()
+                .setColor(sub === "añadir-dinero" ? "#3498db" : "#ff4444")
+                .setTitle(sub === "añadir-dinero" ? "💼┃AJUSTE FINANCIERO" : "🚨┃SANCIÓN ECONÓMICA")
+                .addFields(
+                    { name: "👤 Usuario", value: `${target}`, inline: true },
+                    { name: "💰 Cantidad", value: `\`\`\`$${cantidad}\`\`\`` }
+                )
+                .setFooter({ text: `Acción realizada por ${interaction.user.tag}` })
+                .setTimestamp();
+
+            return interaction.reply({ embeds: [embed] });
+        }
+
+        /* ================= BANCO ================= */
+
+        if (sub === "depositar") {
+
+            const cantidad = interaction.options.getInteger("cantidad");
+
+            if (user.efectivo < cantidad)
+                return interaction.reply({ content: "❌ No tienes suficiente efectivo.", ephemeral: true });
+
+            const impuestoBanco = Math.floor(cantidad * 0.05);
             const final = cantidad - impuestoBanco;
 
             user.efectivo -= cantidad;
             user.banco += final;
 
-            save(ECONOMIA_FILE, data);
+            saveData(data);
 
-            interaction.reply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor("Blue")
-                        .setTitle("🏦 Depósito realizado")
-                        .setDescription(`Depositaste $${final}\nCosto bancario: $${impuestoBanco}`)
-                ]
-            });
+            const embed = new EmbedBuilder()
+                .setColor("#2ecc71")
+                .setTitle("🏦┃DEPÓSITO CONFIRMADO")
+                .addFields(
+                    { name: "💰 Depositado", value: `\`\`\`$${final}\`\`\`` },
+                    { name: "🏛️ Comisión (5%)", value: `\`\`\`-$${impuestoBanco}\`\`\`` }
+                )
+                .setTimestamp();
+
+            return interaction.reply({ embeds: [embed] });
         }
-    },
 
-    // ================= RETIRAR =================
-    {
-        data: new SlashCommandBuilder()
-            .setName("retirar")
-            .setDescription("Retirar dinero del banco")
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                 .setDescription("Cantidad")
-                 .setRequired(true)
-            ),
-
-        async execute(interaction) {
+        if (sub === "retirar") {
 
             const cantidad = interaction.options.getInteger("cantidad");
-            const data = load(ECONOMIA_FILE);
-            const user = getUser(data, interaction.user.id);
 
-            if (cantidad <= 0 || user.banco < cantidad)
-                return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+            if (user.banco < cantidad)
+                return interaction.reply({ content: "❌ No tienes suficiente dinero en banco.", ephemeral: true });
 
             user.banco -= cantidad;
             user.efectivo += cantidad;
 
-            save(ECONOMIA_FILE, data);
-
-            interaction.reply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor("Green")
-                        .setTitle("💵 Retiro realizado")
-                        .setDescription(`Retiraste $${cantidad}`)
-                ]
-            });
-        }
-    },
-
-    // ================= TOP DINERO =================
-    {
-        data: new SlashCommandBuilder()
-            .setName("topdinero")
-            .setDescription("Ver ranking económico"),
-
-        async execute(interaction) {
-
-            const data = load(ECONOMIA_FILE);
-
-            const ranking = Object.entries(data)
-                .map(([id, info]) => ({
-                    id,
-                    total: info.efectivo + info.banco
-                }))
-                .sort((a, b) => b.total - a.total);
-
-            let descripcion = "";
-
-            ranking.slice(0, 10).forEach((u, i) => {
-                descripcion += `**#${i + 1}** <@${u.id}> - $${u.total}\n`;
-            });
-
-            const posicion = ranking.findIndex(u => u.id === interaction.user.id) + 1;
+            saveData(data);
 
             const embed = new EmbedBuilder()
-                .setColor("Gold")
-                .setTitle("🏆 Ranking de Dinero")
-                .setDescription(descripcion || "Sin datos.")
-                .setFooter({ text: `Tu posición: #${posicion || "Sin puesto"}` })
+                .setColor("#27ae60")
+                .setTitle("💵┃RETIRO COMPLETADO")
+                .addFields(
+                    { name: "💰 Cantidad retirada", value: `\`\`\`$${cantidad}\`\`\`` }
+                )
                 .setTimestamp();
 
-            interaction.reply({ embeds: [embed] });
+            return interaction.reply({ embeds: [embed] });
         }
-    },
 
-    // ================= AÑADIR SUELDO =================
-    {
-        data: new SlashCommandBuilder()
-            .setName("añadir-sueldo")
-            .setDescription("Asignar sueldo a un rol")
-            .addRoleOption(o =>
-                o.setName("rol")
-                 .setDescription("Rol")
-                 .setRequired(true)
-            )
-            .addIntegerOption(o =>
-                o.setName("cantidad")
-                 .setDescription("Cantidad")
-                 .setRequired(true)
-            ),
-
-        async execute(interaction) {
-
-            if (!interaction.member.roles.cache.has(STAFF_ROLE))
-                return interaction.reply({ content: "❌ No tienes permisos.", ephemeral: true });
-
-            const role = interaction.options.getRole("rol");
-            const cantidad = interaction.options.getInteger("cantidad");
-
-            const sueldos = load(SUELDOS_FILE);
-
-            sueldos[role.id] = cantidad;
-            save(SUELDOS_FILE, sueldos);
-
-            interaction.reply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor("Purple")
-                        .setTitle("💼 Sueldo Configurado")
-                        .setDescription(`${role} cobrará **$${cantidad}** cada 6 días.`)
-                        .setTimestamp()
-                ]
-            });
-        }
     }
-
-];
+};
