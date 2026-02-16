@@ -1,128 +1,216 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 
-const DATA_FILE = './economia.json';
-const SUELDO = 1000;
-const IMPUESTO = 0.10; // 10%
-const BANCO_IMPUESTO = 0.02; // 2% por guardar dinero
+const ECONOMIA_FILE = './economia.json';
+const SUELDOS_FILE = './sueldos.json';
+
+const IMPUESTO = 0.10;
+const BANCO_IMPUESTO = 0.02;
+const COOLDOWN = 6 * 24 * 60 * 60 * 1000;
 const STAFF_ROLE = "1472766576934649979";
 
-function loadData() {
-    if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, "{}");
-    return JSON.parse(fs.readFileSync(DATA_FILE));
+function load(file) {
+    if (!fs.existsSync(file)) fs.writeFileSync(file, "{}");
+    return JSON.parse(fs.readFileSync(file));
 }
 
-function saveData(data) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+function save(file, data) {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-function getUser(data, userId) {
-    if (!data[userId]) {
-        data[userId] = {
+function getUser(data, id) {
+    if (!data[id]) {
+        data[id] = {
             efectivo: 0,
-            banco: 0
+            banco: 0,
+            lastClaim: 0
         };
     }
-    return data[userId];
+    return data[id];
 }
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('economia')
-        .setDescription('Sistema económico')
-        .addSubcommand(s => s.setName('cobrar').setDescription('Cobrar sueldo'))
-        .addSubcommand(s => s.setName('balance').setDescription('Ver balance'))
-        .addSubcommand(s =>
-            s.setName('depositar')
-            .setDescription('Depositar dinero')
-            .addIntegerOption(o =>
-                o.setName('cantidad')
-                .setDescription('Cantidad a depositar')
-                .setRequired(true)))
-        .addSubcommand(s =>
-            s.setName('retirar')
-            .setDescription('Retirar dinero')
-            .addIntegerOption(o =>
-                o.setName('cantidad')
-                .setDescription('Cantidad a retirar')
-                .setRequired(true)))
-        .addSubcommand(s => s.setName('topdinero').setDescription('Ranking de dinero'))
-        .addSubcommand(s =>
-            s.setName('añadir-economia')
-            .setDescription('Añadir dinero a un usuario')
-            .addUserOption(o =>
-                o.setName('usuario')
-                .setDescription('Usuario')
-                .setRequired(true))
-            .addIntegerOption(o =>
-                o.setName('cantidad')
-                .setDescription('Cantidad')
-                .setRequired(true))
-        ),
+module.exports = [
 
-    async execute(interaction) {
+    // ================= COBRAR =================
+    {
+        data: new SlashCommandBuilder()
+            .setName("cobrar")
+            .setDescription("Cobrar sueldo según tu rol"),
 
-        const data = loadData();
-        const sub = interaction.options.getSubcommand();
-        const userData = getUser(data, interaction.user.id);
+        async execute(interaction) {
 
-        // COBRAR
-        if (sub === 'cobrar') {
+            const data = load(ECONOMIA_FILE);
+            const sueldos = load(SUELDOS_FILE);
+            const user = getUser(data, interaction.user.id);
 
-            const impuesto = SUELDO * IMPUESTO;
-            const total = SUELDO - impuesto;
+            const ahora = Date.now();
 
-            userData.efectivo += total;
-            saveData(data);
+            if (ahora - user.lastClaim < COOLDOWN) {
+                const restante = COOLDOWN - (ahora - user.lastClaim);
+                const dias = Math.ceil(restante / (1000 * 60 * 60 * 24));
 
-            return interaction.reply(`💰 Has cobrado $${total} (Impuestos: $${impuesto})`);
+                return interaction.reply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor("Red")
+                            .setTitle("⏳ No puedes cobrar aún")
+                            .setDescription(`Debes esperar **${dias} días**.`)
+                    ],
+                    ephemeral: true
+                });
+            }
+
+            let sueldoTotal = 0;
+
+            interaction.member.roles.cache.forEach(role => {
+                if (sueldos[role.id]) {
+                    sueldoTotal += sueldos[role.id];
+                }
+            });
+
+            if (sueldoTotal === 0) {
+                return interaction.reply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor("Red")
+                            .setTitle("❌ No tienes sueldo asignado")
+                            .setDescription("Tu rol no tiene sueldo configurado.")
+                    ],
+                    ephemeral: true
+                });
+            }
+
+            const impuesto = sueldoTotal * IMPUESTO;
+            const final = sueldoTotal - impuesto;
+
+            user.efectivo += final;
+            user.lastClaim = ahora;
+
+            save(ECONOMIA_FILE, data);
+
+            const embed = new EmbedBuilder()
+                .setColor("Green")
+                .setTitle("💰 Sueldo Cobrado")
+                .addFields(
+                    { name: "Sueldo bruto", value: `$${sueldoTotal}`, inline: true },
+                    { name: "Impuestos (10%)", value: `$${impuesto}`, inline: true },
+                    { name: "Recibido", value: `$${final}`, inline: true }
+                )
+                .setFooter({ text: "MIAMI RP" })
+                .setTimestamp();
+
+            interaction.reply({ embeds: [embed] });
         }
+    },
 
-        // BALANCE
-        if (sub === 'balance') {
+    // ================= BALANCE =================
+    {
+        data: new SlashCommandBuilder()
+            .setName("balance")
+            .setDescription("Ver tu dinero"),
 
-            return interaction.reply(
-                `💵 Efectivo: $${userData.efectivo}\n🏦 Banco: $${userData.banco}`
-            );
+        async execute(interaction) {
+
+            const data = load(ECONOMIA_FILE);
+            const user = getUser(data, interaction.user.id);
+
+            const embed = new EmbedBuilder()
+                .setColor("Blue")
+                .setTitle("💳 Tu Balance")
+                .addFields(
+                    { name: "💵 Efectivo", value: `$${user.efectivo}`, inline: true },
+                    { name: "🏦 Banco", value: `$${user.banco}`, inline: true }
+                )
+                .setTimestamp();
+
+            interaction.reply({ embeds: [embed] });
         }
+    },
 
-        // DEPOSITAR
-        if (sub === 'depositar') {
+    // ================= DEPOSITAR =================
+    {
+        data: new SlashCommandBuilder()
+            .setName("depositar")
+            .setDescription("Depositar dinero al banco")
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                 .setDescription("Cantidad")
+                 .setRequired(true)
+            ),
 
-            const cantidad = interaction.options.getInteger('cantidad');
+        async execute(interaction) {
 
-            if (cantidad <= 0) return interaction.reply("Cantidad inválida.");
-            if (userData.efectivo < cantidad) return interaction.reply("No tienes suficiente efectivo.");
+            const cantidad = interaction.options.getInteger("cantidad");
+            const data = load(ECONOMIA_FILE);
+            const user = getUser(data, interaction.user.id);
+
+            if (cantidad <= 0 || user.efectivo < cantidad)
+                return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
 
             const impuestoBanco = cantidad * BANCO_IMPUESTO;
-            const total = cantidad - impuestoBanco;
+            const final = cantidad - impuestoBanco;
 
-            userData.efectivo -= cantidad;
-            userData.banco += total;
+            user.efectivo -= cantidad;
+            user.banco += final;
 
-            saveData(data);
+            save(ECONOMIA_FILE, data);
 
-            return interaction.reply(`🏦 Depositaste $${total} (Costo bancario: $${impuestoBanco})`);
+            interaction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor("Blue")
+                        .setTitle("🏦 Depósito realizado")
+                        .setDescription(`Depositaste $${final}\nCosto bancario: $${impuestoBanco}`)
+                ]
+            });
         }
+    },
 
-        // RETIRAR
-        if (sub === 'retirar') {
+    // ================= RETIRAR =================
+    {
+        data: new SlashCommandBuilder()
+            .setName("retirar")
+            .setDescription("Retirar dinero del banco")
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                 .setDescription("Cantidad")
+                 .setRequired(true)
+            ),
 
-            const cantidad = interaction.options.getInteger('cantidad');
+        async execute(interaction) {
 
-            if (cantidad <= 0) return interaction.reply("Cantidad inválida.");
-            if (userData.banco < cantidad) return interaction.reply("No tienes suficiente dinero en el banco.");
+            const cantidad = interaction.options.getInteger("cantidad");
+            const data = load(ECONOMIA_FILE);
+            const user = getUser(data, interaction.user.id);
 
-            userData.banco -= cantidad;
-            userData.efectivo += cantidad;
+            if (cantidad <= 0 || user.banco < cantidad)
+                return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
 
-            saveData(data);
+            user.banco -= cantidad;
+            user.efectivo += cantidad;
 
-            return interaction.reply(`💵 Retiraste $${cantidad}`);
+            save(ECONOMIA_FILE, data);
+
+            interaction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor("Green")
+                        .setTitle("💵 Retiro realizado")
+                        .setDescription(`Retiraste $${cantidad}`)
+                ]
+            });
         }
+    },
 
-        // TOPDINERO
-        if (sub === 'topdinero') {
+    // ================= TOP DINERO =================
+    {
+        data: new SlashCommandBuilder()
+            .setName("topdinero")
+            .setDescription("Ver ranking económico"),
+
+        async execute(interaction) {
+
+            const data = load(ECONOMIA_FILE);
 
             const ranking = Object.entries(data)
                 .map(([id, info]) => ({
@@ -131,35 +219,64 @@ module.exports = {
                 }))
                 .sort((a, b) => b.total - a.total);
 
-            let mensaje = "🏆 **Ranking de Dinero**\n";
+            let descripcion = "";
 
             ranking.slice(0, 10).forEach((u, i) => {
-                mensaje += `#${i + 1} <@${u.id}> - $${u.total}\n`;
+                descripcion += `**#${i + 1}** <@${u.id}> - $${u.total}\n`;
             });
 
             const posicion = ranking.findIndex(u => u.id === interaction.user.id) + 1;
 
-            mensaje += `\n📍 Tu posición: #${posicion}`;
+            const embed = new EmbedBuilder()
+                .setColor("Gold")
+                .setTitle("🏆 Ranking de Dinero")
+                .setDescription(descripcion || "Sin datos.")
+                .setFooter({ text: `Tu posición: #${posicion || "Sin puesto"}` })
+                .setTimestamp();
 
-            return interaction.reply(mensaje);
+            interaction.reply({ embeds: [embed] });
         }
+    },
 
-        // AÑADIR ECONOMIA (solo rol específico)
-        if (sub === 'añadir-economia') {
+    // ================= AÑADIR SUELDO =================
+    {
+        data: new SlashCommandBuilder()
+            .setName("añadir-sueldo")
+            .setDescription("Asignar sueldo a un rol")
+            .addRoleOption(o =>
+                o.setName("rol")
+                 .setDescription("Rol")
+                 .setRequired(true)
+            )
+            .addIntegerOption(o =>
+                o.setName("cantidad")
+                 .setDescription("Cantidad")
+                 .setRequired(true)
+            ),
 
-            if (!interaction.member.roles.cache.has(STAFF_ROLE)) {
-                return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
-            }
+        async execute(interaction) {
 
-            const target = interaction.options.getUser('usuario');
-            const cantidad = interaction.options.getInteger('cantidad');
+            if (!interaction.member.roles.cache.has(STAFF_ROLE))
+                return interaction.reply({ content: "❌ No tienes permisos.", ephemeral: true });
 
-            const targetData = getUser(data, target.id);
-            targetData.efectivo += cantidad;
+            const role = interaction.options.getRole("rol");
+            const cantidad = interaction.options.getInteger("cantidad");
 
-            saveData(data);
+            const sueldos = load(SUELDOS_FILE);
 
-            return interaction.reply(`💰 Se añadieron $${cantidad} a ${target.username}`);
+            sueldos[role.id] = cantidad;
+            save(SUELDOS_FILE, sueldos);
+
+            interaction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor("Purple")
+                        .setTitle("💼 Sueldo Configurado")
+                        .setDescription(`${role} cobrará **$${cantidad}** cada 6 días.`)
+                        .setTimestamp()
+                ]
+            });
         }
     }
-};
+
+];
