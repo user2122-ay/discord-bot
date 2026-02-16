@@ -14,7 +14,21 @@ const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith("
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
-  client.commands.set(command.data.name, command);
+
+  // 🔥 Si el archivo exporta varios comandos (array)
+  if (Array.isArray(command)) {
+    for (const cmd of command) {
+      if (cmd?.data?.name) {
+        client.commands.set(cmd.data.name, cmd);
+      }
+    }
+  } 
+  // 🔥 Si exporta un solo comando
+  else {
+    if (command?.data?.name) {
+      client.commands.set(command.data.name, command);
+    }
+  }
 }
 
 // 🆔 ID del servidor
@@ -48,13 +62,21 @@ client.on("interactionCreate", async interaction => {
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(error);
-    await interaction.reply({
-      content: "❌ Error ejecutando el comando",
-      ephemeral: true
-    });
+    console.error("❌ Error ejecutando comando:", error);
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({
+        content: "❌ Error ejecutando el comando",
+        ephemeral: true
+      });
+    } else {
+      await interaction.reply({
+        content: "❌ Error ejecutando el comando",
+        ephemeral: true
+      });
+    }
   }
 });
 
 // 🔐 Login
-client.login(process.env.TOKEN); 
+client.login(process.env.TOKEN);
