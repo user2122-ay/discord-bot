@@ -1,10 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔒 Rol que PUEDE USAR el comando (STAFF)
-const ROL_AUTORIZADO = "1472649851526316195";
+const ROL_AUTORIZADO = "1463192290423083324";
 
 // 📢 Rol al que SE HACE PING
-const ROL_PING = "1472647022887702609";
+const ROL_PING = "1463192290360295646";
 
 module.exports = {
   data: new SlashCommandBuilder()
