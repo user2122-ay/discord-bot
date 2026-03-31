@@ -46,7 +46,7 @@ for (const file of commandFiles) {
 }
 
 // 🆔 ID del servidor
-const GUILD_ID = "1471525858291355936";
+const GUILD_ID = "1463192289974157334";
 
 // 🚀 Ready + registro de comandos
 client.once("ready", async () => {
