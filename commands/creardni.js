@@ -41,16 +41,42 @@ module.exports = {
 
     const dni = Math.floor(10000000 + Math.random() * 90000000);
 
+    const nombre = interaction.options.getString("nombre");
+    const apellido = interaction.options.getString("apellido");
+    const edad = interaction.options.getInteger("edad");
+    const nacimiento = interaction.options.getString("nacimiento");
+    const sangre = interaction.options.getString("sangre");
+
     data[interaction.user.id] = {
-      nombre: interaction.options.getString("nombre"),
-      apellido: interaction.options.getString("apellido"),
-      edad: interaction.options.getInteger("edad"),
-      nacimiento: interaction.options.getString("nacimiento"),
-      sangre: interaction.options.getString("sangre"),
+      nombre,
+      apellido,
+      edad,
+      nacimiento,
+      sangre,
       dni
     };
 
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+
+    // 🔥 GUARDAR EN POSTGRES (AQUÍ ESTÁ LO NUEVO)
+    try {
+      await interaction.pool.query(
+        `INSERT INTO "DNI_LS"
+        (user_id, nombre, apellido, edad, fecha_nacimiento, sangre, dni_numero)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          interaction.user.id,
+          nombre,
+          apellido,
+          edad,
+          nacimiento,
+          sangre,
+          dni.toString()
+        ]
+      );
+    } catch (err) {
+      console.error("❌ Error guardando en DB:", err);
+    }
 
     // ✅ AÑADIR ROL AUTOMÁTICAMENTE
     if (!interaction.member.roles.cache.has(ROL_DNI)) {
@@ -62,11 +88,11 @@ module.exports = {
       .setColor(0x3498db)
       .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
       .addFields(
-        { name: "👤 Nombre IC", value: data[interaction.user.id].nombre, inline: true },
-        { name: "👤 Apellido IC", value: data[interaction.user.id].apellido, inline: true },
-        { name: "🎂 Edad IC", value: `${data[interaction.user.id].edad}`, inline: true },
-        { name: "📅 Nacimiento", value: data[interaction.user.id].nacimiento, inline: true },
-        { name: "🩸 Sangre", value: data[interaction.user.id].sangre, inline: true },
+        { name: "👤 Nombre IC", value: nombre, inline: true },
+        { name: "👤 Apellido IC", value: apellido, inline: true },
+        { name: "🎂 Edad IC", value: `${edad}`, inline: true },
+        { name: "📅 Nacimiento", value: nacimiento, inline: true },
+        { name: "🩸 Sangre", value: sangre, inline: true },
         { name: "🆔 DNI", value: `${dni}`, inline: true }
       )
       .setFooter({
