@@ -6,40 +6,33 @@ module.exports = (client) => {
 
     client.on("guildMemberAdd", async (member) => {
 
-        console.log("📥 Nuevo usuario:", member.user.tag);
-
         const canal = await member.guild.channels.fetch(CANAL_BIENVENIDA).catch(() => null);
-        if (!canal) {
-            console.log("❌ Canal no encontrado");
-            return;
-        }
+        if (!canal) return;
 
-        try {
+        // 👋 Mensaje fuera del embed
+        await canal.send(`¡<@${member.id}> ingresó al servidor! 🎉`);
 
-            await canal.send(`¡<@${member.id}> ingresó al servidor! 🎉`);
+        // 📦 Embed bonito
+        const embed = new EmbedBuilder()
+            .setColor(0x2ecc71)
+            .setTitle("👋 ¡Bienvenido/a a Los Santos Spanish RP! 🌴")
+            .setDescription(
+`Nos alegra tenerte en esta ciudad donde cada decisión cuenta y cada historia deja huella. **Los Santos Spanish RP** es un servidor enfocado en el **rol serio, realista y respetuoso**, donde podrás desarrollar a tu personaje desde cero y vivir experiencias únicas dentro de un entorno activo y organizado.
 
-            const embed = new EmbedBuilder()
-                .setTitle("👋 ¡Bienvenido/a a Los Santos Spanish RP! 🌴")
-                .setDescription(
-`Nos alegra tenerte en la ciudad.
+📌 **Antes de comenzar**, te recomendamos:
 
-📌 Lee las normas
-📌 Respeta a todos
-📌 Disfruta el rol`
-                )
-                .setColor(0x2ecc71)
-                .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-                .setFooter({
-                    text: `Usuario: ${member.user.tag}`,
-                    iconURL: member.user.displayAvatarURL({ dynamic: true })
-                })
-                .setTimestamp();
+• Leer atentamente las **normativas** del servidor.
+• Elegir tu **rol y facción** con responsabilidad.
+• Mantener siempre el **respeto** hacia la comunidad y el staff.`
+            )
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .setFooter({
+                text: "© Los Santos RP | Todos los derechos reservados®",
+                iconURL: member.user.displayAvatarURL({ dynamic: true })
+            })
+            .setTimestamp();
 
-            await canal.send({ embeds: [embed] });
-
-        } catch (err) {
-            console.log("❌ Error enviando bienvenida:", err);
-        }
+        await canal.send({ embeds: [embed] });
     });
 
 };
