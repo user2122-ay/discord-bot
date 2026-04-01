@@ -1,64 +1,40 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-
-function generarDNI() {
-  return Math.floor(100000 + Math.random() * 900000);
-}
+const fs = require("fs");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("creardni")
-    .setDescription("Crear DNI IC")
-    .addStringOption(o => o.setName("nombre").setDescription("Nombre").setRequired(true))
-    .addStringOption(o => o.setName("apellido").setDescription("Apellido").setRequired(true))
-    .addIntegerOption(o => o.setName("edad").setDescription("Edad").setRequired(true))
-    .addStringOption(o => o.setName("fecha").setDescription("Fecha de nacimiento").setRequired(true))
-    .addStringOption(o => o.setName("sangre").setDescription("Tipo de sangre").setRequired(true)),
+    .setName("verdni")
+    .setDescription("Ver DNI de un usuario")
+    .addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true)),
 
   async execute(interaction) {
+    const user = interaction.options.getUser("usuario");
+    const data = JSON.parse(fs.readFileSync("./dniData.json"));
 
-    const nombre = interaction.options.getString("nombre");
-    const apellido = interaction.options.getString("apellido");
-    const edad = interaction.options.getInteger("edad");
-    const fecha = interaction.options.getString("fecha");
-    const sangre = interaction.options.getString("sangre");
-
-    const dni = `LS-${generarDNI()}`;
-
-    try {
-      // 💾 GUARDAR EN LA BASE DE DATOS
-      await interaction.pool.query(
-        `INSERT INTO "DNI_LS"
-        (user_id, nombre, apellido, edad, fecha_nacimiento, sangre, dni_numero)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          interaction.user.id,
-          nombre,
-          apellido,
-          edad,
-          fecha,
-          sangre,
-          dni
-        ]
-      );
-
-      // 📄 RESPUESTA
-      const embed = new EmbedBuilder()
-        .setTitle("🪪 DNI CREADO")
-        .setColor("Green")
-        .addFields(
-          { name: "Nombre", value: `${nombre} ${apellido}` },
-          { name: "Edad", value: `${edad}` },
-          { name: "DNI", value: dni }
-        );
-
-      await interaction.reply({ embeds: [embed] });
-
-    } catch (error) {
-      console.error(error);
-      await interaction.reply({
-        content: "❌ Error guardando en la base de datos",
-        ephemeral: true
-      });
+    if (!data[user.id]) {
+      return interaction.reply({ content: "❌ Ese usuario no tiene DNI", ephemeral: true });
     }
+
+    const d = data[user.id];
+
+    const embed = new EmbedBuilder()
+      .setTitle("🪪 DNI - MIAMI HISPANO RP")
+      .setColor(0x2ecc71)
+      .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+      .addFields(
+        { name: "👤 Nombre IC", value: d.nombre, inline: true },
+        { name: "👤 Apellido IC", value: d.apellido, inline: true },
+        { name: "🎂 Edad IC", value: `${d.edad}`, inline: true },
+        { name: "📅 Nacimiento", value: d.nacimiento, inline: true },
+        { name: "🩸 Sangre", value: d.sangre, inline: true },
+        { name: "🆔 DNI", value: `${d.dni}`, inline: true }
+      )
+      .setFooter({
+        text: `MIAMI HISPANO RP | ${new Date().toLocaleDateString()}`,
+        iconURL: interaction.guild.iconURL({ dynamic: true })
+      })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
   }
 };
