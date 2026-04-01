@@ -30,7 +30,7 @@ module.exports = (client) => {
         };
 
         // 🔁 Cambiar cada 10 minutos
-        setInterval(cambiarEstado, 10 * 60 * 1000);
+        setInterval(cambiarEstado, 5000);
 
         // 🔥 Ejecutar uno al iniciar
         cambiarEstado();
