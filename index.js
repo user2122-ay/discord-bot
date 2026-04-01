@@ -3,7 +3,7 @@ const fs = require("fs");
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require("discord.js");
 const { Pool } = require("pg");
 
-// 🔹 Conexión a Postgres (opcional)
+// 🔹 Conexión a Postgres
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
@@ -11,7 +11,7 @@ const pool = new Pool({
 
 pool.connect()
     .then(() => console.log("✅ Conectado a Postgres"))
-    .catch(err => console.log("⚠️ Postgres no conectado (no pasa nada si no usas DB)"));
+    .catch(err => console.log("⚠️ Postgres no conectado"));
 
 // 🤖 Cliente
 const client = new Client({
@@ -19,18 +19,25 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers
+        GatewayIntentBits.GuildMembers // 🔥 NECESARIO PARA BIENVENIDA
     ]
 });
 
-// 🔥 SISTEMAS
-require("./events/seguridad")(client);
-require("./events/seguridad")(client);
-require("./events/logs")(client); // 👈 AÑADIDO (NO ROMPE NADA)
+// ==============================
+// 🔥 SISTEMAS (AQUÍ SE CONECTAN)
+// ==============================
+
+require("./events/seguridad")(client);   // anti raid / spam
+require("./events/logs")(client);        // logs
+require("./events/bienvenida")(client);  // 👈 ESTE TE FALTABA
+require("./events/presence")(client);    // estados rotativos
+
+// ==============================
+// 📦 COMANDOS
+// ==============================
 
 client.commands = new Collection();
 
-// 📂 Cargar comandos
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
@@ -53,7 +60,7 @@ for (const file of commandFiles) {
         }
 
         else {
-            console.log(`❌ ${file} no tiene estructura válida`);
+            console.log(`❌ ${file} inválido`);
         }
 
     } catch (err) {
@@ -61,10 +68,16 @@ for (const file of commandFiles) {
     }
 }
 
-// 🆔 TU GUILD ID
+// ==============================
+// 🆔 GUILD
+// ==============================
+
 const GUILD_ID = "1463192289974157334";
 
-// 🚀 Cuando el bot prende
+// ==============================
+// 🚀 READY
+// ==============================
+
 client.once("ready", async () => {
     console.log(`🔥 Bot conectado como ${client.user.tag}`);
 
@@ -73,7 +86,7 @@ client.once("ready", async () => {
         try {
             commands.push(cmd.data.toJSON());
         } catch (err) {
-            console.log(`❌ Error en comando ${cmd.data?.name}:`, err.message);
+            console.log(`❌ Error en ${cmd.data?.name}`);
         }
     });
 
@@ -93,7 +106,10 @@ client.once("ready", async () => {
     }
 });
 
-// 🎯 Ejecutar comandos
+// ==============================
+// 🎯 INTERACCIONES
+// ==============================
+
 client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -117,5 +133,5 @@ client.on("interactionCreate", async interaction => {
     }
 });
 
-// 🔐 Login
+// 🔐 LOGIN
 client.login(process.env.TOKEN);
