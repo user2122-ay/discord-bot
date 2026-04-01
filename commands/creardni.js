@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // 🧾 ROL QUE SE DA AL CREAR DNI
-const ROL_DNI = "1472647022887702609";
+const ROL_DNI = "1463192290360295645";
 
 module.exports = {
   data: new SlashCommandBuilder()
