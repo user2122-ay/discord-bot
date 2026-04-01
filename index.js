@@ -13,7 +13,7 @@ pool.connect()
     .then(() => console.log("✅ Conectado a Postgres"))
     .catch(err => console.log("⚠️ Postgres no conectado (no pasa nada si no usas DB)"));
 
-// 🤖 Cliente (🔥 INTENTS ARREGLADOS)
+// 🤖 Cliente
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -23,8 +23,9 @@ const client = new Client({
     ]
 });
 
-// 🔥 CARGAR SISTEMA DE SEGURIDAD
+// 🔥 SISTEMAS
 require("./events/seguridad")(client);
+require("./events/logs")(client); // 👈 AÑADIDO (NO ROMPE NADA)
 
 client.commands = new Collection();
 
