@@ -13,10 +13,18 @@ pool.connect()
     .then(() => console.log("✅ Conectado a Postgres"))
     .catch(err => console.log("⚠️ Postgres no conectado (no pasa nada si no usas DB)"));
 
-// 🤖 Cliente
+// 🤖 Cliente (🔥 INTENTS ARREGLADOS)
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers
+    ]
 });
+
+// 🔥 CARGAR SISTEMA DE SEGURIDAD
+require("./events/seguridad")(client);
 
 client.commands = new Collection();
 
@@ -27,7 +35,6 @@ for (const file of commandFiles) {
     try {
         const command = require(`./commands/${file}`);
 
-        // 🔥 Multi-comandos (ej: economia.js)
         if (typeof command === "object" && !command.data) {
             for (const key in command) {
                 const cmd = command[key];
@@ -38,7 +45,6 @@ for (const file of commandFiles) {
             }
         }
 
-        // 🔥 Comando normal
         else if (command?.data?.name) {
             client.commands.set(command.data.name, command);
             console.log(`✅ Cargado: ${command.data.name}`);
@@ -92,7 +98,6 @@ client.on("interactionCreate", async interaction => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
-    // 🔹 Pasar DB a comandos
     interaction.pool = pool;
 
     try {
