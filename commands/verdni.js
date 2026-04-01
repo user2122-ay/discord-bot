@@ -38,7 +38,7 @@ module.exports = {
           { name: "🆔 DNI", value: d.dni_numero, inline: true }
         )
         .setFooter({
-          text: `MIAMI HISPANO RP | ${new Date().toLocaleDateString()}`,
+          text: `Los Santos RP | ${new Date().toLocaleDateString()}`,
           iconURL: interaction.guild.iconURL({ dynamic: true })
         })
         .setTimestamp();
