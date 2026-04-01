@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const fs = require("fs");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,32 +8,49 @@ module.exports = {
 
   async execute(interaction) {
     const user = interaction.options.getUser("usuario");
-    const data = JSON.parse(fs.readFileSync("./dniData.json"));
 
-    if (!data[user.id]) {
-      return interaction.reply({ content: "❌ Ese usuario no tiene DNI", ephemeral: true });
+    try {
+      // 🔥 BUSCAR EN LA BASE DE DATOS
+      const result = await interaction.pool.query(
+        `SELECT * FROM "DNI_LS" WHERE user_id = $1`,
+        [user.id]
+      );
+
+      if (result.rows.length === 0) {
+        return interaction.reply({
+          content: "❌ Ese usuario no tiene DNI",
+          ephemeral: true
+        });
+      }
+
+      const d = result.rows[0];
+
+      const embed = new EmbedBuilder()
+        .setTitle("🪪 DNI - MIAMI HISPANO RP")
+        .setColor(0x2ecc71)
+        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+        .addFields(
+          { name: "👤 Nombre IC", value: d.nombre, inline: true },
+          { name: "👤 Apellido IC", value: d.apellido, inline: true },
+          { name: "🎂 Edad IC", value: `${d.edad}`, inline: true },
+          { name: "📅 Nacimiento", value: d.fecha_nacimiento, inline: true },
+          { name: "🩸 Sangre", value: d.sangre, inline: true },
+          { name: "🆔 DNI", value: d.dni_numero, inline: true }
+        )
+        .setFooter({
+          text: `MIAMI HISPANO RP | ${new Date().toLocaleDateString()}`,
+          iconURL: interaction.guild.iconURL({ dynamic: true })
+        })
+        .setTimestamp();
+
+      await interaction.reply({ embeds: [embed] });
+
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: "❌ Error obteniendo el DNI",
+        ephemeral: true
+      });
     }
-
-    const d = data[user.id];
-
-    const embed = new EmbedBuilder()
-      .setTitle("🪪 DNI - MIAMI HISPANO RP")
-      .setColor(0x2ecc71)
-      .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-      .addFields(
-        { name: "👤 Nombre IC", value: d.nombre, inline: true },
-        { name: "👤 Apellido IC", value: d.apellido, inline: true },
-        { name: "🎂 Edad IC", value: `${d.edad}`, inline: true },
-        { name: "📅 Nacimiento", value: d.nacimiento, inline: true },
-        { name: "🩸 Sangre", value: d.sangre, inline: true },
-        { name: "🆔 DNI", value: `${d.dni}`, inline: true }
-      )
-      .setFooter({
-        text: `MIAMI HISPANO RP | ${new Date().toLocaleDateString()}`,
-        iconURL: interaction.guild.iconURL({ dynamic: true })
-      })
-      .setTimestamp();
-
-    await interaction.reply({ embeds: [embed] });
   }
 };
