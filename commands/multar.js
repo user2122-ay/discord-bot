@@ -16,39 +16,25 @@ module.exports = {
     .setName("multar")
     .setDescription("Registrar una multa vehicular")
     .addStringOption(o =>
-      o.setName("placa")
-        .setDescription("Placa del vehículo")
-        .setRequired(true)
+      o.setName("placa").setDescription("Placa del vehículo").setRequired(true)
     )
     .addUserOption(o =>
-      o.setName("usuario")
-        .setDescription("Usuario multado")
-        .setRequired(true)
+      o.setName("usuario").setDescription("Usuario multado").setRequired(true)
     )
     .addStringOption(o =>
-      o.setName("oficial")
-        .setDescription("Oficial que impone la multa")
-        .setRequired(true)
+      o.setName("oficial").setDescription("Oficial que impone la multa").setRequired(true)
     )
     .addStringOption(o =>
-      o.setName("lugar")
-        .setDescription("Lugar de la infracción")
-        .setRequired(true)
+      o.setName("lugar").setDescription("Lugar de la infracción").setRequired(true)
     )
     .addStringOption(o =>
-      o.setName("motivo")
-        .setDescription("Motivo de la multa")
-        .setRequired(true)
+      o.setName("motivo").setDescription("Motivo de la multa").setRequired(true)
     )
     .addIntegerOption(o =>
-      o.setName("monto")
-        .setDescription("Monto de la multa")
-        .setRequired(true)
+      o.setName("monto").setDescription("Monto de la multa").setRequired(true)
     )
     .addAttachmentOption(o =>
-      o.setName("imagen")
-        .setDescription("Imagen de evidencia")
-        .setRequired(true)
+      o.setName("imagen").setDescription("Imagen de evidencia").setRequired(true)
     ),
 
   async execute(interaction) {
@@ -74,10 +60,35 @@ module.exports = {
       fecha: new Date().toLocaleString()
     };
 
+    // 🔹 Guardar en JSON (temporal)
     if (!data[multa.usuario]) data[multa.usuario] = [];
     data[multa.usuario].push(multa);
-
     fs.writeFileSync("./multasData.json", JSON.stringify(data, null, 2));
+
+    // 🔥 GUARDAR EN POSTGRES
+    try {
+      await interaction.pool.query(
+        `INSERT INTO "MULTAS_LS"
+        (user_id, placa, oficial, lugar, motivo, monto, imagen, fecha)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          multa.usuario,
+          multa.placa,
+          multa.oficial,
+          multa.lugar,
+          multa.motivo,
+          multa.monto,
+          multa.imagen,
+          multa.fecha
+        ]
+      );
+    } catch (err) {
+      console.error("❌ Error guardando multa en DB:", err);
+      return interaction.reply({
+        content: "❌ Error guardando la multa en la base de datos",
+        ephemeral: true
+      });
+    }
 
     const embed = new EmbedBuilder()
       .setTitle("🚨 Multa Registrada")
