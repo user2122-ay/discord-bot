@@ -6,7 +6,7 @@ module.exports = (client) => {
         { name: "🎧 Radio policial activa", type: 2 },
         { name: "💰 Sistema económico", type: 0 },
         { name: "🚨 Alertas activas", type: 3 },
-        { name: "👮‍♂️ Controlando el crimen", type: 0 },
+        { name: "👮 Controlando el crimen", type: 0 },
         { name: "📋 Sistema de DNIs", type: 0 },
         { name: "🚗 Multando conductores", type: 0 },
         { name: "🌆 Vida en Los Santos", type: 3 },
@@ -17,23 +17,29 @@ module.exports = (client) => {
 
     let i = 0;
 
-    client.on("ready", () => {
-        console.log("🎮 Sistema de estados activo");
+    client.once("ready", () => {
+        console.log("✅ Sistema de presence cargado");
 
         const cambiarEstado = () => {
             const estado = estados[i];
 
-            client.user.setActivity(estado.name, { type: estado.type });
+            client.user.setPresence({
+                activities: [{
+                    name: estado.name,
+                    type: estado.type
+                }],
+                status: "online"
+            });
 
             i++;
             if (i >= estados.length) i = 0;
         };
 
-        // 🔁 Cambiar cada 10 minutos
-        setInterval(cambiarEstado, 5000);
-
-        // 🔥 Ejecutar uno al iniciar
+        // 🔥 Ejecutar al iniciar
         cambiarEstado();
+
+        // 🔁 Cada 10 minutos
+        setInterval(cambiarEstado, 10 * 60 * 1000);
     });
 
 };
