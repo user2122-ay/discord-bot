@@ -25,6 +25,7 @@ const client = new Client({
 
 // 🔥 SISTEMAS
 require("./events/seguridad")(client);
+require("./events/seguridad")(client);
 require("./events/logs")(client); // 👈 AÑADIDO (NO ROMPE NADA)
 
 client.commands = new Collection();
