@@ -1,15 +1,25 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
+} = require("discord.js");
 
-// 🔒 Rol que PUEDE USAR el comando (STAFF)
+// 🔒 Roles
 const ROL_AUTORIZADO = "1463192290423083324";
-
-// 📢 Rol al que SE HACE PING
 const ROL_PING = "1463192290360295646";
+
+// 📍 Canales
+const CANAL_SESION = "1463192291056423024";
+const CANAL_LOGS = "1463192293312958628";
+
+let votacionActiva = null;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("sesion")
-    .setDescription("Sesiones y votaciones")
+    .setDescription("Sistema de sesiones")
     .addSubcommand(s => s.setName("abrir_votacion").setDescription("Abrir votación"))
     .addSubcommand(s => s.setName("cerrar_votacion").setDescription("Cerrar votación"))
     .addSubcommand(s => s.setName("abrir").setDescription("Abrir sesión"))
@@ -17,88 +27,185 @@ module.exports = {
 
   async execute(interaction) {
 
-    // 🔒 VERIFICAR ROL STAFF
+    // 🔒 Permisos
     if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
-      return interaction.reply({
-        content: "⛔ **No tienes permisos para usar este comando.**",
-        ephemeral: true
-      });
+      return interaction.reply({ content: "⛔ Sin permisos", ephemeral: true });
     }
 
-    let desc = "";
-    let color = 0x3498db;
+    const sub = interaction.options.getSubcommand();
 
-    if (interaction.options.getSubcommand() === "abrir_votacion") {
-      desc =
-        "🗳️ **Se abre oficialmente la votación para decidir la apertura del servidor de ER:LC.**\n\n" +
-        "Los miembros habilitados podrán emitir su voto mediante las reacciones correspondientes.\n" +
-        "La votación estará disponible por tiempo limitado.\n\n" +
-        "Se solicita votar con responsabilidad.";
-      color = 0xf1c40f;
+    const canalSesion = await interaction.guild.channels.fetch(CANAL_SESION);
+    const canalLogs = await interaction.guild.channels.fetch(CANAL_LOGS);
+
+    // =============================
+    // 🗳️ ABRIR VOTACIÓN
+    // =============================
+    if (sub === "abrir_votacion") {
+
+      if (votacionActiva) {
+        return interaction.reply({ content: "❌ Ya hay una votación activa", ephemeral: true });
+      }
+
+      const votos = { si: [], no: [] };
 
       const embed = new EmbedBuilder()
-        .setTitle("📢 Staff de Los Santos RP")
-        .setDescription(desc)
-        .setColor(color)
-        .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
-        .setFooter({
-          text: `Moderador: ${interaction.user.tag}`,
-          iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-        })
+        .setTitle("🗳️ Votación de Apertura")
+        .setDescription("Presiona un botón para votar.\n\n**SI:** 0\n**NO:** 0")
+        .setColor(0xf1c40f)
+        .setFooter({ text: `Moderador: ${interaction.user.tag}` })
         .setTimestamp();
 
-      const mensaje = await interaction.reply({
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("votar_si")
+          .setLabel("Votar SI")
+          .setStyle(ButtonStyle.Success),
+
+        new ButtonBuilder()
+          .setCustomId("votar_no")
+          .setLabel("Votar NO")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      const msg = await canalSesion.send({
         content: `<@&${ROL_PING}>`,
         embeds: [embed],
-        allowedMentions: { roles: [ROL_PING] }, // ✅ PING REAL
-        fetchReply: true
+        components: [row]
       });
 
-      await mensaje.react("✅");
-      await mensaje.react("❌");
+      votacionActiva = { msg, votos };
+
+      // 🎯 BOTONES
+      const collector = msg.createMessageComponentCollector({ time: 10 * 60 * 1000 });
+
+      collector.on("collect", async i => {
+
+        if (i.customId === "votar_si") {
+          votos.no = votos.no.filter(id => id !== i.user.id);
+          if (!votos.si.includes(i.user.id)) votos.si.push(i.user.id);
+        }
+
+        if (i.customId === "votar_no") {
+          votos.si = votos.si.filter(id => id !== i.user.id);
+          if (!votos.no.includes(i.user.id)) votos.no.push(i.user.id);
+        }
+
+        const nuevoEmbed = EmbedBuilder.from(embed)
+          .setDescription(
+            `Presiona un botón para votar.\n\n` +
+            `✅ **SI (${votos.si.length})**\n${votos.si.map(id => `<@${id}>`).join("\n") || "Nadie"}\n\n` +
+            `❌ **NO (${votos.no.length})**\n${votos.no.map(id => `<@${id}>`).join("\n") || "Nadie"}`
+          );
+
+        await msg.edit({ embeds: [nuevoEmbed] });
+        await i.reply({ content: "✅ Voto registrado", ephemeral: true });
+      });
+
+      await interaction.reply({ content: "✅ Votación iniciada", ephemeral: true });
+
       return;
     }
 
-    if (interaction.options.getSubcommand() === "cerrar_votacion") {
-      desc =
-        "🔒 **La votación para la apertura del servidor de ER:LC ha sido cerrada.**\n\n" +
-        "Agradecemos a todos los que participaron.\n" +
-        "El resultado será anunciado a continuación.";
-      color = 0xe74c3c;
+    // =============================
+    // 🔒 CERRAR VOTACIÓN
+    // =============================
+    if (sub === "cerrar_votacion") {
+
+      if (!votacionActiva) {
+        return interaction.reply({ content: "❌ No hay votación activa", ephemeral: true });
+      }
+
+      const { votos } = votacionActiva;
+
+      votacionActiva.msg.edit({ components: [] });
+
+      // 📩 ENVIAR DM
+      votos.si.forEach(async id => {
+        const user = await interaction.client.users.fetch(id).catch(() => null);
+        if (!user) return;
+
+        const embedDM = new EmbedBuilder()
+          .setTitle("🚨 Sesión Abierta")
+          .setDescription(
+            "Debes unirte a rolear inmediatamente.\n\n⏱️ Tiempo límite: 10 minutos\n❌ De no hacerlo, serás sancionado."
+          )
+          .setColor(0xe74c3c);
+
+        user.send({ embeds: [embedDM] }).catch(() => {});
+      });
+
+      // 📜 LOG
+      canalLogs.send({
+        embeds: [{
+          title: "🗳️ Votación cerrada",
+          color: 0xe74c3c,
+          fields: [
+            { name: "👮 Staff", value: `<@${interaction.user.id}>` },
+            { name: "✅ SI", value: `${votos.si.length}` },
+            { name: "❌ NO", value: `${votos.no.length}` }
+          ],
+          timestamp: new Date()
+        }]
+      });
+
+      votacionActiva = null;
+
+      return interaction.reply({ content: "🔒 Votación cerrada", ephemeral: true });
     }
 
-    if (interaction.options.getSubcommand() === "abrir") {
-      desc =
-        "🟢 **Tras el resultado de la votación, el servidor de ER:LC queda oficialmente abierto para rolear.**\n\n" +
-        "Todas las normativas del servidor están activas.\n" +
-        "Se solicita rol serio, respeto y cooperación con el staff.\n\n" +
-        "📌 **Código:** `CODIGO`\n\n" +
-        "¡Buen rol para todos!";
+    // =============================
+    // 🟢 ABRIR SESIÓN
+    // =============================
+    if (sub === "abrir") {
+
+      const embed = new EmbedBuilder()
+        .setTitle("🟢 SERVIDOR ABIERTO")
+        .setDescription("El servidor está abierto. ¡A rolear!")
+        .setColor(0x2ecc71);
+
+      await canalSesion.send({
+        content: `<@&${ROL_PING}>`,
+        embeds: [embed]
+      });
+
+      canalLogs.send({
+        embeds: [{
+          title: "🟢 Sesión abierta",
+          color: 0x2ecc71,
+          fields: [{ name: "👮 Staff", value: `<@${interaction.user.id}>` }],
+          timestamp: new Date()
+        }]
+      });
+
+      return interaction.reply({ content: "✅ Sesión abierta", ephemeral: true });
     }
 
-    if (interaction.options.getSubcommand() === "cerrar") {
-      desc =
-        "🔴 **El servidor de ER:LC queda cerrado por el momento.**\n\n" +
-        "Agradecemos la participación y el buen rol de todos los usuarios.\n" +
-        "Cualquier novedad será comunicada por los canales oficiales.";
-      color = 0x95a5a6;
+    // =============================
+    // 🔴 CERRAR SESIÓN
+    // =============================
+    if (sub === "cerrar") {
+
+      const embed = new EmbedBuilder()
+        .setTitle("🔴 SERVIDOR CERRADO")
+        .setDescription("El servidor ha sido cerrado.")
+        .setColor(0xe74c3c);
+
+      await canalSesion.send({
+        content: `<@&${ROL_PING}>`,
+        embeds: [embed]
+      });
+
+      canalLogs.send({
+        embeds: [{
+          title: "🔴 Sesión cerrada",
+          color: 0xe74c3c,
+          fields: [{ name: "👮 Staff", value: `<@${interaction.user.id}>` }],
+          timestamp: new Date()
+        }]
+      });
+
+      return interaction.reply({ content: "❌ Sesión cerrada", ephemeral: true });
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle("📢 Staff de MIAMI HISPANO RP")
-      .setDescription(desc)
-      .setColor(color)
-      .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
-      .setFooter({
-        text: `Moderador: ${interaction.user.tag}`,
-        iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-      })
-      .setTimestamp();
-
-    await interaction.reply({
-      content: `<@&${ROL_PING}>`,
-      embeds: [embed],
-      allowedMentions: { roles: [ROL_PING] } // ✅ PING REAL
-    });
   }
 };
