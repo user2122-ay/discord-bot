@@ -47,6 +47,28 @@ module.exports = {
     const nacimiento = interaction.options.getString("nacimiento");
     const sangre = interaction.options.getString("sangre");
 
+    // 🔥 VERIFICAR EN BASE DE DATOS SI YA TIENE DNI
+    try {
+      const check = await interaction.pool.query(
+        `SELECT * FROM "DNI_LS" WHERE user_id = $1`,
+        [interaction.user.id]
+      );
+
+      if (check.rows.length > 0) {
+        return interaction.reply({
+          content: "❌ Ya tienes un DNI registrado, no puedes crear otro.",
+          ephemeral: true
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error verificando DNI:", err);
+      return interaction.reply({
+        content: "❌ Error verificando en la base de datos",
+        ephemeral: true
+      });
+    }
+
+    // 🔹 Guardar en JSON (opcional, puedes borrarlo después)
     data[interaction.user.id] = {
       nombre,
       apellido,
@@ -58,7 +80,7 @@ module.exports = {
 
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
-    // 🔥 GUARDAR EN POSTGRES (AQUÍ ESTÁ LO NUEVO)
+    // 🔥 GUARDAR EN POSTGRES
     try {
       await interaction.pool.query(
         `INSERT INTO "DNI_LS"
@@ -76,9 +98,13 @@ module.exports = {
       );
     } catch (err) {
       console.error("❌ Error guardando en DB:", err);
+      return interaction.reply({
+        content: "❌ Error guardando el DNI",
+        ephemeral: true
+      });
     }
 
-    // ✅ AÑADIR ROL AUTOMÁTICAMENTE
+    // ✅ AÑADIR ROL
     if (!interaction.member.roles.cache.has(ROL_DNI)) {
       await interaction.member.roles.add(ROL_DNI).catch(() => {});
     }
