@@ -25,7 +25,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 
     const executor = await getExecutor(newMember.guild, 25);
 
-    // ➕ Rol añadido
     addedRoles.forEach(role => {
         channel.send({
             embeds: [{
@@ -41,7 +40,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
         });
     });
 
-    // ➖ Rol quitado
     removedRoles.forEach(role => {
         channel.send({
             embeds: [{
@@ -57,7 +55,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
         });
     });
 
-    // ✏️ Apodo
     if (oldMember.nickname !== newMember.nickname) {
         const executorNick = await getExecutor(newMember.guild, 24);
 
@@ -137,17 +134,15 @@ client.on("guildMemberAdd", async (member) => {
 });
 
 // ==============================
-// 🏷️ ROLES (🔥 NUEVO)
+// 🏷️ ROLES
 // ==============================
 
-// ✏️ Editar rol
 client.on("roleUpdate", async (oldRole, newRole) => {
     const channel = newRole.guild.channels.cache.get(LOG_CHANNEL_ID);
     if (!channel) return;
 
     const executor = await getExecutor(newRole.guild, 31);
 
-    // Nombre
     if (oldRole.name !== newRole.name) {
         channel.send({
             embeds: [{
@@ -164,12 +159,12 @@ client.on("roleUpdate", async (oldRole, newRole) => {
         });
     }
 
-    // Permisos peligrosos
-    if (!oldRole.permissions.has("Administrator") && newRole.permissions.has("Administrator")) {
+    // 🔥 CAMBIO DE PERMISOS DE ROL
+    if (oldRole.permissions.bitfield !== newRole.permissions.bitfield) {
         channel.send({
             embeds: [{
-                title: "🚨 ALERTA: ADMIN otorgado",
-                color: 0xff0000,
+                title: "⚠️ Permisos de rol modificados",
+                color: 0xffa500,
                 fields: [
                     { name: "🏷️ Rol", value: newRole.name, inline: true },
                     { name: "🛡️ Responsable", value: executor?.tag || "Desconocido", inline: true }
@@ -180,7 +175,6 @@ client.on("roleUpdate", async (oldRole, newRole) => {
     }
 });
 
-// ➕ Crear rol
 client.on("roleCreate", async (role) => {
     const channel = role.guild.channels.cache.get(LOG_CHANNEL_ID);
     if (!channel) return;
@@ -200,7 +194,6 @@ client.on("roleCreate", async (role) => {
     });
 });
 
-// ❌ Eliminar rol
 client.on("roleDelete", async (role) => {
     const channel = role.guild.channels.cache.get(LOG_CHANNEL_ID);
     if (!channel) return;
@@ -218,6 +211,72 @@ client.on("roleDelete", async (role) => {
             timestamp: new Date()
         }]
     });
+});
+
+// ==============================
+// 📁 CANALES (🔥 NUEVO)
+// ==============================
+
+// ➕ Crear canal
+client.on("channelCreate", async (channelCreated) => {
+    const channel = channelCreated.guild.channels.cache.get(LOG_CHANNEL_ID);
+    if (!channel) return;
+
+    const executor = await getExecutor(channelCreated.guild, 10);
+
+    channel.send({
+        embeds: [{
+            title: "📁 Canal creado",
+            color: 0x2ecc71,
+            fields: [
+                { name: "📌 Nombre", value: channelCreated.name, inline: true },
+                { name: "🛡️ Responsable", value: executor?.tag || "Desconocido", inline: true }
+            ],
+            timestamp: new Date()
+        }]
+    });
+});
+
+// ❌ Eliminar canal
+client.on("channelDelete", async (channelDeleted) => {
+    const channel = channelDeleted.guild.channels.cache.get(LOG_CHANNEL_ID);
+    if (!channel) return;
+
+    const executor = await getExecutor(channelDeleted.guild, 12);
+
+    channel.send({
+        embeds: [{
+            title: "❌ Canal eliminado",
+            color: 0xe74c3c,
+            fields: [
+                { name: "📌 Nombre", value: channelDeleted.name, inline: true },
+                { name: "🛡️ Responsable", value: executor?.tag || "Desconocido", inline: true }
+            ],
+            timestamp: new Date()
+        }]
+    });
+});
+
+// ✏️ Editar canal (permisos)
+client.on("channelUpdate", async (oldChannel, newChannel) => {
+    const channel = newChannel.guild.channels.cache.get(LOG_CHANNEL_ID);
+    if (!channel) return;
+
+    const executor = await getExecutor(newChannel.guild, 11);
+
+    if (oldChannel.permissionOverwrites.cache.size !== newChannel.permissionOverwrites.cache.size) {
+        channel.send({
+            embeds: [{
+                title: "⚠️ Permisos de canal modificados",
+                color: 0xffa500,
+                fields: [
+                    { name: "📌 Canal", value: `<#${newChannel.id}>`, inline: true },
+                    { name: "🛡️ Responsable", value: executor?.tag || "Desconocido", inline: true }
+                ],
+                timestamp: new Date()
+            }]
+        });
+    }
 });
 
 };
