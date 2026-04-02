@@ -48,12 +48,12 @@ function ensureUser(data, userId) {
 /* ================= BALANCE ================= */
 
 module.exports.balance = {
+    permisos: "🌐 Todos",
     data: new SlashCommandBuilder()
         .setName("balance")
         .setDescription("Ver tu dinero"),
 
     async execute(interaction) {
-
         const data = loadData();
         const userId = interaction.user.id;
 
@@ -79,6 +79,7 @@ module.exports.balance = {
 /* ================= AÑADIR SUELDO ================= */
 
 module.exports["añadir-sueldo"] = {
+    permisos: "👑 Fundación",
     data: new SlashCommandBuilder()
         .setName("añadir-sueldo")
         .setDescription("Asignar sueldo a un rol")
@@ -94,7 +95,6 @@ module.exports["añadir-sueldo"] = {
 
     async execute(interaction) {
 
-        // 🔒 VERIFICAR FUNDACIÓN
         const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
         if (!tieneRol) {
             return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
@@ -125,12 +125,12 @@ module.exports["añadir-sueldo"] = {
 /* ================= COBRAR ================= */
 
 module.exports.cobrar = {
+    permisos: "🌐 Todos",
     data: new SlashCommandBuilder()
         .setName("cobrar")
         .setDescription("Cobrar tu sueldo"),
 
     async execute(interaction) {
-
         const data = loadData();
         const userId = interaction.user.id;
 
@@ -181,12 +181,12 @@ module.exports.cobrar = {
 /* ================= TOP DINERO ================= */
 
 module.exports["top-dinero"] = {
+    permisos: "🌐 Todos",
     data: new SlashCommandBuilder()
         .setName("top-dinero")
         .setDescription("Ranking de los más ricos"),
 
     async execute(interaction) {
-
         const data = loadData();
 
         const usersArray = Object.entries(data.users)
@@ -228,6 +228,7 @@ module.exports["top-dinero"] = {
 /* ================= TRANSFERIR ================= */
 
 module.exports.transferir = {
+    permisos: "🌐 Todos",
     data: new SlashCommandBuilder()
         .setName("transferir")
         .setDescription("Transferir dinero a otro usuario")
@@ -235,7 +236,6 @@ module.exports.transferir = {
         .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
 
     async execute(interaction) {
-
         const data = loadData();
         const sender = interaction.user;
         const target = interaction.options.getUser("usuario");
@@ -262,13 +262,13 @@ module.exports.transferir = {
 /* ================= DEPOSITAR ================= */
 
 module.exports.depositar = {
+    permisos: "🌐 Todos",
     data: new SlashCommandBuilder()
         .setName("depositar")
         .setDescription("Depositar dinero al banco")
         .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
 
     async execute(interaction) {
-
         const data = loadData();
         const userId = interaction.user.id;
         const cantidad = interaction.options.getInteger("cantidad");
@@ -293,13 +293,13 @@ module.exports.depositar = {
 /* ================= RETIRAR ================= */
 
 module.exports.retirar = {
+    permisos: "🌐 Todos",
     data: new SlashCommandBuilder()
         .setName("retirar")
         .setDescription("Retirar dinero del banco")
         .addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
 
     async execute(interaction) {
-
         const data = loadData();
         const userId = interaction.user.id;
         const cantidad = interaction.options.getInteger("cantidad");
@@ -324,6 +324,7 @@ module.exports.retirar = {
 /* ================= AÑADIR DINERO ================= */
 
 module.exports["añadir-dinero"] = {
+    permisos: "👑 Fundación",
     data: new SlashCommandBuilder()
         .setName("añadir-dinero")
         .setDescription("Añadir dinero a un usuario")
@@ -333,7 +334,6 @@ module.exports["añadir-dinero"] = {
 
     async execute(interaction) {
 
-        // 🔒 VERIFICAR FUNDACIÓN
         const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
         if (!tieneRol) {
             return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
@@ -356,6 +356,7 @@ module.exports["añadir-dinero"] = {
 /* ================= QUITAR DINERO ================= */
 
 module.exports["quitar-dinero"] = {
+    permisos: "👑 Fundación",
     data: new SlashCommandBuilder()
         .setName("quitar-dinero")
         .setDescription("Quitar dinero a un usuario")
@@ -365,7 +366,6 @@ module.exports["quitar-dinero"] = {
 
     async execute(interaction) {
 
-        // 🔒 VERIFICAR FUNDACIÓN
         const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
         if (!tieneRol) {
             return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
