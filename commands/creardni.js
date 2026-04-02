@@ -6,6 +6,8 @@ const path = require("path");
 const ROL_DNI = "1463192290360295645";
 
 module.exports = {
+  permisos: "🌐 Todos", // 👈 AÑADIDO
+
   data: new SlashCommandBuilder()
     .setName("creardni")
     .setDescription("Crear DNI IC")
