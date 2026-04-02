@@ -9,6 +9,12 @@ const path = require("path");
 
 const dataPath = path.join(__dirname, "../economia.json");
 
+// 🔒 ROLES FUNDACIÓN
+const ROLES_FUNDACION = [
+    "1463192290456764547",
+    "1463192290456764545"
+];
+
 function loadData() {
     if (!fs.existsSync(dataPath)) {
         fs.writeFileSync(dataPath, JSON.stringify({ users: {}, roles: {} }, null, 4));
@@ -87,6 +93,12 @@ module.exports["añadir-sueldo"] = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
+
+        // 🔒 VERIFICAR FUNDACIÓN
+        const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+        if (!tieneRol) {
+            return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+        }
 
         const data = loadData();
         const rol = interaction.options.getRole("rol");
@@ -321,6 +333,12 @@ module.exports["añadir-dinero"] = {
 
     async execute(interaction) {
 
+        // 🔒 VERIFICAR FUNDACIÓN
+        const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+        if (!tieneRol) {
+            return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+        }
+
         const data = loadData();
         const target = interaction.options.getUser("usuario");
         const cantidad = interaction.options.getInteger("cantidad");
@@ -346,6 +364,12 @@ module.exports["quitar-dinero"] = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
+
+        // 🔒 VERIFICAR FUNDACIÓN
+        const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+        if (!tieneRol) {
+            return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+        }
 
         const data = loadData();
         const target = interaction.options.getUser("usuario");
