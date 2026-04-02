@@ -1,29 +1,36 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
+// 🔒 ROLES FUERZA PÚBLICA
+const ROLES_FUERZA_PUBLICA = [
+  "1463192290381271047",
+  "1463192290381271043",
+  "1463192290381271046", 
+  "1463192290389528671", 
+  "1463192290389528668", 
+  "1463192290389528670"
+];
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("entorno")
-    .setDescription("Reportar un entorno de rol")
-    .addStringOption(option =>
-      option
-        .setName("lugar")
-        .setDescription("Lugar del entorno")
-        .setRequired(true)
-    )
-    .addStringOption(option =>
-      option
-        .setName("accion")
-        .setDescription("Acción que ocurre en el entorno")
-        .setRequired(true)
-    )
-    .addAttachmentOption(option =>
-      option
-        .setName("imagen")
-        .setDescription("Imagen del entorno (adjunta desde tu galería)")
-        .setRequired(true)
-    ),
+    .setDescription("Reportar un entorno de rol"),
+
+  permisos: "Fuerza Pública",
 
   async execute(interaction) {
+
+    // 🔒 VERIFICAR ROLES
+    const tieneRol = interaction.member.roles.cache.some(r =>
+      ROLES_FUERZA_PUBLICA.includes(r.id)
+    );
+
+    if (!tieneRol) {
+      return interaction.reply({
+        content: "❌ No tienes permiso para usar este comando.",
+        ephemeral: true
+      });
+    }
+
     const lugar = interaction.options.getString("lugar");
     const accion = interaction.options.getString("accion");
     const imagen = interaction.options.getAttachment("imagen");
