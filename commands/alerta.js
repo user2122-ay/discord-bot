@@ -15,24 +15,12 @@ const CANAL_LOGS = "1463192293312958628";
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("alerta")
-    .setDescription("Emitir una alerta de seguridad")
-    .addStringOption(option =>
-      option
-        .setName("tipo")
-        .setDescription("Tipo de alerta")
-        .setRequired(true)
-        .addChoices(
-          { name: "🟢 Alerta Verde", value: "verde" },
-          { name: "🟡 Alerta Amarilla", value: "amarilla" },
-          { name: "🔴 Alerta Roja", value: "roja" }
-        )
-    )
-    .addStringOption(option =>
-      option
-        .setName("razon")
-        .setDescription("Razón de la alerta")
-        .setRequired(true)
-    ),
+    .setDescription("Emitir una alerta de seguridad"),
+
+  // 🔥 ESTO ES LO IMPORTANTE (para /comandos)
+  ROL_AUTORIZADO,
+
+  permisos: `<@&${ROL_AUTORIZADO}>`, // opcional pero recomendado
 
   async execute(interaction) {
 
@@ -79,13 +67,9 @@ module.exports = {
         `📌 **Razón:** ${razon}`;
     }
 
-    // 📢 Canal de alertas
     const canalAlertas = interaction.guild.channels.cache.get(CANAL_ALERTAS);
-
-    // 📜 Canal logs
     const canalLogs = interaction.guild.channels.cache.get(CANAL_LOGS);
 
-    // 🎨 Embed principal
     const embed = new EmbedBuilder()
       .setTitle(titulo)
       .setDescription(descripcion)
@@ -102,7 +86,6 @@ module.exports = {
       })
       .setTimestamp();
 
-    // 🚨 ENVIAR ALERTA
     if (canalAlertas) {
       await canalAlertas.send({
         content: `<@&${ROL_PING}>`,
@@ -111,7 +94,6 @@ module.exports = {
       });
     }
 
-    // 📜 LOG
     if (canalLogs) {
       const logEmbed = new EmbedBuilder()
         .setTitle("📜 Alerta emitida")
@@ -130,7 +112,6 @@ module.exports = {
       canalLogs.send({ embeds: [logEmbed] });
     }
 
-    // ✅ RESPUESTA SOLO PARA EL STAFF
     await interaction.reply({
       content: "✅ Alerta enviada correctamente.",
       ephemeral: true
