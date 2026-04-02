@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 const ROL_AUTORIZADO = "1463192290423083324";
+const ROL_PING = "1463192290360295646";
+
 const CANAL_SESION = "1463192291056423024";
 const CANAL_LOGS = "1463192293312958628";
 
@@ -14,20 +16,18 @@ module.exports = {
 
   async execute(interaction) {
 
-    // 🔒 Permisos
     if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
       return interaction.reply({ content: "⛔ No tienes permisos.", ephemeral: true });
     }
 
-    // 🎛️ PANEL (solo staff)
     const panel = new EmbedBuilder()
       .setTitle("📊 Panel de Sesión")
-      .setDescription("Selecciona una acción:")
+      .setDescription("Selecciona una acción administrativa:")
       .setColor(0x3498db);
 
     const botones = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("abrir").setLabel("🟢 Abrir Sesión").setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId("cerrar").setLabel("🔴 Cerrar Sesión").setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId("abrir").setLabel("🟢 Abrir").setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId("cerrar").setLabel("🔴 Cerrar").setStyle(ButtonStyle.Danger),
       new ButtonBuilder().setCustomId("votar").setLabel("🗳️ Votación").setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId("mantenimiento").setLabel("🛠️ Mantenimiento").setStyle(ButtonStyle.Secondary)
     );
@@ -49,111 +49,109 @@ module.exports = {
       const canal = interaction.guild.channels.cache.get(CANAL_SESION);
       const logs = interaction.guild.channels.cache.get(CANAL_LOGS);
 
-      // ========================
-      // 🟢 ABRIR SESIÓN
-      // ========================
+      // 🟢 ABRIR
       if (i.customId === "abrir") {
 
         const embed = new EmbedBuilder()
           .setTitle("🟢 SESIÓN ABIERTA")
-          .setDescription("El servidor está abierto para rolear.\n\n¡Entren ya!")
+          .setDescription(
+            "🌴 **¡El servidor ha sido abierto oficialmente!**\n\n" +
+            "🚓 Sistemas activos\n📜 Respeta normativas\n\n" +
+            "🎭 ¡Buen rol!"
+          )
           .setColor(0x2ecc71)
+          .setFooter({ text: `Por ${i.user.tag}`, iconURL: i.user.displayAvatarURL() })
           .setTimestamp();
 
-        canal.send({ embeds: [embed] });
+        canal.send({
+          content: `<@&${ROL_PING}>`,
+          embeds: [embed],
+          allowedMentions: { roles: [ROL_PING] }
+        });
 
         logs.send({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("📊 LOG SESIÓN")
-              .setDescription(`🟢 Sesión abierta por <@${i.user.id}>`)
-              .setColor(0x2ecc71)
-          ]
+          embeds: [new EmbedBuilder()
+            .setTitle("📊 LOG SESIÓN")
+            .setDescription(`🟢 Abierta por <@${i.user.id}>`)
+            .setColor(0x2ecc71)]
         });
 
         return i.update({ content: "✅ Sesión abierta", components: [] });
       }
 
-      // ========================
-      // 🔴 CERRAR SESIÓN
-      // ========================
+      // 🔴 CERRAR
       if (i.customId === "cerrar") {
 
         const embed = new EmbedBuilder()
           .setTitle("🔴 SESIÓN CERRADA")
-          .setDescription("El servidor ha sido cerrado.")
+          .setDescription("🚫 Servidor cerrado temporalmente.")
           .setColor(0xe74c3c);
 
-        canal.send({ embeds: [embed] });
+        canal.send({
+          content: `<@&${ROL_PING}>`,
+          embeds: [embed],
+          allowedMentions: { roles: [ROL_PING] }
+        });
 
         logs.send({
-          embeds: [
-            new EmbedBuilder()
-              .setDescription(`🔴 Sesión cerrada por <@${i.user.id}>`)
-              .setColor(0xe74c3c)
-          ]
+          embeds: [new EmbedBuilder()
+            .setDescription(`🔴 Cerrada por <@${i.user.id}>`)
+            .setColor(0xe74c3c)]
         });
 
         return i.update({ content: "❌ Sesión cerrada", components: [] });
       }
 
-      // ========================
       // 🛠️ MANTENIMIENTO
-      // ========================
       if (i.customId === "mantenimiento") {
 
         const embed = new EmbedBuilder()
           .setTitle("🛠️ MANTENIMIENTO")
-          .setDescription("El servidor está en mantenimiento.")
+          .setDescription("⚙️ Servidor en mantenimiento.")
           .setColor(0x95a5a6);
 
-        canal.send({ embeds: [embed] });
-
-        logs.send({
-          embeds: [
-            new EmbedBuilder()
-              .setDescription(`🛠️ Mantenimiento activado por <@${i.user.id}>`)
-              .setColor(0x95a5a6)
-          ]
+        canal.send({
+          content: `<@&${ROL_PING}>`,
+          embeds: [embed],
+          allowedMentions: { roles: [ROL_PING] }
         });
 
-        return i.update({ content: "🛠️ Mantenimiento activado", components: [] });
+        logs.send({
+          embeds: [new EmbedBuilder()
+            .setDescription(`🛠️ Activado por <@${i.user.id}>`)
+            .setColor(0x95a5a6)]
+        });
+
+        return i.update({ content: "🛠️ Activado", components: [] });
       }
 
-      // ========================
       // 🗳️ VOTACIÓN
-      // ========================
       if (i.customId === "votar") {
 
         if (votacionActiva) {
-          return i.reply({ content: "❌ Ya hay una votación activa.", ephemeral: true });
+          return i.reply({ content: "❌ Ya hay una votación.", ephemeral: true });
         }
 
         votacionActiva = true;
         votos.clear();
 
         const embed = new EmbedBuilder()
-          .setTitle("🗳️ VOTACIÓN ABIERTA")
-          .setDescription("Presiona el botón para votar.\n\n**Votos: 0/8**")
+          .setTitle("🗳️ VOTACIÓN")
+          .setDescription("📊 Votos: 0/8\n⏳ 20 minutos")
           .setColor(0xf1c40f);
 
-        const botonVotar = new ActionRowBuilder().addComponents(
+        const boton = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId("votar_si")
             .setLabel("✅ Votar")
             .setStyle(ButtonStyle.Success)
         );
 
-        const mensaje = await canal.send({
-          embeds: [embed],
-          components: [botonVotar]
-        });
+        const msg = await canal.send({ embeds: [embed], components: [boton] });
 
-        const filtro = i => i.customId === "votar_si";
+        const collectorV = msg.createMessageComponentCollector({ time: 20 * 60 * 1000 });
 
-        const collectorVotos = mensaje.createMessageComponentCollector({ time: 20 * 60 * 1000 });
-
-        collectorVotos.on("collect", async btn => {
+        collectorV.on("collect", async btn => {
 
           if (votos.has(btn.user.id)) {
             return btn.reply({ content: "❌ Ya votaste.", ephemeral: true });
@@ -161,67 +159,58 @@ module.exports = {
 
           votos.add(btn.user.id);
 
-          const nuevoEmbed = EmbedBuilder.from(embed)
-            .setDescription(`Presiona el botón para votar.\n\n**Votos: ${votos.size}/8**`);
-
-          await mensaje.edit({ embeds: [nuevoEmbed] });
+          await msg.edit({
+            embeds: [EmbedBuilder.from(embed)
+              .setDescription(`📊 Votos: ${votos.size}/8`)]
+          });
 
           await btn.reply({ content: "✅ Voto registrado", ephemeral: true });
 
-          // 🔥 SI LLEGA A 8 VOTOS
-          if (votos.size >= 8) {
-            collectorVotos.stop("completo");
-          }
+          if (votos.size >= 8) collectorV.stop();
         });
 
-        collectorVotos.on("end", async () => {
+        collectorV.on("end", async () => {
 
           votacionActiva = false;
 
           if (votos.size >= 8) {
 
-            const abrirEmbed = new EmbedBuilder()
-              .setTitle("🟢 SESIÓN ABIERTA AUTOMÁTICAMENTE")
-              .setDescription("Se alcanzaron los votos necesarios.")
-              .setColor(0x2ecc71);
+            canal.send({
+              content: `<@&${ROL_PING}>`,
+              embeds: [new EmbedBuilder()
+                .setTitle("🟢 APERTURA AUTOMÁTICA")
+                .setDescription("🎉 Votación exitosa.")
+                .setColor(0x2ecc71)],
+              allowedMentions: { roles: [ROL_PING] }
+            });
 
-            canal.send({ embeds: [abrirEmbed] });
-
-            // 📩 DM a votantes
             votos.forEach(async id => {
               const user = await interaction.client.users.fetch(id);
               user.send({
-                embeds: [
-                  new EmbedBuilder()
-                    .setTitle("🚨 ¡A ROLEAR!")
-                    .setDescription("Únete en menos de 10 minutos o podrías ser sancionado.")
-                    .setColor(0xe74c3c)
-                ]
+                embeds: [new EmbedBuilder()
+                  .setTitle("🚨 A ROLEAR")
+                  .setDescription("Tienes 10 minutos para entrar.")]
               }).catch(() => {});
             });
 
           } else {
 
             canal.send({
-              embeds: [
-                new EmbedBuilder()
-                  .setTitle("❌ VOTACIÓN FALLIDA")
-                  .setDescription("No se alcanzaron los votos.")
-                  .setColor(0xe74c3c)
-              ]
+              embeds: [new EmbedBuilder()
+                .setTitle("❌ VOTACIÓN FALLIDA")
+                .setDescription("No se alcanzaron votos.")
+                .setColor(0xe74c3c)]
             });
 
           }
 
-          mensaje.edit({ components: [] });
+          msg.edit({ components: [] });
 
           logs.send({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle("📊 LOG VOTACIÓN")
-                .setDescription(`Votos: ${votos.size}/8\nEjecutado por <@${interaction.user.id}>`)
-                .setColor(0xf1c40f)
-            ]
+            embeds: [new EmbedBuilder()
+              .setTitle("📊 LOG VOTACIÓN")
+              .setDescription(`Votos: ${votos.size}/8\n<@${interaction.user.id}>`)
+              .setColor(0xf1c40f)]
           });
 
         });
