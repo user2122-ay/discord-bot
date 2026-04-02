@@ -9,6 +9,16 @@ const CANAL_LOGS = "1463192293312958628";
 let votacionActiva = false;
 let votos = new Set();
 
+// 🧹 FUNCIÓN PARA LIMPIAR CANAL
+async function limpiarCanal(canal) {
+  if (!canal || !canal.isTextBased()) return;
+
+  let mensajes;
+  do {
+    mensajes = await canal.bulkDelete(100, true).catch(() => null);
+  } while (mensajes && mensajes.size === 100);
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("sesion")
@@ -52,24 +62,13 @@ module.exports = {
       // 🟢 ABRIR
       if (i.customId === "abrir") {
 
+        await limpiarCanal(canal); // 🧹 LIMPIAR
+
         const embed = new EmbedBuilder()
           .setTitle("📢 SESIÓN ABIERTA — SERVIDOR ROLEPLAY")
-          .setDescription(
-            "Se declara oficialmente **ABIERTA** la sesión en el servidor. A partir de este momento, se da inicio a las actividades dentro de la comunidad.\n\n" +
-            "🗳️ **Participación requerida:** Activa\n" +
-            "⏳ **Estado:** En curso\n\n" +
-            "Es fundamental la participación de todos los miembros para garantizar un entorno organizado, activo y realista.\n\n" +
-            "⚠️ **Indicaciones:**\n" +
-            "• Mantener el orden y el respeto.\n" +
-            "• Seguir instrucciones del staff.\n" +
-            "• Priorizar el rol serio.\n\n" +
-            "🔥 **La sesión ha comenzado… el roleplay está en tus manos.** 🔥"
-          )
+          .setDescription("Sesión iniciada correctamente.")
           .setColor(0x2ecc71)
-          .setFooter({
-            text: `Apertura realizada por ${i.user.tag}`,
-            iconURL: i.user.displayAvatarURL()
-          })
+          .setFooter({ text: `Apertura realizada por ${i.user.tag}` })
           .setTimestamp();
 
         canal.send({
@@ -93,21 +92,13 @@ module.exports = {
       // 🔴 CERRAR
       if (i.customId === "cerrar") {
 
+        await limpiarCanal(canal); // 🧹 LIMPIAR
+
         const embed = new EmbedBuilder()
           .setTitle("🔴 SESIÓN CERRADA — SERVIDOR ROLEPLAY")
-          .setDescription(
-            "Se declara oficialmente **CERRADA** la sesión en el servidor.\n\n" +
-            "A partir de este momento, todas las actividades de roleplay quedan suspendidas hasta nuevo aviso.\n\n" +
-            "📊 **Estado:** Finalizado\n\n" +
-            "Agradecemos a todos los usuarios por su participación y compromiso durante la sesión.\n\n" +
-            "📢 Mantente atento a futuros anuncios para la próxima apertura.\n\n" +
-            "🔥 **Gracias por formar parte de la comunidad.** 🔥"
-          )
+          .setDescription("Sesión cerrada correctamente.")
           .setColor(0xe74c3c)
-          .setFooter({
-            text: `Cierre realizado por ${i.user.tag}`,
-            iconURL: i.user.displayAvatarURL()
-          })
+          .setFooter({ text: `Cierre realizado por ${i.user.tag}` })
           .setTimestamp();
 
         canal.send({
@@ -130,20 +121,11 @@ module.exports = {
       // 🛠️ MANTENIMIENTO
       if (i.customId === "mantenimiento") {
 
+        await limpiarCanal(canal); // 🧹 LIMPIAR
+
         const embed = new EmbedBuilder()
-          .setTitle("🛠️ MANTENIMIENTO DEL SERVIDOR — ROLEPLAY")
-          .setDescription(
-            "Se informa a todos los miembros que el servidor se encuentra actualmente en **MANTENIMIENTO**.\n\n" +
-            "⚙️ Durante este periodo se estarán realizando ajustes, mejoras y optimizaciones.\n\n" +
-            "⏳ **Estado:** En progreso\n" +
-            "🔧 **Acceso:** Limitado temporalmente\n\n" +
-            "⚠️ **Recomendaciones:**\n" +
-            "• Evitar realizar acciones dentro del servidor.\n" +
-            "• Esperar indicaciones del staff.\n" +
-            "• Mantenerse atentos a anuncios oficiales.\n\n" +
-            "📢 Una vez finalizado el mantenimiento, se notificará la reapertura.\n\n" +
-            "🔥 **Estamos trabajando para darte una mejor experiencia.** 🔥"
-          )
+          .setTitle("🛠️ MANTENIMIENTO DEL SERVIDOR")
+          .setDescription("Servidor en mantenimiento.")
           .setColor(0x95a5a6);
 
         canal.send({ embeds: [embed] });
@@ -158,28 +140,15 @@ module.exports = {
           return i.reply({ content: "❌ Ya hay una votación.", ephemeral: true });
         }
 
+        await limpiarCanal(canal); // 🧹 LIMPIAR
+
         votacionActiva = true;
         votos.clear();
 
         const embed = new EmbedBuilder()
-          .setTitle("📢 SESIÓN DE VOTACIÓN ABIERTA — SERVIDOR ROLEPLAY")
-          .setDescription(
-            "Se declara oficialmente **ABIERTA** la sesión de votación en el servidor.\n\n" +
-            "🗳️ **Votos requeridos:** 0/8\n\n" +
-            "👥 **Votantes:**\nAún no hay votos registrados.\n\n" +
-            "⏳ **Tiempo restante:** 20 minutos\n\n" +
-            "Cada voto cuenta y puede marcar la diferencia.\n\n" +
-            "⚠️ **Recuerda:**\n" +
-            "• Solo se permite un voto por persona.\n" +
-            "• Mantén el respeto.\n" +
-            "• La decisión es democrática.\n\n" +
-            "🔥 **¡Tu voz tiene poder, hazla valer!** 🔥"
-          )
-          .setColor(0xf1c40f)
-          .setFooter({
-            text: `Votación iniciada por ${i.user.tag}`,
-            iconURL: i.user.displayAvatarURL()
-          });
+          .setTitle("📢 SESIÓN DE VOTACIÓN ABIERTA")
+          .setDescription("🗳️ **Votos requeridos:** 0/8")
+          .setColor(0xf1c40f);
 
         const boton = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
@@ -205,16 +174,10 @@ module.exports = {
 
           votos.add(btn.user.id);
 
-          const lista = [...votos].map(id => `<@${id}>`).join("\n");
-
           await msg.edit({
             embeds: [
               EmbedBuilder.from(embed).setDescription(
-                "📢 SESIÓN DE VOTACIÓN ABIERTA — SERVIDOR ROLEPLAY\n\n" +
-                `🗳️ **Votos requeridos:** ${votos.size}/8\n\n` +
-                `👥 **Votantes:**\n${lista}\n\n` +
-                "⏳ **Tiempo restante:** En curso\n\n" +
-                "🔥 **Tu voto decide el futuro del servidor.** 🔥"
+                `🗳️ **Votos requeridos:** ${votos.size}/8`
               )
             ]
           });
@@ -229,41 +192,23 @@ module.exports = {
           votacionActiva = false;
 
           if (votos.size >= 8) {
-
             canal.send({
               content: `<@&${ROL_PING}>`,
               embeds: [
                 new EmbedBuilder()
                   .setTitle("🟢 SESIÓN ABIERTA AUTOMÁTICAMENTE")
-                  .setDescription(
-                    "🎉 Se han alcanzado los votos necesarios.\n\n" +
-                    "El servidor queda oficialmente **ABIERTO**.\n\n" +
-                    "⏳ Tienen 10 minutos para ingresar y comenzar a rolear.\n\n" +
-                    "⚠️ El incumplimiento podrá ser sancionado.\n\n" +
-                    "🔥 ¡El roleplay comienza ahora! 🔥"
-                  )
                   .setColor(0x2ecc71)
               ],
               allowedMentions: { roles: [ROL_PING] }
             });
-
           } else {
-
             canal.send({
               embeds: [
                 new EmbedBuilder()
-                  .setTitle("🔒 SESIÓN DE VOTACIÓN CERRADA — SERVIDOR ROLEPLAY")
-                  .setDescription(
-                    "Se declara oficialmente **CERRADA** la votación.\n\n" +
-                    "No se alcanzaron los votos necesarios.\n\n" +
-                    "📊 Estado: Finalizado\n\n" +
-                    "📢 Se podrá iniciar una nueva votación más adelante.\n\n" +
-                    "🔥 Gracias por participar. 🔥"
-                  )
+                  .setTitle("🔒 VOTACIÓN CERRADA")
                   .setColor(0xe74c3c)
               ]
             });
-
           }
 
           msg.edit({ components: [] });
