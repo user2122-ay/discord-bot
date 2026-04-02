@@ -5,6 +5,8 @@ module.exports = {
     .setName("ping")
     .setDescription("Comando de prueba"),
 
+  permisos: "Todos",
+
   async execute(interaction) {
     await interaction.reply("🏓 Pong! El bot está vivo.");
   }
