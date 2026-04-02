@@ -20,29 +20,52 @@ module.exports = {
     let data = {};
     try {
       data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    } catch { data = {}; }
+    } catch {
+      data = {};
+    }
 
     if (!data[usuario.id] || data[usuario.id].length === 0) {
-      return interaction.reply({ content: "❌ Este usuario no tiene arrestos registrados.", ephemeral: true });
+      return interaction.reply({
+        content: "❌ Este usuario no tiene arrestos registrados.",
+        ephemeral: true
+      });
     }
+
+    const arrestos = data[usuario.id];
 
     const embed = new EmbedBuilder()
       .setTitle(`📋 Arrestos de ${usuario.username}`)
       .setColor(0xf1c40f)
       .setThumbnail(usuario.displayAvatarURL({ dynamic: true }))
+      .setDescription(`👮 Total de arrestos: **${arrestos.length}**`)
       .setFooter({
         text: "Gobierno de Los Santos RP",
         iconURL: interaction.guild.iconURL({ dynamic: true })
       })
       .setTimestamp();
 
-    // Agregar cada arresto al embed
-    data[usuario.id].forEach((a, i) => {
+    // ⚠️ Discord solo permite 25 fields
+    const limite = 25;
+    const mostrar = arrestos.slice(0, limite);
+
+    mostrar.forEach((a, i) => {
       embed.addFields({
-        name: `Arresto #${i + 1} - ${new Date(a.fecha).toLocaleString()}`,
-        value: `**Moderador:** <@${a.moderador}>\n**Motivo:** ${a.motivo}\n**Lugar:** ${a.lugar}\n[Imagen](${a.imagen})`
+        name: `🚔 Arresto #${i + 1}`,
+        value:
+          `🕒 **Fecha:** ${new Date(a.fecha).toLocaleString()}\n` +
+          `👮 **Oficial:** <@${a.moderador}>\n` +
+          `📄 **Motivo:** ${a.motivo}\n` +
+          `📍 **Lugar:** ${a.lugar}\n` +
+          `📸 [Ver imagen](${a.imagen})`
       });
     });
+
+    if (arrestos.length > limite) {
+      embed.addFields({
+        name: "⚠️ Aviso",
+        value: `Se muestran solo los primeros ${limite} arrestos.`
+      });
+    }
 
     await interaction.reply({ embeds: [embed] });
   }
