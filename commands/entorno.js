@@ -57,7 +57,7 @@ module.exports = {
         .setRequired(true)
     ),
 
-  permisos: "Todos",
+  permisos: "🌍 Todos",
 
   async execute(interaction) {
 
