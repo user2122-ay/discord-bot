@@ -10,6 +10,8 @@ module.exports = {
         .setRequired(true)
     ),
 
+  permisos: "🌍 Todos",
+
   async execute(interaction) {
     const user = interaction.options.getUser("usuario");
 
