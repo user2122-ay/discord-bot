@@ -89,7 +89,8 @@ module.exports = {
         ephemeral: true
       });
     }
-
+permisos: "👮 Fuerza Pública ",
+  
     const embed = new EmbedBuilder()
       .setTitle("🚨 Multa Registrada")
       .setColor(0xe67e22)
