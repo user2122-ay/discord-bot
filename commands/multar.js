@@ -37,6 +37,8 @@ module.exports = {
       o.setName("imagen").setDescription("Imagen de evidencia").setRequired(true)
     ),
 
+  permisos: "👮 Fuerza Pública",
+
   async execute(interaction) {
 
     // 🔒 Verificar roles
@@ -89,8 +91,7 @@ module.exports = {
         ephemeral: true
       });
     }
-permisos: "👮 Fuerza Pública ",
-  
+
     const embed = new EmbedBuilder()
       .setTitle("🚨 Multa Registrada")
       .setColor(0xe67e22)
