@@ -11,24 +11,12 @@ module.exports = {
       o.setName("mensaje")
         .setDescription("Escribe tu sugerencia")
         .setRequired(true)
+        .setMinLength(5)
+        .setMaxLength(1000)
     ),
 
   async execute(interaction) {
     const sugerencia = interaction.options.getString("mensaje");
-
-    const embed = new EmbedBuilder()
-      .setTitle("💡 Nueva sugerencia")
-      .setDescription(sugerencia)
-      .setColor(0x2ecc71)
-      .addFields(
-        { name: "👤 Usuario", value: `<@${interaction.user.id}>`, inline: true },
-        { name: "🆔 ID", value: interaction.user.id, inline: true }
-      )
-      .setFooter({
-        text: "Sistema de sugerencias | Los Santos RP",
-        iconURL: interaction.guild.iconURL({ dynamic: true })
-      })
-      .setTimestamp();
 
     const canal = interaction.guild.channels.cache.get(CANAL_SUGERENCIAS);
     if (!canal) {
@@ -38,19 +26,40 @@ module.exports = {
       });
     }
 
-    // 📤 Enviar sugerencia (SIN ping)
-    const mensaje = await canal.send({
-      embeds: [embed]
-    });
+    const embed = new EmbedBuilder()
+      .setTitle("💡 Nueva sugerencia")
+      .setDescription(`📌 ${sugerencia}`)
+      .setColor(0x2ecc71)
+      .addFields(
+        { name: "👤 Usuario", value: `<@${interaction.user.id}>`, inline: true },
+        { name: "🆔 ID", value: interaction.user.id, inline: true }
+      )
+      .setFooter({
+        text: "Sistema de sugerencias • Los Santos RP",
+        iconURL: interaction.guild.iconURL({ dynamic: true })
+      })
+      .setTimestamp();
 
-    // 👍👎 Reacciones automáticas
-    await mensaje.react("👍");
-    await mensaje.react("👎");
+    try {
+      // 📤 Enviar sugerencia
+      const mensaje = await canal.send({ embeds: [embed] });
 
-    // ✅ Confirmación al usuario
-    await interaction.reply({
-      content: "✅ Tu sugerencia fue enviada correctamente.",
-      ephemeral: true
-    });
+      // 👍👎 Reacciones
+      await mensaje.react("👍").catch(() => {});
+      await mensaje.react("👎").catch(() => {});
+
+      // ✅ Confirmación
+      await interaction.reply({
+        content: "✅ Tu sugerencia fue enviada correctamente.",
+        ephemeral: true
+      });
+
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: "❌ Ocurrió un error al enviar la sugerencia.",
+        ephemeral: true
+      });
+    }
   }
 };
