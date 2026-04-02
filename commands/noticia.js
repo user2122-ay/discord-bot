@@ -45,7 +45,7 @@ module.exports = {
         .setRequired(false)
     ),
 
-  permisos: "Noticieros",
+  permisos: "📰 Noticieros",
 
   async execute(interaction) {
 
