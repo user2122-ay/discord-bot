@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
 module.exports = {
+  permisos: "🛡️ Administrador", // 👈 AÑADIDO
+
   data: new SlashCommandBuilder()
     .setName("clear")
     .setDescription("Eliminar mensajes de un canal")
