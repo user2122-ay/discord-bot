@@ -15,6 +15,8 @@ const ROLES_AUTORIZADOS = [
 const filePath = path.join(__dirname, "..", "arrestos.json");
 
 module.exports = {
+  permisos: "👮 Fuerza Pública", // 👈 CORREGIDO
+
   data: new SlashCommandBuilder()
     .setName("arrestar")
     .setDescription("Registrar un arresto")
