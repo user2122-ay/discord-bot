@@ -24,6 +24,11 @@ module.exports = {
     .addStringOption(o =>
       o.setName("oficial").setDescription("Oficial que impone la multa").setRequired(true)
     )
+    .addUserOption(o =>
+      o.setName("companero")
+        .setDescription("Compañero en el operativo")
+        .setRequired(false)
+    )
     .addStringOption(o =>
       o.setName("lugar").setDescription("Lugar de la infracción").setRequired(true)
     )
@@ -49,12 +54,24 @@ module.exports = {
       });
     }
 
-    const data = JSON.parse(fs.readFileSync("./multasData.json"));
+    // ✅ FIX JSON (NO CRASHEA)
+    let data = {};
+    try {
+      if (fs.existsSync("./multasData.json")) {
+        data = JSON.parse(fs.readFileSync("./multasData.json", "utf8"));
+      }
+    } catch (err) {
+      console.error("Error leyendo JSON:", err);
+      data = {};
+    }
+
+    const companeroUser = interaction.options.getUser("companero");
 
     const multa = {
       placa: interaction.options.getString("placa"),
       usuario: interaction.options.getUser("usuario").id,
       oficial: interaction.options.getString("oficial"),
+      companero: companeroUser ? companeroUser.id : null,
       lugar: interaction.options.getString("lugar"),
       motivo: interaction.options.getString("motivo"),
       monto: interaction.options.getInteger("monto"),
@@ -62,10 +79,13 @@ module.exports = {
       fecha: new Date().toLocaleString()
     };
 
-    // 🔹 Guardar en JSON (temporal)
+    // 🔹 Guardar en JSON
     if (!data[multa.usuario]) data[multa.usuario] = [];
     data[multa.usuario].push(multa);
     fs.writeFileSync("./multasData.json", JSON.stringify(data, null, 2));
+
+    // 🔥 DEBUG
+    console.log("Datos a guardar:", multa);
 
     // 🔥 GUARDAR EN POSTGRES
     try {
@@ -100,6 +120,11 @@ module.exports = {
         { name: "🚗 Placa", value: multa.placa, inline: true },
         { name: "👤 Usuario", value: `<@${multa.usuario}>`, inline: true },
         { name: "👮 Oficial", value: multa.oficial, inline: true },
+        { 
+          name: "👮‍♂️ Compañero", 
+          value: multa.companero ? `<@${multa.companero}>` : "No asignado", 
+          inline: true 
+        },
         { name: "📍 Lugar", value: multa.lugar, inline: true },
         { name: "📝 Motivo", value: multa.motivo, inline: false },
         { name: "💰 Monto", value: `$${multa.monto}`, inline: true }
