@@ -199,8 +199,10 @@ embeds: [embed],
 components: [boton],
 allowedMentions: { roles: [ROL_PING] }
 });
-
-const collectorV = msg.createMessageComponentCollector({ time: 20 * 60 * 1000 });
+const collector = interaction.channel.createMessageComponentCollector({
+  time: 600000,
+  filter: i => ["abrir", "cerrar", "votar", "mantenimiento"].includes(i.customId)
+});
 
 collectorV.on("collect", async btn => {
 
