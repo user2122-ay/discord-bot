@@ -156,7 +156,7 @@ return i.update({ content: "🛠️ Activado", components: [] });
 
 }
 
-// 🗳️ VOTACIÓN
+// 🗳️ VOTACIÓN (ARREGLADO)
 if (i.customId === "votar") {
 
 if (votacionActiva) {
@@ -199,9 +199,11 @@ embeds: [embed],
 components: [boton],
 allowedMentions: { roles: [ROL_PING] }
 });
-const collector = interaction.channel.createMessageComponentCollector({
-  time: 600000,
-  filter: i => ["abrir", "cerrar", "votar", "mantenimiento"].includes(i.customId)
+
+// ✅ FIX REAL
+const collectorV = msg.createMessageComponentCollector({
+time: 20 * 60 * 1000,
+filter: btn => btn.customId === "votar_si"
 });
 
 collectorV.on("collect", async btn => {
