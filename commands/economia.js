@@ -7,23 +7,19 @@ PermissionFlagsBits
 const fs = require("fs");
 const path = require("path");
 
-/* ================= BASE DE DATOS (NO AFECTA NADA) ================= */
+/* ================= BASE DE DATOS (NO ROMPE NADA) ================= */
 const mysql = require("mysql2/promise");
 
-const db = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "economia",
-    waitForConnections: true,
-    connectionLimit: 10
-});
+(async () => {
+    const db = await mysql.createPool({
+        host: "localhost",
+        user: "root",
+        password: "",
+        database: "economia",
+        waitForConnections: true,
+        connectionLimit: 10
+    });
 
-// VARIABLES DB (solo referencia, no rompe nada)
-// users: id (PK), efectivo (BIGINT), banco (BIGINT), lastClaim (BIGINT)
-// roles: role_id (PK), sueldo (BIGINT)
-
-async function initDB() {
     await db.query(`
         CREATE TABLE IF NOT EXISTS users (
             id VARCHAR(50) PRIMARY KEY,
@@ -39,9 +35,7 @@ async function initDB() {
             sueldo BIGINT DEFAULT 0
         )
     `);
-}
-
-initDB();
+})();
 /* ================= FIN DB ================= */
 
 const dataPath = path.join(__dirname, "../economia.json");
@@ -215,6 +209,219 @@ async execute(interaction) {
                 .setTimestamp()  
         ]  
     });  
+}
+
+};
+
+/* ================= TOP DINERO ================= */
+
+module.exports["top-dinero"] = {
+permisos: "🌐 Todos",
+data: new SlashCommandBuilder()
+.setName("top-dinero")
+.setDescription("Ranking de los más ricos"),
+
+async execute(interaction) {  
+    const data = loadData();  
+
+    const usersArray = Object.entries(data.users)  
+        .map(([id, user]) => ({  
+            id,  
+            total: (user.efectivo || 0) + (user.banco || 0)  
+        }))  
+        .sort((a, b) => b.total - a.total)  
+        .slice(0, 10);  
+
+    if (!usersArray.length)  
+        return interaction.reply({ content: "❌ No hay datos.", ephemeral: true });  
+
+    let description = "━━━━━━━━━━━━━━━━━━\n\n";  
+
+    for (let i = 0; i < usersArray.length; i++) {  
+        const userData = usersArray[i];  
+        const member = await interaction.guild.members.fetch(userData.id).catch(() => null);  
+        const name = member ? member.user.username : "Usuario";  
+        let medal = ["🥇","🥈","🥉"][i] || "🏅";  
+
+        description += `${medal} **${i + 1}. ${name}**\n💰 $${userData.total}\n\n`;  
+    }  
+
+    return interaction.reply({  
+        embeds: [  
+            new EmbedBuilder()  
+                .setColor("#ffd700")  
+                .setTitle("🏆┃RANKING ECONÓMICO")
+                .setDescription(description)
+                .setTimestamp()
+        ]
+    });
+}
+
+};
+
+/* ================= TRANSFERIR ================= */
+
+module.exports.transferir = {
+permisos: "🌐 Todos",
+data: new SlashCommandBuilder()
+.setName("transferir")
+.setDescription("Transferir dinero a otro usuario")
+.addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
+.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
+
+async execute(interaction) {
+    const data = loadData();
+    const sender = interaction.user;
+    const target = interaction.options.getUser("usuario");
+    const cantidad = interaction.options.getInteger("cantidad");
+
+    if (cantidad <= 0)
+        return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+
+    ensureUser(data, sender.id);
+    ensureUser(data, target.id);
+
+    if (data.users[sender.id].efectivo < cantidad)
+        return interaction.reply({ content: "❌ No tienes suficiente efectivo.", ephemeral: true });
+
+    data.users[sender.id].efectivo -= cantidad;
+    data.users[target.id].efectivo += cantidad;
+
+    saveData(data);
+
+    return interaction.reply(`💸 Transferiste $${cantidad} a ${target}`);
+}
+
+};
+
+/* ================= DEPOSITAR ================= */
+
+module.exports.depositar = {
+permisos: "🌐 Todos",
+data: new SlashCommandBuilder()
+.setName("depositar")
+.setDescription("Depositar dinero al banco")
+.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
+
+async execute(interaction) {
+    const data = loadData();
+    const userId = interaction.user.id;
+    const cantidad = interaction.options.getInteger("cantidad");
+
+    ensureUser(data, userId);
+
+    if (cantidad <= 0)
+        return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+
+    if (data.users[userId].efectivo < cantidad)
+        return interaction.reply({ content: "❌ No tienes suficiente efectivo.", ephemeral: true });
+
+    data.users[userId].efectivo -= cantidad;
+    data.users[userId].banco += cantidad;
+
+    saveData(data);
+
+    return interaction.reply(`🏦 Depositaste $${cantidad} al banco.`);
+}
+
+};
+
+/* ================= RETIRAR ================= */
+
+module.exports.retirar = {
+permisos: "🌐 Todos",
+data: new SlashCommandBuilder()
+.setName("retirar")
+.setDescription("Retirar dinero del banco")
+.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true)),
+
+async execute(interaction) {
+    const data = loadData();
+    const userId = interaction.user.id;
+    const cantidad = interaction.options.getInteger("cantidad");
+
+    ensureUser(data, userId);
+
+    if (cantidad <= 0)
+        return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+
+    if (data.users[userId].banco < cantidad)
+        return interaction.reply({ content: "❌ No tienes suficiente en el banco.", ephemeral: true });
+
+    data.users[userId].banco -= cantidad;
+    data.users[userId].efectivo += cantidad;
+
+    saveData(data);
+
+    return interaction.reply(`💵 Retiraste $${cantidad} del banco.`);
+}
+
+};
+
+/* ================= AÑADIR DINERO ================= */
+
+module.exports["añadir-dinero"] = {
+permisos: "👑 Fundación",
+data: new SlashCommandBuilder()
+.setName("añadir-dinero")
+.setDescription("Añadir dinero a un usuario")
+.addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
+.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true))
+.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+async execute(interaction) {
+
+    const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+    if (!tieneRol) {
+        return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+    }
+
+    const data = loadData();
+    const target = interaction.options.getUser("usuario");
+    const cantidad = interaction.options.getInteger("cantidad");
+
+    ensureUser(data, target.id);
+
+    data.users[target.id].efectivo += cantidad;
+
+    saveData(data);
+
+    return interaction.reply(`💰 Se añadieron $${cantidad} a ${target}`);
+}
+
+};
+
+/* ================= QUITAR DINERO ================= */
+
+module.exports["quitar-dinero"] = {
+permisos: "👑 Fundación",
+data: new SlashCommandBuilder()
+.setName("quitar-dinero")
+.setDescription("Quitar dinero a un usuario")
+.addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
+.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true))
+.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+async execute(interaction) {
+
+    const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+    if (!tieneRol) {
+        return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+    }
+
+    const data = loadData();
+    const target = interaction.options.getUser("usuario");
+    const cantidad = interaction.options.getInteger("cantidad");
+
+    ensureUser(data, target.id);
+
+    data.users[target.id].efectivo -= cantidad;
+    if (data.users[target.id].efectivo < 0)
+        data.users[target.id].efectivo = 0;
+
+    saveData(data);
+
+    return interaction.reply(`💸 Se quitaron $${cantidad} a ${target}`);
 }
 
 };
