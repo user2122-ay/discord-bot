@@ -4,27 +4,21 @@ EmbedBuilder,
 PermissionFlagsBits
 } = require("discord.js");
 
-const { Pool } = require("pg");
-
-// 🔌 CONEXIÓN POSTGRES (Railway)
-const pool = new Pool({
-connectionString: process.env.DATABASE_URL,
-ssl: { rejectUnauthorized: false }
-});
-
 // 🔒 ROLES FUNDACIÓN
 const ROLES_FUNDACION = [
 "1463192290456764547",
 "1463192290456764545"
 ];
 
-// ✅ ASEGURAR USUARIO
-async function ensureUser(userId) {
-await pool.query(`
-INSERT INTO ECONOMIA_LS_V2 (discord_id, cash, bank, last_pay)
-VALUES ($1, 0, 0, 0)
-ON CONFLICT (discord_id) DO NOTHING
-`, [userId]);
+// ================= DB HELPER =================
+
+async function ensureUser(db, userId) {
+  await db.query(
+    `INSERT INTO ECONOMIA_LS_V2 (discord_id, cash, bank, last_pay)
+     VALUES ($1, 0, 0, 0)
+     ON CONFLICT (discord_id) DO NOTHING`,
+    [userId]
+  );
 }
 
 /* ================= BALANCE ================= */
@@ -36,29 +30,30 @@ data: new SlashCommandBuilder()
 .setDescription("Ver tu dinero"),
 
 async execute(interaction) {
+    const db = interaction.pool;
+    const userId = interaction.user.id;
 
-const userId = interaction.user.id;
-await ensureUser(userId);
+    await ensureUser(db, userId);
 
-const res = await pool.query(
-"SELECT * FROM ECONOMIA_LS_V2 WHERE discord_id = $1",
-[userId]
-);
+    const res = await db.query(
+        "SELECT cash, bank FROM ECONOMIA_LS_V2 WHERE discord_id = $1",
+        [userId]
+    );
 
-const user = res.rows[0];
+    const user = res.rows[0];
 
-const embed = new EmbedBuilder()
-.setColor("#0099ff")
-.setTitle("🏦┃ESTADO FINANCIERO")
-.addFields(
-{ name: "💵 Efectivo", value: `\`\`\`$${user.cash}\`\`\``, inline: true },
-{ name: "🏦 Banco", value: `\`\`\`$${user.bank}\`\`\``, inline: true },
-{ name: "📊 Total", value: `\`\`\`$${user.cash + user.bank}\`\`\`` }
-)
-.setTimestamp();
+    const embed = new EmbedBuilder()
+        .setColor("#0099ff")
+        .setTitle("🏦┃ESTADO FINANCIERO")
+        .addFields(
+            { name: "💵 Efectivo", value: `\`\`\`$${user.cash}\`\`\``, inline: true },
+            { name: "🏦 Banco", value: `\`\`\`$${user.bank}\`\`\``, inline: true },
+            { name: "📊 Total", value: `\`\`\`$${user.cash + user.bank}\`\`\`` }
+        );
 
-return interaction.reply({ embeds: [embed] });
+    return interaction.reply({ embeds: [embed] });
 }
+
 };
 
 /* ================= AÑADIR SUELDO ================= */
@@ -68,39 +63,31 @@ permisos: "👑 Fundación",
 data: new SlashCommandBuilder()
 .setName("añadir-sueldo")
 .setDescription("Asignar sueldo a un rol")
-.addRoleOption(o => o.setName("rol").setDescription("Rol").setRequired(true))
-.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true))
+.addRoleOption(o => o.setName("rol").setRequired(true))
+.addIntegerOption(o => o.setName("cantidad").setRequired(true))
 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 async execute(interaction) {
+    const db = interaction.pool;
 
-const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
-if (!tieneRol)
-return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+    const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+    if (!tieneRol) {
+        return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+    }
 
-const rol = interaction.options.getRole("rol");
-const cantidad = interaction.options.getInteger("cantidad");
+    const rol = interaction.options.getRole("rol");
+    const cantidad = interaction.options.getInteger("cantidad");
 
-await pool.query(`
-INSERT INTO SUELDOS_LS (role_id, sueldo)
-VALUES ($1, $2)
-ON CONFLICT (role_id)
-DO UPDATE SET sueldo = $2
-`, [rol.id, cantidad]);
+    await db.query(
+        `INSERT INTO SUELDOS_LS (role_id, sueldo)
+         VALUES ($1, $2)
+         ON CONFLICT (role_id) DO UPDATE SET sueldo = EXCLUDED.sueldo`,
+        [rol.id, cantidad]
+    );
 
-return interaction.reply({
-embeds: [
-new EmbedBuilder()
-.setColor("#f1c40f")
-.setTitle("💼┃SUELDO ASIGNADO")
-.addFields(
-{ name: "📛 Rol", value: `${rol}`, inline: true },
-{ name: "💰 Sueldo cada 6 días", value: `\`\`\`$${cantidad}\`\`\`` }
-)
-.setTimestamp()
-]
-});
+    return interaction.reply(`💼 Sueldo asignado a ${rol}`);
 }
+
 };
 
 /* ================= COBRAR ================= */
@@ -112,58 +99,50 @@ data: new SlashCommandBuilder()
 .setDescription("Cobrar tu sueldo"),
 
 async execute(interaction) {
+    const db = interaction.pool;
+    const userId = interaction.user.id;
 
-const userId = interaction.user.id;
-await ensureUser(userId);
+    await ensureUser(db, userId);
 
-const userRes = await pool.query(
-"SELECT * FROM ECONOMIA_LS_V2 WHERE discord_id = $1",
-[userId]
-);
+    const cooldown = 6 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
 
-const user = userRes.rows[0];
+    const userRes = await db.query(
+        "SELECT last_pay FROM ECONOMIA_LS_V2 WHERE discord_id = $1",
+        [userId]
+    );
 
-const cooldown = 6 * 24 * 60 * 60 * 1000;
-const now = Date.now();
+    const lastPay = userRes.rows[0].last_pay;
 
-if (now - user.last_pay < cooldown)
-return interaction.reply({ content: "⏳ Aún no puedes cobrar (6 días).", ephemeral: true });
+    if (now - lastPay < cooldown)
+        return interaction.reply({ content: "⏳ Aún no puedes cobrar.", ephemeral: true });
 
-let sueldoTotal = 0;
+    let sueldoTotal = 0;
 
-for (const role of interaction.member.roles.cache.values()) {
-const res = await pool.query(
-"SELECT sueldo FROM SUELDOS_LS WHERE role_id = $1",
-[role.id]
-);
-if (res.rows[0]) sueldoTotal += res.rows[0].sueldo;
+    for (const role of interaction.member.roles.cache.values()) {
+        const roleRes = await db.query(
+            "SELECT sueldo FROM SUELDOS_LS WHERE role_id = $1",
+            [role.id]
+        );
+
+        if (roleRes.rows.length > 0) {
+            sueldoTotal += Number(roleRes.rows[0].sueldo);
+        }
+    }
+
+    const impuesto = Math.floor(sueldoTotal * 0.10);
+    const final = sueldoTotal - impuesto;
+
+    await db.query(
+        `UPDATE ECONOMIA_LS_V2
+         SET cash = cash + $1, last_pay = $2
+         WHERE discord_id = $3`,
+        [final, now, userId]
+    );
+
+    return interaction.reply(`💼 Cobraste $${final}`);
 }
 
-if (sueldoTotal <= 0)
-return interaction.reply({ content: "❌ No tienes rol con sueldo.", ephemeral: true });
-
-const impuesto = Math.floor(sueldoTotal * 0.10);
-const final = sueldoTotal - impuesto;
-
-await pool.query(
-"UPDATE ECONOMIA_LS_V2 SET cash = cash + $1, last_pay = $2 WHERE discord_id = $3",
-[final, now, userId]
-);
-
-return interaction.reply({
-embeds: [
-new EmbedBuilder()
-.setColor("#00ff88")
-.setTitle("💼┃NÓMINA PROCESADA")
-.addFields(
-{ name: "💰 Bruto", value: `\`\`\`$${sueldoTotal}\`\`\``, inline: true },
-{ name: "🏛️ Impuesto 10%", value: `\`\`\`-$${impuesto}\`\`\``, inline: true },
-{ name: "💵 Recibido", value: `\`\`\`$${final}\`\`\`` }
-)
-.setTimestamp()
-]
-});
-}
 };
 
 /* ================= TOP DINERO ================= */
@@ -175,39 +154,36 @@ data: new SlashCommandBuilder()
 .setDescription("Ranking de los más ricos"),
 
 async execute(interaction) {
+    const db = interaction.pool;
 
-const res = await pool.query(`
-SELECT * FROM ECONOMIA_LS_V2
-ORDER BY (cash + bank) DESC
-LIMIT 10
-`);
+    const res = await db.query("SELECT discord_id, cash, bank FROM ECONOMIA_LS_V2");
 
-if (!res.rows.length)
-return interaction.reply({ content: "❌ No hay datos.", ephemeral: true });
+    const usersArray = res.rows
+        .map(u => ({
+            id: u.discord_id,
+            total: Number(u.cash) + Number(u.bank)
+        }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
 
-let description = "━━━━━━━━━━━━━━━━━━\n\n";
+    let description = "";
 
-for (let i = 0; i < res.rows.length; i++) {
+    for (let i = 0; i < usersArray.length; i++) {
+        const member = await interaction.guild.members.fetch(usersArray[i].id).catch(() => null);
+        const name = member ? member.user.username : "Usuario";
 
-const userData = res.rows[i];
-const member = await interaction.guild.members.fetch(userData.discord_id).catch(() => null);
-const name = member ? member.user.username : "Usuario";
+        description += `${i + 1}. ${name} - $${usersArray[i].total}\n`;
+    }
 
-let medal = ["🥇","🥈","🥉"][i] || "🏅";
-
-description += `${medal} **${i + 1}. ${name}**\n💰 $${userData.cash + userData.bank}\n\n`;
+    return interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle("🏆┃RANKING")
+                .setDescription(description)
+        ]
+    });
 }
 
-return interaction.reply({
-embeds: [
-new EmbedBuilder()
-.setColor("#ffd700")
-.setTitle("🏆┃RANKING ECONÓMICO")
-.setDescription(description)
-.setTimestamp()
-]
-});
-}
 };
 
 /* ================= TRANSFERIR ================= */
@@ -216,32 +192,26 @@ module.exports.transferir = {
 permisos: "🌐 Todos",
 data: new SlashCommandBuilder()
 .setName("transferir")
-.setDescription("Transferir dinero a otro usuario")
+.setDescription("Transferir dinero")
 .addUserOption(o => o.setName("usuario").setRequired(true))
 .addIntegerOption(o => o.setName("cantidad").setRequired(true)),
 
 async execute(interaction) {
+    const db = interaction.pool;
 
-const sender = interaction.user.id;
-const target = interaction.options.getUser("usuario").id;
-const cantidad = interaction.options.getInteger("cantidad");
+    const sender = interaction.user;
+    const target = interaction.options.getUser("usuario");
+    const cantidad = interaction.options.getInteger("cantidad");
 
-if (cantidad <= 0)
-return interaction.reply({ content: "❌ Cantidad inválida.", ephemeral: true });
+    await ensureUser(db, sender.id);
+    await ensureUser(db, target.id);
 
-await ensureUser(sender);
-await ensureUser(target);
+    await db.query("UPDATE ECONOMIA_LS_V2 SET cash = cash - $1 WHERE discord_id = $2", [cantidad, sender.id]);
+    await db.query("UPDATE ECONOMIA_LS_V2 SET cash = cash + $1 WHERE discord_id = $2", [cantidad, target.id]);
 
-const res = await pool.query("SELECT cash FROM ECONOMIA_LS_V2 WHERE discord_id = $1", [sender]);
-
-if (res.rows[0].cash < cantidad)
-return interaction.reply({ content: "❌ No tienes suficiente efectivo.", ephemeral: true });
-
-await pool.query("UPDATE ECONOMIA_LS_V2 SET cash = cash - $1 WHERE discord_id = $2", [cantidad, sender]);
-await pool.query("UPDATE ECONOMIA_LS_V2 SET cash = cash + $1 WHERE discord_id = $2", [cantidad, target]);
-
-return interaction.reply(`💸 Transferiste $${cantidad}`);
+    return interaction.reply(`💸 Transferiste $${cantidad} a ${target}`);
 }
+
 };
 
 /* ================= DEPOSITAR ================= */
@@ -254,21 +224,20 @@ data: new SlashCommandBuilder()
 .addIntegerOption(o => o.setName("cantidad").setRequired(true)),
 
 async execute(interaction) {
+    const db = interaction.pool;
+    const userId = interaction.user.id;
+    const cantidad = interaction.options.getInteger("cantidad");
 
-const userId = interaction.user.id;
-const cantidad = interaction.options.getInteger("cantidad");
+    await ensureUser(db, userId);
 
-await ensureUser(userId);
+    await db.query(
+        "UPDATE ECONOMIA_LS_V2 SET cash = cash - $1, bank = bank + $1 WHERE discord_id = $2",
+        [cantidad, userId]
+    );
 
-const res = await pool.query("SELECT cash FROM ECONOMIA_LS_V2 WHERE discord_id = $1", [userId]);
-
-if (res.rows[0].cash < cantidad)
-return interaction.reply({ content: "❌ No tienes suficiente.", ephemeral: true });
-
-await pool.query("UPDATE ECONOMIA_LS_V2 SET cash = cash - $1, bank = bank + $1 WHERE discord_id = $2", [cantidad, userId]);
-
-return interaction.reply(`🏦 Depositaste $${cantidad}`);
+    return interaction.reply(`🏦 Depositaste $${cantidad}`);
 }
+
 };
 
 /* ================= RETIRAR ================= */
@@ -281,22 +250,22 @@ data: new SlashCommandBuilder()
 .addIntegerOption(o => o.setName("cantidad").setRequired(true)),
 
 async execute(interaction) {
+    const db = interaction.pool;
+    const userId = interaction.user.id;
+    const cantidad = interaction.options.getInteger("cantidad");
 
-const userId = interaction.user.id;
-const cantidad = interaction.options.getInteger("cantidad");
+    await ensureUser(db, userId);
 
-await ensureUser(userId);
+    await db.query(
+        "UPDATE ECONOMIA_LS_V2 SET bank = bank - $1, cash = cash + $1 WHERE discord_id = $2",
+        [cantidad, userId]
+    );
 
-const res = await pool.query("SELECT bank FROM ECONOMIA_LS_V2 WHERE discord_id = $1", [userId]);
-
-if (res.rows[0].bank < cantidad)
-return interaction.reply({ content: "❌ No tienes suficiente.", ephemeral: true });
-
-await pool.query("UPDATE ECONOMIA_LS_V2 SET bank = bank - $1, cash = cash + $1 WHERE discord_id = $2", [cantidad, userId]);
-
-return interaction.reply(`💵 Retiraste $${cantidad}`);
+    return interaction.reply(`💵 Retiraste $${cantidad}`);
 }
+
 };
+
 /* ================= AÑADIR DINERO ================= */
 
 module.exports["añadir-dinero"] = {
@@ -304,29 +273,29 @@ permisos: "👑 Fundación",
 data: new SlashCommandBuilder()
 .setName("añadir-dinero")
 .setDescription("Añadir dinero a un usuario")
-.addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
-.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true))
+.addUserOption(o => o.setName("usuario").setRequired(true))
+.addIntegerOption(o => o.setName("cantidad").setRequired(true))
 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 async execute(interaction) {
+    const db = interaction.pool;
 
-const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));    
-if (!tieneRol) {    
-    return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });    
-}    
+    const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+    if (!tieneRol) {
+        return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+    }
 
-const data = loadData();    
-const target = interaction.options.getUser("usuario");    
-const cantidad = interaction.options.getInteger("cantidad");    
+    const target = interaction.options.getUser("usuario");
+    const cantidad = interaction.options.getInteger("cantidad");
 
-ensureUser(data, target.id);    
+    await ensureUser(db, target.id);
 
-data.users[target.id].efectivo += cantidad;    
+    await db.query(
+        "UPDATE ECONOMIA_LS_V2 SET cash = cash + $1 WHERE discord_id = $2",
+        [cantidad, target.id]
+    );
 
-saveData(data);    
-
-return interaction.reply(`💰 Se añadieron $${cantidad} a ${target}`);
-
+    return interaction.reply(`💰 Se añadieron $${cantidad} a ${target}`);
 }
 
 };
@@ -338,31 +307,29 @@ permisos: "👑 Fundación",
 data: new SlashCommandBuilder()
 .setName("quitar-dinero")
 .setDescription("Quitar dinero a un usuario")
-.addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true))
-.addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad").setRequired(true))
+.addUserOption(o => o.setName("usuario").setRequired(true))
+.addIntegerOption(o => o.setName("cantidad").setRequired(true))
 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 async execute(interaction) {
+    const db = interaction.pool;
 
-const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));    
-if (!tieneRol) {    
-    return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });    
-}    
+    const tieneRol = interaction.member.roles.cache.some(r => ROLES_FUNDACION.includes(r.id));
+    if (!tieneRol) {
+        return interaction.reply({ content: "❌ No tienes permiso.", ephemeral: true });
+    }
 
-const data = loadData();    
-const target = interaction.options.getUser("usuario");    
-const cantidad = interaction.options.getInteger("cantidad");    
+    const target = interaction.options.getUser("usuario");
+    const cantidad = interaction.options.getInteger("cantidad");
 
-ensureUser(data, target.id);    
+    await ensureUser(db, target.id);
 
-data.users[target.id].efectivo -= cantidad;    
-if (data.users[target.id].efectivo < 0)    
-    data.users[target.id].efectivo = 0;    
+    await db.query(
+        "UPDATE ECONOMIA_LS_V2 SET cash = GREATEST(cash - $1, 0) WHERE discord_id = $2",
+        [cantidad, target.id]
+    );
 
-saveData(data);    
-
-return interaction.reply(`💸 Se quitaron $${cantidad} a ${target}`);
-
+    return interaction.reply(`💸 Se quitaron $${cantidad} a ${target}`);
 }
 
 };
