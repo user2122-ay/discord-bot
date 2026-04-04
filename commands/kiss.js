@@ -1,13 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
-const mensajes = [
-"💋 le dio un beso a",
-"😘 besó tiernamente a",
-"❤️ le robó un beso a",
-"😚 besó suavemente a",
-"🔥 besó apasionadamente a"
-];
-
 module.exports = {
 data: new SlashCommandBuilder()
 .setName("kiss")
@@ -30,13 +22,20 @@ ephemeral: true
 });
 }
 
-const frase = mensajes[Math.floor(Math.random() * mensajes.length)];
+const frases = [
+"💋 le dio un beso a",
+"😘 besó tiernamente a",
+"❤️ le robó un beso a",
+"😚 besó suavemente a",
+"🔥 besó apasionadamente a"
+];
+
+const frase = frases[Math.floor(Math.random() * frases.length)];
 
 const embed = new EmbedBuilder()
 .setColor("#ff69b4")
 .setTitle("💋┃KISS")
 .setDescription(`**${autor.username}** ${frase} **${target.username}** 💞`)
-.setFooter({ text: "El amor está en el aire 💕" })
 .setTimestamp();
 
 return interaction.reply({ embeds: [embed] });
