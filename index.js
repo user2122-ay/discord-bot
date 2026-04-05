@@ -31,7 +31,7 @@ require("./events/seguridad")(client);
 require("./events/logs")(client);
 require("./events/bienvenida")(client);
 require("./events/presence")(client);
-
+require("./events/tickets")(client);
 
 // ==============================
 // 📦 COMANDOS
