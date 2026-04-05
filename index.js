@@ -11,7 +11,7 @@ const pool = new Pool({
 
 pool.connect()
     .then(() => console.log("✅ Conectado a Postgres"))
-    .catch(err => console.log("⚠️ Postgres no conectado"));
+    .catch(err => console.log("⚠️ Postgres no conectado:", err.message));
 
 // 🤖 Cliente
 const client = new Client({
@@ -44,6 +44,7 @@ for (const file of commandFiles) {
     try {
         const command = require(`./commands/${file}`);
 
+        // 🧩 Para archivos con varios comandos
         if (typeof command === "object" && !command.data) {
             for (const key in command) {
                 const cmd = command[key];
@@ -52,10 +53,15 @@ for (const file of commandFiles) {
                     console.log(`✅ Cargado: ${cmd.data.name}`);
                 }
             }
-        } else if (command?.data?.name) {
+        }
+
+        // 🧩 Para archivos normales
+        else if (command?.data?.name) {
             client.commands.set(command.data.name, command);
             console.log(`✅ Cargado: ${command.data.name}`);
-        } else {
+        }
+
+        else {
             console.log(`❌ ${file} inválido`);
         }
 
@@ -87,24 +93,15 @@ client.once("ready", async () => {
         }
     });
 
-    // 🔥 DEBUG IMPORTANTE
+    // 🔍 DEBUG
     console.log("📦 Comandos que se enviarán:");
     commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));
 
     const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     try {
-        console.log("🧹 Limpiando comandos...");
+        console.log("⏳ Registrando comandos...");
 
-        // 🧹 LIMPIAR (ANTI BUG)
-        await rest.put(
-            Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-            { body: [] }
-        );
-
-        console.log("⏳ Registrando comandos nuevos...");
-
-        // 🚀 REGISTRAR NUEVOS
         await rest.put(
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
             { body: commands }
