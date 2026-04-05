@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔒 Rol autorizado
@@ -18,21 +17,21 @@ module.exports = {
     .setName("alerta")
     .setDescription("Emitir una alerta de seguridad")
 
-    // ✅ OPCIONES (OBLIGATORIAS PRIMERO)
+    // ✅ AQUÍ ESTABA EL ERROR
     .addStringOption(option =>
       option.setName("tipo")
         .setDescription("Tipo de alerta")
         .setRequired(true)
         .addChoices(
-          { name: "🟢 Verde", value: "verde" },
-          { name: "🟡 Amarilla", value: "amarilla" },
-          { name: "🔴 Roja", value: "roja" }
+          { name: "Verde", value: "verde" },
+          { name: "Amarilla", value: "amarilla" },
+          { name: "Roja", value: "roja" }
         )
     )
 
     .addStringOption(option =>
       option.setName("razon")
-        .setDescription("Motivo de la alerta")
+        .setDescription("Razón de la alerta")
         .setRequired(true)
     ),
 
@@ -42,7 +41,7 @@ module.exports = {
 
     if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
       return interaction.reply({
-        content: "⛔ No tienes permisos para usar este comando.",
+        content: "⛔ No tienes permisos.",
         ephemeral: true
       });
     }
@@ -55,19 +54,19 @@ module.exports = {
     if (tipo === "verde") {
       color = 0x2ecc71;
       titulo = "🟢 ALERTA VERDE";
-      descripcion = `🔫 Pistolas\n\n🟢 Riesgo bajo\n\n📌 ${razon}`;
+      descripcion = `Nivel bajo\n\n📌 ${razon}`;
     }
 
     if (tipo === "amarilla") {
       color = 0xf1c40f;
       titulo = "🟡 ALERTA AMARILLA";
-      descripcion = `🔫 Semi-automáticas\n\n🟡 Riesgo medio\n\n📌 ${razon}`;
+      descripcion = `Nivel medio\n\n📌 ${razon}`;
     }
 
     if (tipo === "roja") {
       color = 0xe74c3c;
       titulo = "🔴 ALERTA ROJA";
-      descripcion = `🚨 Todas las armas\n\n🔴 Riesgo alto\n\n📌 ${razon}`;
+      descripcion = `Nivel alto\n\n📌 ${razon}`;
     }
 
     const canalAlertas = interaction.guild.channels.cache.get(CANAL_ALERTAS);
@@ -82,7 +81,8 @@ module.exports = {
     if (canalAlertas) {
       await canalAlertas.send({
         content: `<@&${ROL_PING}>`,
-        embeds: [embed]
+        embeds: [embed],
+        allowedMentions: { roles: [ROL_PING] }
       });
     }
 
@@ -90,8 +90,8 @@ module.exports = {
       canalLogs.send({
         embeds: [
           new EmbedBuilder()
-            .setTitle("📜 Alerta emitida")
-            .setDescription(`${titulo}\n📌 ${razon}`)
+            .setTitle("📜 Alerta registrada")
+            .setDescription(`Tipo: ${titulo}\nRazón: ${razon}`)
             .setColor(0x3498db)
             .setTimestamp()
         ]
@@ -99,7 +99,7 @@ module.exports = {
     }
 
     await interaction.reply({
-      content: "✅ Alerta enviada correctamente.",
+      content: "✅ Alerta enviada",
       ephemeral: true
     });
   }
