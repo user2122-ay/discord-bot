@@ -19,18 +19,18 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers // 🔥 NECESARIO PARA BIENVENIDA
+        GatewayIntentBits.GuildMembers
     ]
 });
 
 // ==============================
-// 🔥 SISTEMAS (AQUÍ SE CONECTAN)
+// 🔥 SISTEMAS
 // ==============================
 
-require("./events/seguridad")(client);   // anti raid / spam
-require("./events/logs")(client);        // logs
-require("./events/bienvenida")(client);  // 👈 ESTE TE FALTABA
-require("./events/presence")(client);    // estados rotativos
+require("./events/seguridad")(client);
+require("./events/logs")(client);
+require("./events/bienvenida")(client);
+require("./events/presence")(client);
 
 // ==============================
 // 📦 COMANDOS
@@ -52,14 +52,10 @@ for (const file of commandFiles) {
                     console.log(`✅ Cargado: ${cmd.data.name}`);
                 }
             }
-        }
-
-        else if (command?.data?.name) {
+        } else if (command?.data?.name) {
             client.commands.set(command.data.name, command);
             console.log(`✅ Cargado: ${command.data.name}`);
-        }
-
-        else {
+        } else {
             console.log(`❌ ${file} inválido`);
         }
 
@@ -82,6 +78,7 @@ client.once("ready", async () => {
     console.log(`🔥 Bot conectado como ${client.user.tag}`);
 
     const commands = [];
+
     client.commands.forEach(cmd => {
         try {
             commands.push(cmd.data.toJSON());
@@ -90,11 +87,24 @@ client.once("ready", async () => {
         }
     });
 
+    // 🔥 DEBUG IMPORTANTE
+    console.log("📦 Comandos que se enviarán:");
+    commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));
+
     const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     try {
-        console.log("⏳ Registrando comandos...");
+        console.log("🧹 Limpiando comandos...");
 
+        // 🧹 LIMPIAR (ANTI BUG)
+        await rest.put(
+            Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+            { body: [] }
+        );
+
+        console.log("⏳ Registrando comandos nuevos...");
+
+        // 🚀 REGISTRAR NUEVOS
         await rest.put(
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
             { body: commands }
