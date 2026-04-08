@@ -23,6 +23,9 @@ const client = new Client({
     ]
 });
 
+// ✅ 🔥 ESTA LÍNEA ES LA CLAVE (TE FALTABA)
+client.pool = pool;
+
 // ==============================
 // 🔥 SISTEMAS
 // ==============================
@@ -119,17 +122,16 @@ client.once("ready", async () => {
 // ==============================
 
 client.on("interactionCreate", async interaction => {
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
-    interaction.pool = pool;
-
     try {
         await command.execute(interaction);
     } catch (error) {
-        console.error(`❌ Error en ${interaction.commandName}:`, error);
+        console.error("❌ ERROR REAL:", error); // 🔥 ahora verás el error bien
 
         const msg = "❌ Error ejecutando el comando";
 
