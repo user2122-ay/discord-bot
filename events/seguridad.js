@@ -1,6 +1,6 @@
 module.exports = (client) => {
 
-const LOG_CHANNEL_ID = "1463192293312958628";
+const LOG_CHANNEL_ID = "1463192293312958629";
 
 // 📊 Mapas de control
 const spamMensajes = new Map();
