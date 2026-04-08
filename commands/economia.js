@@ -315,3 +315,4 @@ module.exports["top-dinero"] = {
     interaction.reply({ embeds: [embed] });
   }
 };
+
