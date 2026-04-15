@@ -19,8 +19,10 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers
-    ]
+        GatewayIntentBits.GuildMembers, 
+        GatewayIntentBits.DirectMessages //agregado ahorita a las 10 del 14
+    ], 
+    partials: ["CHANNEL"] //lo acabo de agregar 
 });
 
 // ==============================
