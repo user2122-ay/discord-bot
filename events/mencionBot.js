@@ -105,7 +105,7 @@ module.exports = (client) => {
 
             if (canal) {
                 canal.send({
-                    content: `🚨 <@${interaction.user.id}> necesita ayuda. Fue desde mención al bot.`
+                    content: `🚨 <@${interaction.user.id}> necesita ayuda. Fue desde mención al bot.<@&1463192290423083324>`
                 });
             }
 
