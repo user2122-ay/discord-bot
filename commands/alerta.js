@@ -17,7 +17,7 @@ module.exports = {
     .setName("alerta")
     .setDescription("Emitir una alerta de seguridad")
 
-    // 🔥 OPCIONES OBLIGATORIAS
+    // 🔥 OPCIONES (TE FALTABAN)
     .addStringOption(option =>
       option.setName("tipo")
         .setDescription("Tipo de alerta")
@@ -34,11 +34,13 @@ module.exports = {
         .setRequired(true)
     ),
 
+  // 🔥 PARA TU /comandos
+  ROL_AUTORIZADO,
   permisos: `<@&${ROL_AUTORIZADO}>`,
 
   async execute(interaction) {
 
-    // 🔒 Permisos
+    // 🔒 Verificar permisos
     if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
       return interaction.reply({
         content: "⛔ No tienes permisos para usar este comando.",
@@ -54,19 +56,31 @@ module.exports = {
     if (tipo === "verde") {
       color = 0x2ecc71;
       titulo = "🟢 ALERTA VERDE";
-      descripcion = `🔫 Pistolas permitidas\n\n🟢 Riesgo bajo\n\n📌 ${razon}`;
+      descripcion =
+        "🔫 **Armas permitidas:**\n" +
+        "• Pistolas (Glock, Beretta)\n\n" +
+        "🟢 Nivel de riesgo: Bajo\n\n" +
+        `📌 **Razón:** ${razon}`;
     }
 
     if (tipo === "amarilla") {
       color = 0xf1c40f;
       titulo = "🟡 ALERTA AMARILLA";
-      descripcion = `🔫 Semi-automáticas\n\n🟡 Riesgo medio\n\n📌 ${razon}`;
+      descripcion =
+        "🔫 **Armas permitidas:**\n" +
+        "• Semi-automáticas\n\n" +
+        "🟡 Nivel de riesgo: Medio\n\n" +
+        `📌 **Razón:** ${razon}`;
     }
 
     if (tipo === "roja") {
       color = 0xe74c3c;
       titulo = "🔴 ALERTA ROJA";
-      descripcion = `🚨 Todas las armas\n\n🔴 Riesgo alto\n\n📌 ${razon}`;
+      descripcion =
+        "🚨 **Armas permitidas:**\n" +
+        "• Todas (excepto restringidas por staff)\n\n" +
+        "🔴 Nivel de riesgo: Alto\n\n" +
+        `📌 **Razón:** ${razon}`;
     }
 
     const canalAlertas = interaction.guild.channels.cache.get(CANAL_ALERTAS);
@@ -83,7 +97,8 @@ module.exports = {
         { name: "🕒 Hora", value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
       )
       .setFooter({
-        text: "Sistema de Alertas • Los Santos RP"
+        text: "Sistema de Alertas • Los Santos RP",
+        iconURL: interaction.guild.iconURL({ dynamic: true })
       })
       .setTimestamp();
 
@@ -98,19 +113,21 @@ module.exports = {
 
     // 📜 LOG
     if (canalLogs) {
-      await canalLogs.send({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle("📜 Alerta emitida")
-            .setColor(0x3498db)
-            .addFields(
-              { name: "👮 Usuario", value: `<@${interaction.user.id}>`, inline: true },
-              { name: "🚨 Tipo", value: titulo, inline: true },
-              { name: "📌 Razón", value: razon }
-            )
-            .setTimestamp()
-        ]
-      });
+      const logEmbed = new EmbedBuilder()
+        .setTitle("📜 Alerta emitida")
+        .setColor(0x3498db)
+        .addFields(
+          { name: "👮 Usuario", value: `<@${interaction.user.id}>`, inline: true },
+          { name: "🚨 Tipo", value: titulo, inline: true },
+          { name: "📌 Razón", value: razon }
+        )
+        .setFooter({
+          text: "Registro de Seguridad",
+          iconURL: interaction.user.displayAvatarURL({ dynamic: true })
+        })
+        .setTimestamp();
+
+      canalLogs.send({ embeds: [logEmbed] });
     }
 
     await interaction.reply({
