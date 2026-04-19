@@ -107,11 +107,11 @@ client.once("ready", async () => {
         console.log("⏳ Registrando comandos...");
 
         await rest.put(
-  Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+  Routes.applicationCommands(client.user.id),
   { body: [] }
 );
 
-console.log("🧹 Comandos eliminados");
+console.log("🧹 Comandos globales eliminados");
 
         console.log(`✅ ${commands.length} comandos registrados`);
     } catch (error) {
