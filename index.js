@@ -20,9 +20,9 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers, 
-        GatewayIntentBits.DirectMessages //agregado ahorita a las 10 del 14
+        GatewayIntentBits.DirectMessages
     ], 
-    partials: ["CHANNEL"] //lo acabo de agregar 
+    partials: ["CHANNEL"]
 });
 
 // ==============================
@@ -36,19 +36,40 @@ require("./events/presence")(client);
 require("./events/mencionBot")(client);
 require("./events/panelAuto")(client);
 require("./events/tickets")(client); 
+
 // ==============================
 // 📦 COMANDOS
 // ==============================
 
 client.commands = new Collection();
 
-const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+// 🔥 FUNCIÓN NUEVA (LEE CARPETAS)
+function getAllCommands(dir) {
+    let results = [];
+    const list = fs.readdirSync(dir);
 
+    list.forEach(file => {
+        const filePath = `${dir}/${file}`;
+        const stat = fs.statSync(filePath);
+
+        if (stat && stat.isDirectory()) {
+            results = results.concat(getAllCommands(filePath));
+        } else if (file.endsWith(".js")) {
+            results.push(filePath);
+        }
+    });
+
+    return results;
+}
+
+const commandFiles = getAllCommands("./commands");
+
+// 🔥 CARGADOR (mínimo cambio)
 for (const file of commandFiles) {
     try {
-        const command = require(`./commands/${file}`);
+        const command = require(file);
 
-        // 🧩 Para archivos con varios comandos
+        // 🧩 Archivos con varios comandos
         if (typeof command === "object" && !command.data) {
             for (const key in command) {
                 const cmd = command[key];
@@ -59,7 +80,7 @@ for (const file of commandFiles) {
             }
         }
 
-        // 🧩 Para archivos normales
+        // 🧩 Archivos normales
         else if (command?.data?.name) {
             client.commands.set(command.data.name, command);
             console.log(`✅ Cargado: ${command.data.name}`);
@@ -107,9 +128,10 @@ client.once("ready", async () => {
         console.log("⏳ Registrando comandos...");
 
         await rest.put(
-  Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-  { body: commands }
-);
+            Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+            { body: commands }
+        );
+
         console.log(`✅ ${commands.length} comandos registrados`);
     } catch (error) {
         console.error("❌ Error registrando comandos:", error);
