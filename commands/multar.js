@@ -15,6 +15,8 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("multar")
     .setDescription("Registrar una multa vehicular")
+
+    // 🔥 REQUIRED PRIMERO (IMPORTANTE)
     .addStringOption(o =>
       o.setName("placa").setDescription("Placa del vehículo").setRequired(true)
     )
@@ -23,11 +25,6 @@ module.exports = {
     )
     .addStringOption(o =>
       o.setName("oficial").setDescription("Oficial que impone la multa").setRequired(true)
-    )
-    .addUserOption(o =>
-      o.setName("companero")
-        .setDescription("Compañero en el operativo")
-        .setRequired(false)
     )
     .addStringOption(o =>
       o.setName("lugar").setDescription("Lugar de la infracción").setRequired(true)
@@ -40,6 +37,13 @@ module.exports = {
     )
     .addAttachmentOption(o =>
       o.setName("imagen").setDescription("Imagen de evidencia").setRequired(true)
+    )
+
+    // ✅ OPCIONAL AL FINAL
+    .addUserOption(o =>
+      o.setName("companero")
+        .setDescription("Compañero en el operativo")
+        .setRequired(false)
     ),
 
   permisos: "👮 Fuerza Pública",
@@ -54,7 +58,17 @@ module.exports = {
       });
     }
 
-    // ✅ FIX JSON (NO CRASHEA)
+    // 📦 Obtener datos
+    const placa = interaction.options.getString("placa");
+    const usuario = interaction.options.getUser("usuario");
+    const oficial = interaction.options.getString("oficial");
+    const lugar = interaction.options.getString("lugar");
+    const motivo = interaction.options.getString("motivo");
+    const monto = interaction.options.getInteger("monto");
+    const imagen = interaction.options.getAttachment("imagen");
+    const companeroUser = interaction.options.getUser("companero");
+
+    // 🧠 Leer JSON sin crashear
     let data = {};
     try {
       if (fs.existsSync("./multasData.json")) {
@@ -65,29 +79,27 @@ module.exports = {
       data = {};
     }
 
-    const companeroUser = interaction.options.getUser("companero");
-
     const multa = {
-      placa: interaction.options.getString("placa"),
-      usuario: interaction.options.getUser("usuario").id,
-      oficial: interaction.options.getString("oficial"),
+      placa,
+      usuario: usuario.id,
+      oficial,
       companero: companeroUser ? companeroUser.id : null,
-      lugar: interaction.options.getString("lugar"),
-      motivo: interaction.options.getString("motivo"),
-      monto: interaction.options.getInteger("monto"),
-      imagen: interaction.options.getAttachment("imagen").url,
+      lugar,
+      motivo,
+      monto,
+      imagen: imagen.url,
       fecha: new Date().toLocaleString()
     };
 
-    // 🔹 Guardar en JSON
-    if (!data[multa.usuario]) data[multa.usuario] = [];
-    data[multa.usuario].push(multa);
+    // 💾 Guardar en JSON
+    if (!data[usuario.id]) data[usuario.id] = [];
+    data[usuario.id].push(multa);
+
     fs.writeFileSync("./multasData.json", JSON.stringify(data, null, 2));
 
-    // 🔥 DEBUG
-    console.log("Datos a guardar:", multa);
+    console.log("✅ Multa guardada:", multa);
 
-    // 🔥 GUARDAR EN POSTGRES
+    // 🗄️ GUARDAR EN POSTGRES (opcional)
     try {
       await interaction.pool.query(
         `INSERT INTO "MULTAS_LS"
@@ -105,13 +117,14 @@ module.exports = {
         ]
       );
     } catch (err) {
-      console.error("❌ Error guardando multa en DB:", err);
+      console.error("❌ Error guardando en DB:", err);
       return interaction.reply({
         content: "❌ Error guardando la multa en la base de datos",
         ephemeral: true
       });
     }
 
+    // 📢 EMBED
     const embed = new EmbedBuilder()
       .setTitle("🚨 Multa Registrada")
       .setColor(0xe67e22)
