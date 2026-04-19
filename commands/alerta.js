@@ -16,16 +16,14 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("alerta")
     .setDescription("Emitir una alerta de seguridad")
-
-    // 🔥 OPCIONES (TE FALTABAN)
     .addStringOption(option =>
       option.setName("tipo")
         .setDescription("Tipo de alerta")
         .setRequired(true)
         .addChoices(
-          { name: "🟢 Verde", value: "verde" },
-          { name: "🟡 Amarilla", value: "amarilla" },
-          { name: "🔴 Roja", value: "roja" }
+          { name: "Verde", value: "verde" },
+          { name: "Amarilla", value: "amarilla" },
+          { name: "Roja", value: "roja" }
         )
     )
     .addStringOption(option =>
@@ -34,8 +32,6 @@ module.exports = {
         .setRequired(true)
     ),
 
-  // 🔥 PARA TU /comandos
-  ROL_AUTORIZADO,
   permisos: `<@&${ROL_AUTORIZADO}>`,
 
   async execute(interaction) {
@@ -94,7 +90,7 @@ module.exports = {
       .addFields(
         { name: "📍 Servidor", value: interaction.guild.name, inline: true },
         { name: "👮 Emitido por", value: `<@${interaction.user.id}>`, inline: true },
-        { name: "🕒 Hora", value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+        { name: "🕒 Hora", value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
       )
       .setFooter({
         text: "Sistema de Alertas • Los Santos RP",
@@ -102,7 +98,7 @@ module.exports = {
       })
       .setTimestamp();
 
-    // 📢 ALERTA
+    // 📢 Enviar alerta
     if (canalAlertas) {
       await canalAlertas.send({
         content: `<@&${ROL_PING}>`,
@@ -111,7 +107,7 @@ module.exports = {
       });
     }
 
-    // 📜 LOG
+    // 📜 Logs
     if (canalLogs) {
       const logEmbed = new EmbedBuilder()
         .setTitle("📜 Alerta emitida")
@@ -119,7 +115,7 @@ module.exports = {
         .addFields(
           { name: "👮 Usuario", value: `<@${interaction.user.id}>`, inline: true },
           { name: "🚨 Tipo", value: titulo, inline: true },
-          { name: "📌 Razón", value: razon }
+          { name: "📌 Razón", value: razon, inline: false }
         )
         .setFooter({
           text: "Registro de Seguridad",
@@ -127,7 +123,7 @@ module.exports = {
         })
         .setTimestamp();
 
-      canalLogs.send({ embeds: [logEmbed] });
+      await canalLogs.send({ embeds: [logEmbed] });
     }
 
     await interaction.reply({
