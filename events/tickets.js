@@ -53,7 +53,7 @@ module.exports = (client) => {
             .setColor("#5865F2") // 🔥 color tipo Discord moderno
             .setTitle("🎫┃SISTEMA DE TICKETS")
             .setDescription(
-`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Los Santos Spanish RP**.
+`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **VELARYON Spanish RP**.
 
 Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
