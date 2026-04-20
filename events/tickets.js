@@ -7,17 +7,14 @@ const {
     StringSelectMenuBuilder
 } = require("discord.js");
 
-const fs = require("fs");
-const path = require("path");
-
 // 📂 Categoría donde se crean
 const CATEGORIA_ID = "1463192293111763113";
 
 // 📂 Canal del panel
 const CANAL_PANEL = "1463192291211477008";
 
-// 💾 Archivo donde se guarda el ID del panel
-const panelPath = path.join(__dirname, "../panelTicket.json");
+// 👑 TU ID
+const OWNER_ID = "1237774088039170170";
 
 // 🧠 Memoria temporal
 const ticketsAbiertos = new Map();
@@ -32,43 +29,28 @@ const contadores = {
 module.exports = (client) => {
 
     // ==============================
-    // 🚀 PANEL INTELIGENTE (NO DUPLICA)
+    // 📌 COMANDO !panel
     // ==============================
-    client.once("ready", async () => {
+    client.on("messageCreate", async (message) => {
+
+        if (message.author.bot) return;
+        if (message.content !== "!panel") return;
+
+        // 🔒 Solo tú puedes usarlo
+        if (message.author.id !== OWNER_ID) {
+            return message.reply("❌ No puedes usar este comando.");
+        }
 
         const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
-        if (!canal) return;
+        if (!canal) return message.reply("❌ Canal no encontrado.");
 
-        let data = { mensajeId: null };
+        // 🧹 BORRAR TODO
+        const mensajes = await canal.messages.fetch({ limit: 100 });
+        await canal.bulkDelete(mensajes, true);
 
-        if (fs.existsSync(panelPath)) {
-            try {
-                data = JSON.parse(fs.readFileSync(panelPath, "utf8"));
-            } catch {
-                data = { mensajeId: null };
-            }
-        }
-
-        let mensajeExiste = false;
-
-        if (data.mensajeId) {
-            try {
-                const msg = await canal.messages.fetch(data.mensajeId);
-                if (msg) mensajeExiste = true;
-            } catch {
-                mensajeExiste = false;
-            }
-        }
-
-        // ❌ Si ya existe, no hacer nada
-        if (mensajeExiste) {
-            console.log("🟡 Panel ya existe");
-            return;
-        }
-
-        // ✅ Crear panel
+        // 🎨 NUEVO COLOR (más elegante)
         const embed = new EmbedBuilder()
-            .setColor("#2ecc71")
+            .setColor("#5865F2") // 🔥 color tipo Discord moderno
             .setTitle("🎫┃SISTEMA DE TICKETS")
             .setDescription(
 `Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Los Santos Spanish RP**.
@@ -101,16 +83,12 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
         const row = new ActionRowBuilder().addComponents(menu);
 
-        const mensaje = await canal.send({
+        await canal.send({
             embeds: [embed],
             components: [row]
         });
 
-        fs.writeFileSync(panelPath, JSON.stringify({
-            mensajeId: mensaje.id
-        }, null, 2));
-
-        console.log("✅ Panel creado");
+        message.reply("✅ Panel enviado correctamente.");
     });
 
     // ==============================
@@ -182,7 +160,7 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
             await canal.send(`${pings} <@${user.id}>`);
 
             const embed = new EmbedBuilder()
-                .setColor("#2ecc71")
+                .setColor("#5865F2")
                 .setTitle("🎫 Ticket abierto")
                 .setDescription(`Hola <@${user.id}>, un staff te atenderá pronto.`);
 
