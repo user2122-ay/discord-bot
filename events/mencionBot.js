@@ -32,7 +32,7 @@ module.exports = (client) => {
 💬 Hablar con staff  
 
 ━━━━━━━━━━━━━━━━━━`)
-            .setFooter({ text: "Sistema de Soporte • Los Santos RP" });
+            .setFooter({ text: "Sistema de Soporte • Velaryon RP" });
 
         // 📌 MENÚ
         const menu = new StringSelectMenuBuilder()
