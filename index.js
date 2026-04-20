@@ -35,7 +35,7 @@ require("./events/bienvenida")(client);
 require("./events/presence")(client);
 require("./events/mencionBot")(client);
 require("./events/panelAuto")(client);
-
+require("./events/tickets")(client); 
 
 // ==============================
 // 📦 COMANDOS
