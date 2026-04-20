@@ -3,11 +3,21 @@ const {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
-    ChannelType
+    ChannelType,
+    StringSelectMenuBuilder
 } = require("discord.js");
+
+const fs = require("fs");
+const path = require("path");
 
 // 📂 Categoría donde se crean
 const CATEGORIA_ID = "1463192293111763113";
+
+// 📂 Canal del panel
+const CANAL_PANEL = "1463192291211477008";
+
+// 💾 Archivo donde se guarda el ID del panel
+const panelPath = path.join(__dirname, "../panelTicket.json");
 
 // 🧠 Memoria temporal
 const ticketsAbiertos = new Map();
@@ -21,18 +31,99 @@ const contadores = {
 
 module.exports = (client) => {
 
+    // ==============================
+    // 🚀 PANEL INTELIGENTE (NO DUPLICA)
+    // ==============================
+    client.once("ready", async () => {
+
+        const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
+        if (!canal) return;
+
+        let data = { mensajeId: null };
+
+        if (fs.existsSync(panelPath)) {
+            try {
+                data = JSON.parse(fs.readFileSync(panelPath, "utf8"));
+            } catch {
+                data = { mensajeId: null };
+            }
+        }
+
+        let mensajeExiste = false;
+
+        if (data.mensajeId) {
+            try {
+                const msg = await canal.messages.fetch(data.mensajeId);
+                if (msg) mensajeExiste = true;
+            } catch {
+                mensajeExiste = false;
+            }
+        }
+
+        // ❌ Si ya existe, no hacer nada
+        if (mensajeExiste) {
+            console.log("🟡 Panel ya existe");
+            return;
+        }
+
+        // ✅ Crear panel
+        const embed = new EmbedBuilder()
+            .setColor("#2ecc71")
+            .setTitle("🎫┃SISTEMA DE TICKETS")
+            .setDescription(
+`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Los Santos Spanish RP**.
+
+Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
+
+━━━━━━━━━━━━━━━━━━
+
+<:moderador:1463940895698325708> **SOPORTE GENERAL**
+<:admind:1463940988530589902> **REPORTAR USUARIO**
+<:emoji_5:1463941230294597773> **REPORTAR STAFF**
+<a:Alianza:1463941043870371891> **ALIANZA**
+<:owner:1463941136229077033> **SOPORTE FUNDACIÓN**
+
+━━━━━━━━━━━━━━━━━━
+
+⚠️ Uso indebido = sanción.`
+            );
+
+        const menu = new StringSelectMenuBuilder()
+            .setCustomId("ticket_select")
+            .setPlaceholder("Selecciona una opción")
+            .addOptions([
+                { label: "Soporte General", value: "soporte" },
+                { label: "Reportar Usuario", value: "usuario" },
+                { label: "Reportar Staff", value: "staff" },
+                { label: "Alianza", value: "alianza" },
+                { label: "Fundación", value: "fundacion" }
+            ]);
+
+        const row = new ActionRowBuilder().addComponents(menu);
+
+        const mensaje = await canal.send({
+            embeds: [embed],
+            components: [row]
+        });
+
+        fs.writeFileSync(panelPath, JSON.stringify({
+            mensajeId: mensaje.id
+        }, null, 2));
+
+        console.log("✅ Panel creado");
+    });
+
+    // ==============================
+    // 📌 CREAR TICKET
+    // ==============================
     client.on("interactionCreate", async interaction => {
 
-        // ==============================
-        // 📌 CREAR TICKET
-        // ==============================
         if (interaction.isStringSelectMenu() && interaction.customId === "ticket_select") {
 
             const user = interaction.user;
             const guild = interaction.guild;
             const tipo = interaction.values[0];
 
-            // 🔒 1 ticket por usuario
             if (ticketsAbiertos.has(user.id)) {
                 return interaction.reply({
                     content: "❌ Ya tienes un ticket abierto.",
@@ -40,7 +131,6 @@ module.exports = (client) => {
                 });
             }
 
-            // 🔢 contador
             contadores[tipo]++;
             const numero = String(contadores[tipo]).padStart(3, "0");
 
@@ -72,7 +162,6 @@ module.exports = (client) => {
                 roles = ["1463192290456764549"];
             }
 
-            // 📁 Crear canal
             const canal = await guild.channels.create({
                 name: nombre,
                 type: ChannelType.GuildText,
@@ -89,12 +178,9 @@ module.exports = (client) => {
 
             ticketsAbiertos.set(user.id, canal.id);
 
-            // 📢 Ping fuera del embed
             const pings = roles.map(r => `<@&${r}>`).join(" ");
-
             await canal.send(`${pings} <@${user.id}>`);
 
-            // 📌 EMBED
             const embed = new EmbedBuilder()
                 .setColor("#2ecc71")
                 .setTitle("🎫 Ticket abierto")
@@ -130,21 +216,12 @@ module.exports = (client) => {
 
             const canal = interaction.channel;
 
-            // 🔒 RECLAMAR
             if (interaction.customId === "reclamar") {
-
-                await canal.permissionOverwrites.edit(interaction.user.id, {
-                    ViewChannel: true,
-                    SendMessages: true
-                });
-
                 return interaction.reply(`👮 Ticket reclamado por <@${interaction.user.id}>`);
             }
 
-            // ❌ CERRAR
             if (interaction.customId === "cerrar") {
 
-                // quitar de memoria
                 for (const [userId, canalId] of ticketsAbiertos.entries()) {
                     if (canalId === canal.id) {
                         ticketsAbiertos.delete(userId);
@@ -153,10 +230,8 @@ module.exports = (client) => {
                 }
 
                 await interaction.reply("🔒 Cerrando ticket...");
-
                 setTimeout(() => canal.delete(), 3000);
             }
-
         }
 
     });
