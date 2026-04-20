@@ -18,12 +18,23 @@ const OWNER_ID = "1237774088039170170";
 
 // 🧠 Memoria temporal
 const ticketsAbiertos = new Map();
+const ticketsReclamados = new Map(); // 🔥 NUEVO
+
 const contadores = {
     soporte: 0,
     usuario: 0,
     staff: 0,
     alianza: 0,
     fundacion: 0
+};
+
+// 🔐 ROLES POR TIPO
+const ROLES_TICKET = {
+    soporte: ["1463192290423083324"],
+    usuario: ["1463192290423083324"],
+    staff: ["1463192290444185650"],
+    alianza: ["1463192290410631451"],
+    fundacion: ["1463192290456764549"]
 };
 
 module.exports = (client) => {
@@ -36,7 +47,6 @@ module.exports = (client) => {
         if (message.author.bot) return;
         if (message.content !== "!panel") return;
 
-        // 🔒 Solo tú puedes usarlo
         if (message.author.id !== OWNER_ID) {
             return message.reply("❌ No puedes usar este comando.");
         }
@@ -44,30 +54,20 @@ module.exports = (client) => {
         const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
         if (!canal) return message.reply("❌ Canal no encontrado.");
 
-        // 🧹 BORRAR TODO
         const mensajes = await canal.messages.fetch({ limit: 100 });
         await canal.bulkDelete(mensajes, true);
 
-        // 🎨 NUEVO COLOR (más elegante)
         const embed = new EmbedBuilder()
-            .setColor("#5865F2") // 🔥 color tipo Discord moderno
+            .setColor("#5865F2")
             .setTitle("🎫┃SISTEMA DE TICKETS")
             .setDescription(
-`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **VELARYON Spanish RP**.
-
-Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
+`Bienvenido al sistema de soporte.
 
 ━━━━━━━━━━━━━━━━━━
 
-<:moderador:1463940895698325708> **SOPORTE GENERAL**
-<:admind:1463940988530589902> **REPORTAR USUARIO**
-<:emoji_5:1463941230294597773> **REPORTAR STAFF**
-<a:Alianza:1463941043870371891> **ALIANZA**
-<:owner:1463941136229077033> **SOPORTE FUNDACIÓN**
+Selecciona una opción del menú.
 
-━━━━━━━━━━━━━━━━━━
-
-⚠️ Uso indebido = sanción.`
+━━━━━━━━━━━━━━━━━━`
             );
 
         const menu = new StringSelectMenuBuilder()
@@ -88,7 +88,7 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
             components: [row]
         });
 
-        message.reply("✅ Panel enviado correctamente.");
+        message.reply("✅ Panel enviado.");
     });
 
     // ==============================
@@ -112,33 +112,8 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
             contadores[tipo]++;
             const numero = String(contadores[tipo]).padStart(3, "0");
 
-            let nombre = "";
-            let roles = [];
-
-            if (tipo === "soporte") {
-                nombre = `soporte-${numero}`;
-                roles = ["1463192290423083324"];
-            }
-
-            if (tipo === "usuario") {
-                nombre = `reporte-${numero}`;
-                roles = ["1463192290423083324"];
-            }
-
-            if (tipo === "staff") {
-                nombre = `staff-${numero}`;
-                roles = ["1463192290444185650"];
-            }
-
-            if (tipo === "alianza") {
-                nombre = `alianza-${numero}`;
-                roles = ["1463192290410631451"];
-            }
-
-            if (tipo === "fundacion") {
-                nombre = `fundacion-${numero}`;
-                roles = ["1463192290456764549"];
-            }
+            const nombre = `${tipo}-${numero}`;
+            const roles = ROLES_TICKET[tipo];
 
             const canal = await guild.channels.create({
                 name: nombre,
@@ -162,7 +137,7 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
             const embed = new EmbedBuilder()
                 .setColor("#5865F2")
                 .setTitle("🎫 Ticket abierto")
-                .setDescription(`Hola <@${user.id}>, un staff te atenderá pronto.`);
+                .setDescription(`Hola <@${user.id}>, espera a un staff.`);
 
             const botones = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -194,11 +169,60 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
             const canal = interaction.channel;
 
+            // 🔒 RECLAMAR
             if (interaction.customId === "reclamar") {
-                return interaction.reply(`👮 Ticket reclamado por <@${interaction.user.id}>`);
+
+                // ❌ Ya reclamado
+                if (ticketsReclamados.has(canal.id)) {
+                    return interaction.reply({
+                        content: "❌ Este ticket ya fue reclamado.",
+                        ephemeral: true
+                    });
+                }
+
+                // 🔍 Detectar tipo por nombre
+                const tipo = canal.name.split("-")[0];
+                const rolesPermitidos = ROLES_TICKET[tipo] || [];
+
+                // 🔒 Verificar rol
+                const tieneRol = interaction.member.roles.cache.some(r =>
+                    rolesPermitidos.includes(r.id)
+                );
+
+                if (!tieneRol) {
+                    return interaction.reply({
+                        content: "❌ No tienes permiso para reclamar este ticket.",
+                        ephemeral: true
+                    });
+                }
+
+                // ✅ Guardar reclamador
+                ticketsReclamados.set(canal.id, interaction.user.id);
+
+                await canal.send(`👮 Ticket reclamado por <@${interaction.user.id}>`);
+
+                return interaction.reply({
+                    content: "✅ Ticket reclamado.",
+                    ephemeral: true
+                });
             }
 
+            // ❌ CERRAR
             if (interaction.customId === "cerrar") {
+
+                const tipo = canal.name.split("-")[0];
+                const rolesPermitidos = ROLES_TICKET[tipo] || [];
+
+                const esStaff = interaction.member.roles.cache.some(r =>
+                    rolesPermitidos.includes(r.id)
+                );
+
+                if (!esStaff) {
+                    return interaction.reply({
+                        content: "❌ Solo el staff puede cerrar este ticket.",
+                        ephemeral: true
+                    });
+                }
 
                 for (const [userId, canalId] of ticketsAbiertos.entries()) {
                     if (canalId === canal.id) {
@@ -206,6 +230,8 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
                         break;
                     }
                 }
+
+                ticketsReclamados.delete(canal.id);
 
                 await interaction.reply("🔒 Cerrando ticket...");
                 setTimeout(() => canal.delete(), 3000);
