@@ -60,16 +60,23 @@ module.exports = (client) => {
         const embed = new EmbedBuilder()
             .setColor("#5865F2")
             .setTitle("🎫┃SISTEMA DE TICKETS")
-            .setDescription(
-`Bienvenido al sistema de soporte.
+        .setDescription(
+`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Los Santos Spanish RP**.
+
+Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
 ━━━━━━━━━━━━━━━━━━
 
-Selecciona una opción del menú.
+<:moderador:1463940895698325708> **SOPORTE GENERAL**
+<:admind:1463940988530589902> **REPORTAR USUARIO**
+<:emoji_5:1463941230294597773> **REPORTAR STAFF**
+<a:Alianza:1463941043870371891> **ALIANZA**
+<:owner:1463941136229077033> **SOPORTE FUNDACIÓN**
 
-━━━━━━━━━━━━━━━━━━`
+━━━━━━━━━━━━━━━━━━
+
+⚠️ Uso indebido = sanción.`
             );
-
         const menu = new StringSelectMenuBuilder()
             .setCustomId("ticket_select")
             .setPlaceholder("Selecciona una opción")
