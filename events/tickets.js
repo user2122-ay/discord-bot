@@ -44,7 +44,7 @@ module.exports = (client) => {
     // ðŸ·ï¸ PANEL â€” solo una vez
     // ==============================
     client.once("ready", async () => {
-        const CANAL_PANEL_ID = "PON_AQUI_EL_ID_DEL_CANAL";
+        const CANAL_PANEL_ID = "1463192291211477008";
 
         try {
             const canal = await client.channels.fetch(CANAL_PANEL_ID);
