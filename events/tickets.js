@@ -16,9 +16,9 @@ const CANAL_PANEL = "1463192291211477008";
 // 👑 TU ID
 const OWNER_ID = "1237774088039170170";
 
-// 🧠 Memoria temporal
+// 🧠 Memoria
 const ticketsAbiertos = new Map();
-const ticketsReclamados = new Map(); // 🔥 NUEVO
+const ticketsReclamados = new Map();
 
 const contadores = {
     soporte: 0,
@@ -54,38 +54,76 @@ module.exports = (client) => {
         const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
         if (!canal) return message.reply("❌ Canal no encontrado.");
 
+        // 🧹 limpiar canal
         const mensajes = await canal.messages.fetch({ limit: 100 });
         await canal.bulkDelete(mensajes, true);
 
+        // 🔥 EMBED V2
         const embed = new EmbedBuilder()
             .setColor("#5865F2")
-            .setTitle("🎫┃SISTEMA DE TICKETS")
-        .setDescription(
-`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Velaryon Spanish RP**.
+            .setAuthor({
+                name: "Sistema de Tickets",
+                iconURL: message.guild.iconURL({ dynamic: true })
+            })
+            .setTitle("🎫 Panel de Soporte")
+            .setDescription(
+`> Bienvenido al sistema de atención de **Los Santos RP**
 
-Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
-
-━━━━━━━━━━━━━━━━━━
-
-<:moderador:1463940895698325708> **SOPORTE GENERAL**
-<:admind:1463940988530589902> **REPORTAR USUARIO**
-<:emoji_5:1463941230294597773> **REPORTAR STAFF**
-<a:Alianza:1463941043870371891> **ALIANZA**
-<:owner:1463941136229077033> **SOPORTE FUNDACIÓN**
+Selecciona una categoría para continuar:
 
 ━━━━━━━━━━━━━━━━━━
 
-⚠️ Uso indebido = sanción.`
-            );
+<:moderador:1463940895698325708> **Soporte General**  
+<:admind:1463940988530589902> **Reportar Usuario**  
+<:emoji_5:1463941230294597773> **Reportar Staff**  
+<a:Alianza:1463941043870371891> **Alianzas**  
+<:owner:1463941136229077033> **Fundación**
+
+━━━━━━━━━━━━━━━━━━
+
+⚠️ El mal uso del sistema será sancionado.`
+            )
+            .setThumbnail(message.guild.iconURL({ dynamic: true }))
+            .setFooter({
+                text: "Los Santos RP • Sistema Oficial",
+                iconURL: message.guild.iconURL({ dynamic: true })
+            });
+
+        // 🔘 MENU PRO
         const menu = new StringSelectMenuBuilder()
             .setCustomId("ticket_select")
-            .setPlaceholder("Selecciona una opción")
+            .setPlaceholder("Selecciona una categoría")
             .addOptions([
-                { label: "Soporte General", value: "soporte" },
-                { label: "Reportar Usuario", value: "usuario" },
-                { label: "Reportar Staff", value: "staff" },
-                { label: "Alianza", value: "alianza" },
-                { label: "Fundación", value: "fundacion" }
+                {
+                    label: "Soporte General",
+                    description: "Dudas o ayuda general",
+                    value: "soporte",
+                    emoji: "🛠️"
+                },
+                {
+                    label: "Reportar Usuario",
+                    description: "Reporta a un jugador",
+                    value: "usuario",
+                    emoji: "🚨"
+                },
+                {
+                    label: "Reportar Staff",
+                    description: "Asuntos internos",
+                    value: "staff",
+                    emoji: "⚖️"
+                },
+                {
+                    label: "Alianza",
+                    description: "Solicitudes de alianza",
+                    value: "alianza",
+                    emoji: "🤝"
+                },
+                {
+                    label: "Fundación",
+                    description: "Soporte especial",
+                    value: "fundacion",
+                    emoji: "🏛️"
+                }
             ]);
 
         const row = new ActionRowBuilder().addComponents(menu);
@@ -144,7 +182,7 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
             const embed = new EmbedBuilder()
                 .setColor("#5865F2")
                 .setTitle("🎫 Ticket abierto")
-                .setDescription(`Hola <@${user.id}>, espera a un staff.`);
+                .setDescription(`Hola <@${user.id}>, un staff te atenderá pronto.`);
 
             const botones = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -179,7 +217,6 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
             // 🔒 RECLAMAR
             if (interaction.customId === "reclamar") {
 
-                // ❌ Ya reclamado
                 if (ticketsReclamados.has(canal.id)) {
                     return interaction.reply({
                         content: "❌ Este ticket ya fue reclamado.",
@@ -187,23 +224,20 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
                     });
                 }
 
-                // 🔍 Detectar tipo por nombre
                 const tipo = canal.name.split("-")[0];
                 const rolesPermitidos = ROLES_TICKET[tipo] || [];
 
-                // 🔒 Verificar rol
                 const tieneRol = interaction.member.roles.cache.some(r =>
                     rolesPermitidos.includes(r.id)
                 );
 
                 if (!tieneRol) {
                     return interaction.reply({
-                        content: "❌ No tienes permiso para reclamar este ticket.",
+                        content: "❌ No puedes reclamar este ticket.",
                         ephemeral: true
                     });
                 }
 
-                // ✅ Guardar reclamador
                 ticketsReclamados.set(canal.id, interaction.user.id);
 
                 await canal.send(`👮 Ticket reclamado por <@${interaction.user.id}>`);
@@ -226,7 +260,7 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
                 if (!esStaff) {
                     return interaction.reply({
-                        content: "❌ Solo el staff puede cerrar este ticket.",
+                        content: "❌ Solo staff puede cerrar.",
                         ephemeral: true
                     });
                 }
