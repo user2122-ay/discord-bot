@@ -4,22 +4,21 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ChannelType,
-    StringSelectMenuBuilder
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder
 } = require("discord.js");
 
-// 📂 Categoría donde se crean
+const fs   = require("fs");
+const path = require("path");
+
+// ðŸ“‚ CategorÃ­a donde se crean
 const CATEGORIA_ID = "1463192293111763113";
 
-// 📂 Canal del panel
-const CANAL_PANEL = "1463192291211477008";
+// ðŸ“„ Archivo para recordar el mensaje del panel
+const PANEL_FILE = path.join(__dirname, "../panel-id.json");
 
-// 👑 TU ID
-const OWNER_ID = "1237774088039170170";
-
-// 🧠 Memoria temporal
+// ðŸ§  Memoria temporal
 const ticketsAbiertos = new Map();
-const ticketsReclamados = new Map(); // 🔥 NUEVO
-
 const contadores = {
     soporte: 0,
     usuario: 0,
@@ -28,100 +27,148 @@ const contadores = {
     fundacion: 0
 };
 
-// 🔐 ROLES POR TIPO
-const ROLES_TICKET = {
-    soporte: ["1463192290423083324"],
-    usuario: ["1463192290423083324"],
-    staff: ["1463192290444185650"],
-    alianza: ["1463192290410631451"],
-    fundacion: ["1463192290456764549"]
-};
+function leerPanel() {
+    try {
+        if (fs.existsSync(PANEL_FILE)) return JSON.parse(fs.readFileSync(PANEL_FILE, "utf8"));
+    } catch (_) {}
+    return null;
+}
+
+function guardarPanel(data) {
+    fs.writeFileSync(PANEL_FILE, JSON.stringify(data, null, 2), "utf8");
+}
 
 module.exports = (client) => {
 
     // ==============================
-    // 📌 COMANDO !panel
+    // ðŸ·ï¸ PANEL â€” solo una vez
     // ==============================
-    client.on("messageCreate", async (message) => {
+    client.once("ready", async () => {
+        const CANAL_PANEL_ID = "PON_AQUI_EL_ID_DEL_CANAL";
 
-        if (message.author.bot) return;
-        if (message.content !== "!panel") return;
+        try {
+            const canal = await client.channels.fetch(CANAL_PANEL_ID);
+            const guardado = leerPanel();
 
-        if (message.author.id !== OWNER_ID) {
-            return message.reply("❌ No puedes usar este comando.");
+            if (guardado?.mensajeId) {
+                try {
+                    await canal.messages.fetch(guardado.mensajeId);
+                    console.log("[Tickets] Panel ya existe, no se reenvÃ­a.");
+                    return;
+                } catch (_) {
+                    console.log("[Tickets] Mensaje borrado, reenviando panel...");
+                }
+            }
+
+            const embed = new EmbedBuilder()
+                .setColor("#F0A500")
+                .setTitle("ðŸ·ï¸ | Panel de Tickets")
+                .setDescription(
+                    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n" +
+                    "Â¡Bienvenidos al sistema oficial de Tickets de MedellÃ­n RP!\n" +
+                    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n" +
+                    "Antes de abrir ticket por lo que sea, pregunte. Si nadie es " +
+                    "capaz de responderte, abre y te resolveremos.\n" +
+                    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n" +
+                    "Nuestro tiempo estimado de respuesta es de menos de 6 horas. " +
+                    "Hay varios tipos de tickets que puedes tener:\n\n" +
+                    "â— FundaciÃ³n\n" +
+                    "â— DirecciÃ³n\n" +
+                    "â— AdministraciÃ³n\n" +
+                    "â— ModeraciÃ³n\n" +
+                    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n" +
+                    "Gracias a todos."
+                );
+
+            const selectMenu = new StringSelectMenuBuilder()
+                .setCustomId("ticket_select")
+                .setPlaceholder("Haz una selecciÃ³n")
+                .addOptions(
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel("FundaciÃ³n")
+                        .setDescription("Tickets relacionados con la fundaciÃ³n")
+                        .setValue("fundacion")
+                        .setEmoji("ðŸ›ï¸"),
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel("DirecciÃ³n")
+                        .setDescription("Tickets para direcciÃ³n")
+                        .setValue("soporte")
+                        .setEmoji("ðŸ“‹"),
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel("AdministraciÃ³n")
+                        .setDescription("Tickets de administraciÃ³n")
+                        .setValue("alianza")
+                        .setEmoji("âš™ï¸"),
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel("ModeraciÃ³n")
+                        .setDescription("Reportes y tickets de moderaciÃ³n")
+                        .setValue("usuario")
+                        .setEmoji("ðŸ›¡ï¸")
+                );
+
+            const fila = new ActionRowBuilder().addComponents(selectMenu);
+
+            const mensaje = await canal.send({ embeds: [embed], components: [fila] });
+            guardarPanel({ canalId: canal.id, mensajeId: mensaje.id });
+            console.log("[Tickets] Panel enviado.");
+
+        } catch (err) {
+            console.error("[Tickets] Error enviando panel:", err.message);
         }
-
-        const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
-        if (!canal) return message.reply("❌ Canal no encontrado.");
-
-        const mensajes = await canal.messages.fetch({ limit: 100 });
-        await canal.bulkDelete(mensajes, true);
-
-        const embed = new EmbedBuilder()
-            .setColor("#5865F2")
-            .setTitle("🎫┃SISTEMA DE TICKETS")
-        .setDescription(
-`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Velaryon Spanish RP**.
-
-Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
-
-━━━━━━━━━━━━━━━━━━
-
-<:moderador:1463940895698325708> **SOPORTE GENERAL**
-<:admind:1463940988530589902> **REPORTAR USUARIO**
-<:emoji_5:1463941230294597773> **REPORTAR STAFF**
-<a:Alianza:1463941043870371891> **ALIANZA**
-<:owner:1463941136229077033> **SOPORTE FUNDACIÓN**
-
-━━━━━━━━━━━━━━━━━━
-
-⚠️ Uso indebido = sanción.`
-            );
-        const menu = new StringSelectMenuBuilder()
-            .setCustomId("ticket_select")
-            .setPlaceholder("Selecciona una opción")
-            .addOptions([
-                { label: "Soporte General", value: "soporte" },
-                { label: "Reportar Usuario", value: "usuario" },
-                { label: "Reportar Staff", value: "staff" },
-                { label: "Alianza", value: "alianza" },
-                { label: "Fundación", value: "fundacion" }
-            ]);
-
-        const row = new ActionRowBuilder().addComponents(menu);
-
-        await canal.send({
-            embeds: [embed],
-            components: [row]
-        });
-
-        message.reply("✅ Panel enviado.");
     });
 
-    // ==============================
-    // 📌 CREAR TICKET
-    // ==============================
     client.on("interactionCreate", async interaction => {
 
+        // ==============================
+        // ðŸ“Œ CREAR TICKET
+        // ==============================
         if (interaction.isStringSelectMenu() && interaction.customId === "ticket_select") {
 
             const user = interaction.user;
             const guild = interaction.guild;
             const tipo = interaction.values[0];
 
+            // ðŸ”’ 1 ticket por usuario
             if (ticketsAbiertos.has(user.id)) {
                 return interaction.reply({
-                    content: "❌ Ya tienes un ticket abierto.",
+                    content: "âŒ Ya tienes un ticket abierto.",
                     ephemeral: true
                 });
             }
 
+            // ðŸ”¢ contador
             contadores[tipo]++;
             const numero = String(contadores[tipo]).padStart(3, "0");
 
-            const nombre = `${tipo}-${numero}`;
-            const roles = ROLES_TICKET[tipo];
+            let nombre = "";
+            let roles = [];
 
+            if (tipo === "soporte") {
+                nombre = `soporte-${numero}`;
+                roles = ["1463192290423083324"];
+            }
+
+            if (tipo === "usuario") {
+                nombre = `reporte-${numero}`;
+                roles = ["1463192290423083324"];
+            }
+
+            if (tipo === "staff") {
+                nombre = `staff-${numero}`;
+                roles = ["1463192290444185650"];
+            }
+
+            if (tipo === "alianza") {
+                nombre = `alianza-${numero}`;
+                roles = ["1463192290410631451"];
+            }
+
+            if (tipo === "fundacion") {
+                nombre = `fundacion-${numero}`;
+                roles = ["1463192290456764549"];
+            }
+
+            // ðŸ“ Crear canal
             const canal = await guild.channels.create({
                 name: nombre,
                 type: ChannelType.GuildText,
@@ -138,13 +185,21 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
             ticketsAbiertos.set(user.id, canal.id);
 
+            // ðŸ“¢ Ping fuera del embed
             const pings = roles.map(r => `<@&${r}>`).join(" ");
+
             await canal.send(`${pings} <@${user.id}>`);
 
+            // ðŸ“Œ EMBED (nuevo estilo)
             const embed = new EmbedBuilder()
-                .setColor("#5865F2")
-                .setTitle("🎫 Ticket abierto")
-                .setDescription(`Hola <@${user.id}>, espera a un staff.`);
+                .setColor("#F0A500")
+                .setTitle("ðŸŽ« | Ticket abierto")
+                .setDescription(
+                    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n" +
+                    `Hola <@${user.id}>, un miembro del staff te atenderÃ¡ pronto.\n` +
+                    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n" +
+                    "Describe tu situaciÃ³n con el mayor detalle posible."
+                );
 
             const botones = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -164,73 +219,33 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
             });
 
             await interaction.reply({
-                content: `✅ Ticket creado: ${canal}`,
+                content: `âœ… Ticket creado: ${canal}`,
                 ephemeral: true
             });
         }
 
         // ==============================
-        // 🔘 BOTONES
+        // ðŸ”˜ BOTONES
         // ==============================
         if (interaction.isButton()) {
 
             const canal = interaction.channel;
 
-            // 🔒 RECLAMAR
+            // ðŸ”’ RECLAMAR
             if (interaction.customId === "reclamar") {
 
-                // ❌ Ya reclamado
-                if (ticketsReclamados.has(canal.id)) {
-                    return interaction.reply({
-                        content: "❌ Este ticket ya fue reclamado.",
-                        ephemeral: true
-                    });
-                }
-
-                // 🔍 Detectar tipo por nombre
-                const tipo = canal.name.split("-")[0];
-                const rolesPermitidos = ROLES_TICKET[tipo] || [];
-
-                // 🔒 Verificar rol
-                const tieneRol = interaction.member.roles.cache.some(r =>
-                    rolesPermitidos.includes(r.id)
-                );
-
-                if (!tieneRol) {
-                    return interaction.reply({
-                        content: "❌ No tienes permiso para reclamar este ticket.",
-                        ephemeral: true
-                    });
-                }
-
-                // ✅ Guardar reclamador
-                ticketsReclamados.set(canal.id, interaction.user.id);
-
-                await canal.send(`👮 Ticket reclamado por <@${interaction.user.id}>`);
-
-                return interaction.reply({
-                    content: "✅ Ticket reclamado.",
-                    ephemeral: true
+                await canal.permissionOverwrites.edit(interaction.user.id, {
+                    ViewChannel: true,
+                    SendMessages: true
                 });
+
+                return interaction.reply(`ðŸ‘® Ticket reclamado por <@${interaction.user.id}>`);
             }
 
-            // ❌ CERRAR
+            // âŒ CERRAR
             if (interaction.customId === "cerrar") {
 
-                const tipo = canal.name.split("-")[0];
-                const rolesPermitidos = ROLES_TICKET[tipo] || [];
-
-                const esStaff = interaction.member.roles.cache.some(r =>
-                    rolesPermitidos.includes(r.id)
-                );
-
-                if (!esStaff) {
-                    return interaction.reply({
-                        content: "❌ Solo el staff puede cerrar este ticket.",
-                        ephemeral: true
-                    });
-                }
-
+                // quitar de memoria
                 for (const [userId, canalId] of ticketsAbiertos.entries()) {
                     if (canalId === canal.id) {
                         ticketsAbiertos.delete(userId);
@@ -238,11 +253,11 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
                     }
                 }
 
-                ticketsReclamados.delete(canal.id);
+                await interaction.reply("ðŸ”’ Cerrando ticket...");
 
-                await interaction.reply("🔒 Cerrando ticket...");
                 setTimeout(() => canal.delete(), 3000);
             }
+
         }
 
     });
