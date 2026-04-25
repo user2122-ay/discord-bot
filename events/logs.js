@@ -1,6 +1,6 @@
 module.exports = (client) => {
 
-const LOG_CHANNEL_ID = "1452157557551661167";
+const LOG_CHANNEL_ID = "1455970934535225518";
 
 // 🔎 Función para sacar quién hizo la acción
 async function getExecutor(guild, type) {
