@@ -7,7 +7,7 @@ module.exports = {
   permisos: "🌐 Todos",
 
   data: new SlashCommandBuilder()
-    .setName("creardni")
+    .setName("crearcedula")
     .setDescription("Crear cédula Panamá RP V2")
 
     .addStringOption(o => o.setName("nombre").setDescription("Nombre IC").setRequired(true))
