@@ -1,16 +1,16 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔒 Rol autorizado
-const ROL_AUTORIZADO = "1463192290423083324";
+const ROL_AUTORIZADO = "1451018406537986168";
 
 // 🔔 Rol a ping
-const ROL_PING = "1463192290314162342";
+const ROL_PING = "1451018411512565810";
 
 // 📢 Canal donde se envía la alerta
-const CANAL_ALERTAS = "1463192291811528930";
+const CANAL_ALERTAS = "1451018740245332059";
 
 // 📜 Canal de logs
-const CANAL_LOGS = "1463192293312958628";
+const CANAL_LOGS = "1455970934535225518";
 
 module.exports = {
   data: new SlashCommandBuilder()
