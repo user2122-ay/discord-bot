@@ -39,7 +39,7 @@ module.exports = (client) => {
         cambiarEstado();
 
         // 🔁 Cada 10 minutos
-        setInterval(cambiarEstado, 10 * 60 * 1000);
+        setInterval(cambiarEstado, 25 * 1000);
     });
 
 };
