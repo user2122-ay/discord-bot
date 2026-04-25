@@ -8,13 +8,13 @@ const {
 } = require("discord.js");
 
 // 📂 Categoría donde se crean
-const CATEGORIA_ID = "1463192293111763113";
+const CATEGORIA_ID = "1459214153326657559";
 
 // 📂 Canal del panel
-const CANAL_PANEL = "1463192291211477008";
+const CANAL_PANEL = "1451018705528946923";
 
 // 👑 TU ID
-const OWNER_ID = "1237774088039170170";
+const OWNER_ID = "1451018301831385241";
 
 // 🧠 Memoria temporal
 const ticketsAbiertos = new Map();
@@ -30,11 +30,11 @@ const contadores = {
 
 // 🔐 ROLES POR TIPO
 const ROLES_TICKET = {
-    soporte: ["1463192290423083324"],
-    usuario: ["1463192290423083324"],
-    staff: ["1463192290444185650"],
-    alianza: ["1463192290410631451"],
-    fundacion: ["1463192290456764549"]
+    soporte: ["1451018406537986168"],
+    usuario: ["1451018406537986168"],
+    staff: ["1451018321033036068"],
+    alianza: ["1451218087910309898"],
+    fundacion: ["1497437860608081950"]
 };
 
 module.exports = (client) => {
