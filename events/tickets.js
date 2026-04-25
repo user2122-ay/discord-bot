@@ -67,15 +67,27 @@ Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
 ━━━━━━━━━━━━━━━━━━
 
-<:moderador:1463940895698325708> **SOPORTE GENERAL**
-<:admind:1463940988530589902> **REPORTAR USUARIO**
-<:emoji_5:1463941230294597773> **REPORTAR STAFF**
-<a:Alianza:1463941043870371891> **ALIANZA**
-<:owner:1463941136229077033> **SOPORTE FUNDACIÓN**
+**<:soporte:1459210964867092492> SOPORTE GENERAL**
+Para consultas generales, errores técnicos, problemas dentro del servidor o cualquier situación que no encaje en las demás categorías.
+
+**<:admind:1459211042939732072> REPORTAR USUARIO**
+Para reportar conductas inapropiadas de un jugador.
+Es obligatorio proporcionar información clara y **pruebas válidas** (capturas, clips, fecha y nombre del implicado).
+
+** <:emoji_5:1459211125790085354>REPORTAR STAFF**
+Categoría exclusiva para reportar acciones indebidas del personal del servidor.
+Todos los reportes serán tratados con **confidencialidad, imparcialidad y seriedad** por la administración.
+
+**<a:emoji_6:1459211763752108106> ALIANZA**
+Dirigido a representantes de otros servidores o comunidades interesados en establecer una alianza oficial con **Arizona RP**.
+
+** <:owner:1459210903911141487> SOPORTE FUNDACIÓN**
+Categoría destinada exclusivamente a asuntos directos con los Owners del servidor, tales como decisiones administrativas, situaciones de alto nivel o temas institucionales.
 
 ━━━━━━━━━━━━━━━━━━
 
-⚠️ Uso indebido = sanción.`
+> **⚠️ Importante:**
+> El uso indebido del sistema de tickets, información falsa o falta de respeto podrá resultar en sanciones conforme a la normativa del servidor.`
             );
         const menu = new StringSelectMenuBuilder()
             .setCustomId("ticket_select")
