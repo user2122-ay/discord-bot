@@ -5,7 +5,7 @@ const {
 } = require("discord.js");
 
 // 📢 Canal donde se avisa al staff
-const CANAL_AVISO = "1463192293111763118";
+const CANAL_AVISO = "1455970934535225518";
 
 module.exports = (client) => {
 
