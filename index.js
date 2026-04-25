@@ -98,7 +98,7 @@ for (const file of commandFiles) {
 // 🆔 GUILD
 // ==============================
 
-const GUILD_ID = "1463192289974157334";
+const GUILD_ID = "1345956472986796183";
 
 // ==============================
 // 🚀 READY
