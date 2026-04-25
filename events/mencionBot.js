@@ -73,28 +73,28 @@ module.exports = (client) => {
 
         if (opcion === "ticket") {
             return interaction.reply({
-                content: "🎫 Tickets aquí:\nhttps://discord.com/channels/1463192289974157334/1463192291211477008",
+                content: "🎫 Tickets aquí:\nhttps://discord.com/channels/1345956472986796183/1451018705528946923",
                 ephemeral: true
             });
         }
 
         if (opcion === "normas") {
             return interaction.reply({
-                content: "📜 Normativa:\nhttps://discord.com/channels/1463192289974157334/1463192291056423017",
+                content: "📜 Normativa:\nhttps://discord.com/channels/1345956472986796183/1451018653259792536",
                 ephemeral: true
             });
         }
 
         if (opcion === "rp") {
             return interaction.reply({
-                content: "📘 Conceptos RP:\nhttps://discord.com/channels/1463192289974157334/1463192291056423019",
+                content: "📘 Conceptos RP:\nhttps://discord.com/channels/1345956472986796183/1451771796918636697",
                 ephemeral: true
             });
         }
 
         if (opcion === "estado") {
             return interaction.reply({
-                content: "🟢 Estado del servidor:\nhttps://discord.com/channels/1463192289974157334/1463192291056423024",
+                content: "🟢 Estado del servidor:\nhttps://discord.com/channels/1345956472986796183/1451018683383156827",
                 ephemeral: true
             });
         }
@@ -105,7 +105,7 @@ module.exports = (client) => {
 
             if (canal) {
                 canal.send({
-                    content: `🚨 <@${interaction.user.id}> necesita ayuda. Fue desde mención al bot.<@&1463192290423083324>`
+                    content: `🚨 <@${interaction.user.id}> necesita ayuda. Fue desde mención al bot.<@&1451018406537986168>`
                 });
             }
 
