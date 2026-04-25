@@ -2,7 +2,7 @@ const { EmbedBuilder } = require("discord.js");
 
 module.exports = (client) => {
 
-    const CANAL_BIENVENIDA = "1463192290905559155";
+    const CANAL_BIENVENIDA = "1451018651351384199";
 
     client.on("guildMemberAdd", async (member) => {
 
