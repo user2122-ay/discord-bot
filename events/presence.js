@@ -1,15 +1,15 @@
 module.exports = (client) => {
 
     const estados = [
-        { name: "🌴 Roleando en Los Santos RP", type: 0 },
+        { name: "🇵🇦  Roleando en Panamá RP V2", type: 0 },
         { name: "🚓 Patrullando la ciudad", type: 3 },
         { name: "🎧 Radio policial activa", type: 2 },
         { name: "💰 Sistema económico", type: 0 },
         { name: "🚨 Alertas activas", type: 3 },
         { name: "👮 Controlando el crimen", type: 0 },
-        { name: "📋 Sistema de DNIs", type: 0 },
+        { name: "📋 Sistema de Cédulas", type: 0 },
         { name: "🚗 Multando conductores", type: 0 },
-        { name: "🌆 Vida en Los Santos", type: 3 },
+        { name: "🌆 Vida en Panamá", type: 3 },
         { name: "🧠 IA del servidor", type: 2 },
         { name: "🔒 Anti-Raid activo", type: 3 },
         { name: "⚖️ Justicia RP", type: 0 }
