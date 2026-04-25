@@ -3,6 +3,20 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 // 🧾 ROL QUE SE DA AL CREAR DNI
 const ROL_DNI = "1451018398874996966";
 
+// 🌎 MAPA DE PROVINCIAS
+const PROVINCIAS = {
+  "1": "Bocas del Toro",
+  "2": "Coclé",
+  "3": "Colón",
+  "4": "Chiriquí",
+  "5": "Darién",
+  "6": "Herrera",
+  "7": "Los Santos",
+  "8": "Panamá",
+  "9": "Veraguas",
+  "13": "Panamá Oeste"
+};
+
 module.exports = {
   permisos: "🌐 Todos",
 
@@ -72,7 +86,7 @@ module.exports = {
         });
       }
     } catch (err) {
-      console.error("Error verificando:", err);
+      console.error(err);
       return interaction.reply({
         content: "❌ Error verificando datos",
         ephemeral: true
@@ -84,7 +98,7 @@ module.exports = {
     const asiento = Math.floor(1000 + Math.random() * 9000);
     const cedula = `${provincia}-${tomo}-${asiento}`;
 
-    // 💾 Guardar en base de datos
+    // 💾 Guardar en DB
     try {
       await interaction.pool.query(
         `INSERT INTO "CIUDADANOS_PTY"
@@ -102,7 +116,7 @@ module.exports = {
         ]
       );
     } catch (err) {
-      console.error("Error guardando:", err);
+      console.error(err);
       return interaction.reply({
         content: "❌ Error guardando la cédula",
         ephemeral: true
@@ -119,18 +133,14 @@ module.exports = {
       .setTitle("🪪 Cédula de Identidad - Panamá RP V2")
       .setColor("#2b2d31")
       .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-      .setDescription(
-`# 📄 Documento Oficial
-
-> Registro ciudadano completado correctamente`
-      )
+      .setDescription(`# 📄 Documento Oficial\n\n> Registro ciudadano completado correctamente`)
       .addFields(
         { name: "👤 Nombre", value: nombre, inline: true },
         { name: "👤 Apellido", value: apellido, inline: true },
         { name: "🎂 Edad", value: `${edad}`, inline: true },
         { name: "📅 Nacimiento", value: nacimiento, inline: true },
         { name: "🩸 Sangre", value: sangre, inline: true },
-        { name: "🌎 Provincia", value: provincia, inline: true },
+        { name: "🌎 Provincia", value: PROVINCIAS[provincia], inline: true },
         { name: "🆔 Cédula", value: cedula, inline: true }
       )
       .setFooter({
