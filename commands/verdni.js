@@ -1,59 +1,67 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
-data: new SlashCommandBuilder()
-.setName("verdni")
-.setDescription("Ver DNI de un usuario")
-.addUserOption(o => o.setName("usuario").setDescription("Usuario").setRequired(true)),
+  data: new SlashCommandBuilder()
+    .setName("cedula")
+    .setDescription("Ver cédula de un usuario")
+    .addUserOption(o =>
+      o.setName("usuario")
+        .setDescription("Usuario")
+        .setRequired(true)
+    ),
 
-permisos: "🌍 Todos",
+  permisos: "🌍 Todos",
 
-async execute(interaction) {
-const user = interaction.options.getUser("usuario");
+  async execute(interaction) {
 
-try {  
-  // 🔥 BUSCAR EN LA BASE DE DATOS  
-  const result = await interaction.pool.query(  
-    `SELECT * FROM "DNI_LS" WHERE user_id = $1`,  
-    [user.id]  
-  );  
+    const user = interaction.options.getUser("usuario");
 
-  if (result.rows.length === 0) {  
-    return interaction.reply({  
-      content: "❌ Ese usuario no tiene DNI",  
-      ephemeral: true  
-    });  
-  }  
+    try {
+      // 🔍 BUSCAR EN NUEVA TABLA
+      const result = await interaction.pool.query(
+        `SELECT * FROM "CIUDADANOS_PTY" WHERE discord_id = $1`,
+        [user.id]
+      );
 
-  const d = result.rows[0];  
+      if (result.rows.length === 0) {
+        return interaction.reply({
+          content: "❌ Ese usuario no tiene cédula registrada.",
+          ephemeral: true
+        });
+      }
 
-  const embed = new EmbedBuilder()  
-    .setTitle("🪪 DNI - MIAMI HISPANO RP")  
-    .setColor(0x2ecc71)  
-    .setThumbnail(user.displayAvatarURL({ dynamic: true }))  
-    .addFields(  
-      { name: "👤 Nombre IC", value: d.nombre, inline: true },  
-      { name: "👤 Apellido IC", value: d.apellido, inline: true },  
-      { name: "🎂 Edad IC", value: `${d.edad}`, inline: true },  
-      { name: "📅 Nacimiento", value: d.fecha_nacimiento, inline: true },  
-      { name: "🩸 Sangre", value: d.sangre, inline: true },  
-      { name: "🆔 DNI", value: d.dni_numero, inline: true }  
-    )  
-    .setFooter({  
-      text: `Los Santos RP | ${new Date().toLocaleDateString()}`,  
-      iconURL: interaction.guild.iconURL({ dynamic: true })  
-    })  
-    .setTimestamp();  
+      const d = result.rows[0];
 
-  await interaction.reply({ embeds: [embed] });  
+      // 📄 EMBED NUEVO
+      const embed = new EmbedBuilder()
+        .setTitle("🪪 Cédula - Panamá RP V2")
+        .setColor("#2b2d31")
+        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+        .setDescription(`📄 Información oficial del ciudadano`)
+        .addFields(
+          { name: "👤 Nombre", value: d.nombre_ic, inline: true },
+          { name: "👤 Apellido", value: d.apellido_ic, inline: true },
+          { name: "🎂 Edad", value: `${d.edad_ic}`, inline: true },
+          { name: "📅 Nacimiento", value: d.nacimiento_ic, inline: true },
+          { name: "🩸 Sangre", value: d.tipo_sangre, inline: true },
+          { name: "🌎 Provincia", value: d.provincia_codigo, inline: true },
+          { name: "🆔 Cédula", value: d.numero_cedula, inline: true }
+        )
+        .setFooter({
+          text: "Gobierno de Panamá RP V2",
+          iconURL: interaction.guild.iconURL({ dynamic: true })
+        })
+        .setTimestamp();
 
-} catch (error) {  
-  console.error(error);  
-  await interaction.reply({  
-    content: "❌ Error obteniendo el DNI",  
-    ephemeral: true  
-  });  
-}
+      await interaction.reply({ embeds: [embed] });
 
-}
+    } catch (error) {
+      console.error(error);
+
+      await interaction.reply({
+        content: "❌ Error obteniendo la cédula",
+        ephemeral: true
+      });
+    }
+  }
 };
