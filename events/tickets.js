@@ -14,7 +14,7 @@ const CATEGORIA_ID = "1459214153326657559";
 const CANAL_PANEL = "1451018705528946923";
 
 // 👑 TU ID
-const OWNER_ID = "1451018301831385241";
+const OWNER_ID = "1237774088039170170";
 
 // 🧠 Memoria temporal
 const ticketsAbiertos = new Map();
