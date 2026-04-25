@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔧 CONFIGURACIÓN
-const CANAL_DEEPWEB = "1465098377120452628";
+const CANAL_DEEPWEB = "1451018730460020746";
 const LOGO_URL = "https://cdn.discordapp.com/attachments/1463192290469085257/1465099204182413353/images_1769377256855.jpg";
 
 module.exports = {
