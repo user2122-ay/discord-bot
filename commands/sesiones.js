@@ -1,10 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
-const ROL_AUTORIZADO = "1463192290423083324";
-const ROL_PING = "1463192290360295646";
+const ROL_AUTORIZADO = "1451018406537986168";
+const ROL_PING = "1451018397352595579";
 
-const CANAL_SESION = "1463192291056423024";
-const CANAL_LOGS = "1463192293312958628";
+const CANAL_SESION = "1451018683383156827";
+const CANAL_LOGS = "1497610703677161493";
 
 let votacionActiva = false;
 let votos = new Set();
