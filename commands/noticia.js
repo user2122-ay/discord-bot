@@ -1,9 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔧 CONFIGURACIÓN
-const ROL_AUTORIZADO = "1463192290372620334";
-const CANAL_PERMITIDO = "1463192291501019319";
-const ROL_PING = "1463192289974157340";
+const ROL_AUTORIZADO = "1451018389127434342";
+const CANAL_PERMITIDO = "1451018729063452695";
+const ROL_PING = "1451018420861538467";
 
 module.exports = {
   data: new SlashCommandBuilder()
