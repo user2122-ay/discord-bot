@@ -87,7 +87,7 @@ module.exports = {
       )
       .setImage(imagen.url)
       .setFooter({
-        text: "Gobierno de Los Santos RP",
+        text: "Gobierno de Panamá V2 RP",
         iconURL: interaction.guild.iconURL({ dynamic: true })
       })
       .setTimestamp();
