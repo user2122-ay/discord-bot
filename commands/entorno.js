@@ -2,12 +2,12 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🎯 ROLES SEGÚN ENTORNO
 const ROLES_ENTORNO = {
-  documentos: "1463192289974157338",
-  gobierno: "1463192289974157338",
-  robo: "1463192289974157338",
-  armas: "1463192289974157338",
-  ilegal: "1463192289974157338",
-  persecucion: "1463192289974157338",
+  documentos: "1451018419271893123",
+  gobierno: "1451018422338060411",
+  robo: "1451018419271893123",
+  armas: "1451018419271893123",
+  ilegal: "1451018419271893123",
+  persecucion: "1451018419271893123",
   civil: null,
   ropa: null,
   comercio: null
