@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 // 🔧 CONFIGURACIÓN
-const CANAL_SUGERENCIAS = "1463192291211477011";
+const CANAL_SUGERENCIAS = "1451018708502839346";
 
 module.exports = {
 data: new SlashCommandBuilder()
@@ -27,7 +27,7 @@ const embed = new EmbedBuilder()
     { name: "🆔 ID", value: interaction.user.id, inline: true }  
   )  
   .setFooter({  
-    text: "Sistema de sugerencias | Los Santos RP",  
+    text: "Sistema de sugerencias | Panamá RP V2",  
     iconURL: interaction.guild.iconURL({ dynamic: true })  
   })  
   .setTimestamp();  
