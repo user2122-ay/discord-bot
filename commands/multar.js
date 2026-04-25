@@ -2,13 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 
 const ROLES_AUTORIZADOS = [
-  "1463192290381271046",
-  "1463192290381271043", 
-  "1463192290381271044", 
-  "1463192290389528671", 
-  "1463192290389528668", 
-  "1463192290389528670", 
-  "1463192290389528669", 
+  "1451018375286226957",
+  "1451018385801351219", 
 ];
 
 module.exports = {
@@ -143,7 +138,7 @@ module.exports = {
         { name: "💰 Monto", value: `$${multa.monto}`, inline: true }
       )
       .setFooter({
-        text: `Gobierno de Los Santos RP | ${multa.fecha}`,
+        text: `Gobierno de Panamá RP V2 | ${multa.fecha}`,
         iconURL: interaction.guild.iconURL({ dynamic: true })
       })
       .setTimestamp();
