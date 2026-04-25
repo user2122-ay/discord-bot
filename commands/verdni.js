@@ -1,5 +1,19 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
+// 📍 MAPEO DE PROVINCIAS
+const provincias = {
+  "1": "Bocas del Toro",
+  "2": "Coclé",
+  "3": "Colón",
+  "4": "Chiriquí",
+  "5": "Darién",
+  "6": "Herrera",
+  "7": "Los Santos",
+  "8": "Panamá",
+  "9": "Veraguas",
+  "13": "Panamá Oeste"
+};
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("cedula")
@@ -17,7 +31,6 @@ module.exports = {
     const user = interaction.options.getUser("usuario");
 
     try {
-      // 🔍 BUSCAR EN NUEVA TABLA
       const result = await interaction.pool.query(
         `SELECT * FROM "CIUDADANOS_PTY" WHERE discord_id = $1`,
         [user.id]
@@ -32,7 +45,9 @@ module.exports = {
 
       const d = result.rows[0];
 
-      // 📄 EMBED NUEVO
+      // 🔥 AQUÍ ESTÁ EL FIX
+      const provinciaNombre = provincias[d.provincia_codigo] || "Desconocida";
+
       const embed = new EmbedBuilder()
         .setTitle("🪪 Cédula - Panamá RP V2")
         .setColor("#2b2d31")
@@ -44,7 +59,7 @@ module.exports = {
           { name: "🎂 Edad", value: `${d.edad_ic}`, inline: true },
           { name: "📅 Nacimiento", value: d.nacimiento_ic, inline: true },
           { name: "🩸 Sangre", value: d.tipo_sangre, inline: true },
-          { name: "🌎 Provincia", value: d.provincia_codigo, inline: true },
+          { name: "🌎 Provincia", value: provinciaNombre, inline: true }, // ✅ FIX
           { name: "🆔 Cédula", value: d.numero_cedula, inline: true }
         )
         .setFooter({
