@@ -33,7 +33,7 @@ const embed = new EmbedBuilder()
   .setColor(0xf1c40f)  
   .setThumbnail(usuario.displayAvatarURL({ dynamic: true }))  
   .setFooter({  
-    text: "Gobierno de Los Santos RP",  
+    text: "Gobierno de Panamá RP V2",  
     iconURL: interaction.guild.iconURL({ dynamic: true })  
   })  
   .setTimestamp();  
