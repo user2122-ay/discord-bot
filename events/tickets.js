@@ -93,7 +93,7 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
             .setCustomId("ticket_select")
             .setPlaceholder("Selecciona una opción")
             .addOptions([
-                { label: "Soporte General", value: "soporte" },
+                { label: "<:owner:1459210903911141487> Soporte General", value: "soporte" },
                 { label: "Reportar Usuario", value: "usuario" },
                 { label: "Reportar Staff", value: "staff" },
                 { label: "Alianza", value: "alianza" },
