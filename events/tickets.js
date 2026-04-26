@@ -61,7 +61,7 @@ module.exports = (client) => {
             .setColor("#5865F2")
             .setTitle("🎫┃SISTEMA DE TICKETS")
         .setDescription(
-`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Velaryon Spanish RP**.
+`Bienvenido/a al **Sistema Oficial de Atención y Soporte** de **Panamá RP V2**.
 
 Seleccione cuidadosamente la categoría que mejor se ajuste a su situación.
 
