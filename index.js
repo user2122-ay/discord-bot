@@ -1,276 +1,149 @@
-const {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle
-} = require("discord.js");
+require("dotenv").config();
+const fs = require("fs");
+const { Client, Collection, GatewayIntentBits, REST, Routes } = require("discord.js");
+const { Pool } = require("pg");
 
-const axios = require("axios");
+// 🔹 CONEXIÓN POSTGRES
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
 
-// 📌 CONFIG
-const CANAL_PANEL = "1459259725131809069";
-const CANAL_LOGS = "1452365736927301764";
-const ROL_STAFF = "1451217784444027163";
-const ROL_VERIFICADO = "1451018445998260266"; // ⚠️ CAMBIA ESTO
+pool.connect()
+    .then(() => console.log("✅ Conectado a Postgres"))
+    .catch(err => console.log("⚠️ Postgres no conectado:", err.message));
 
-// 🧠 memoria
-const solicitudes = new Map();
+// 🤖 CLIENTE
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages
+    ],
+    partials: ["CHANNEL"]
+});
 
-module.exports = (client) => {
+// ==============================
+// 🔥 SISTEMAS (EVENTOS)
+// ==============================
 
-  // ==============================
-  // 🚀 PANEL
-  // ==============================
-  client.once("ready", async () => {
+require("./events/seguridad")(client);
+require("./events/logs")(client);
+require("./events/bienvenida")(client);
+require("./events/presence")(client);
+require("./events/mencionBot")(client);
+require("./events/panelAuto")(client);
+require("./events/tickets")(client);
+require("./events/verificacion")(client); // 👈 TU SISTEMA NUEVO
 
-    const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
-    if (!canal) return;
+// ==============================
+// 📦 COMANDOS
+// ==============================
 
-    const mensajes = await canal.messages.fetch();
-    await canal.bulkDelete(mensajes, true).catch(() => {});
+client.commands = new Collection();
 
-    const embed = new EmbedBuilder()
-      .setColor("#2b2d31")
-      .setTitle("🔗 Verificación Roblox")
-      .setDescription("Presiona el botón para verificar tu cuenta.");
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("verificar_inicio")
-        .setLabel("Verificarse")
-        .setStyle(ButtonStyle.Success)
-    );
+for (const file of commandFiles) {
+    try {
+        const command = require(`./commands/${file}`);
 
-    await canal.send({ embeds: [embed], components: [row] });
-    console.log("✅ Panel enviado");
-  });
+        // múltiples comandos en un archivo
+        if (typeof command === "object" && !command.data) {
+            for (const key in command) {
+                const cmd = command[key];
+                if (cmd?.data?.name) {
+                    client.commands.set(cmd.data.name, cmd);
+                    console.log(`✅ Cargado: ${cmd.data.name}`);
+                }
+            }
+        }
 
-  // ==============================
-  // 🎯 INTERACCIONES
-  // ==============================
-  client.on("interactionCreate", async (interaction) => {
+        // comando normal
+        else if (command?.data?.name) {
+            client.commands.set(command.data.name, command);
+            console.log(`✅ Cargado: ${command.data.name}`);
+        }
 
-    // ==============================
-    // 🔘 BOTÓN → MODAL
-    // ==============================
-    if (interaction.isButton() && interaction.customId === "verificar_inicio") {
+        else {
+            console.log(`❌ ${file} inválido`);
+        }
 
-      const modal = new ModalBuilder()
-        .setCustomId("modal_verificacion")
-        .setTitle("Verificación Roblox");
-
-      const historia = new TextInputBuilder()
-        .setCustomId("historia")
-        .setLabel("Historia de tu personaje")
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true);
-
-      const roblox = new TextInputBuilder()
-        .setCustomId("roblox_id")
-        .setLabel("Usuario o ID de Roblox")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(historia),
-        new ActionRowBuilder().addComponents(roblox)
-      );
-
-      return interaction.showModal(modal);
+    } catch (err) {
+        console.log(`❌ Error en ${file}:`, err.message);
     }
+}
 
-    // ==============================
-    // 📥 MODAL → PROCESAR
-    // ==============================
-    if (interaction.isModalSubmit() && interaction.customId === "modal_verificacion") {
+// ==============================
+// 🆔 GUILD ID
+// ==============================
 
-      try {
+const GUILD_ID = "1463192289974157334";
 
-        const historia = interaction.fields.getTextInputValue("historia");
-        const robloxInput = interaction.fields.getTextInputValue("roblox_id");
+// ==============================
+// 🚀 READY
+// ==============================
 
-        let userId;
+client.once("ready", async () => {
+    console.log(`🔥 Bot conectado como ${client.user.tag}`);
 
-        // 🔍 Buscar usuario Roblox
+    const commands = [];
+
+    client.commands.forEach(cmd => {
         try {
-          const res = await axios.post(
-            "https://users.roblox.com/v1/usernames/users",
-            { usernames: [robloxInput] },
-            { timeout: 5000 }
-          );
-
-          userId = res.data.data[0]?.id;
+            commands.push(cmd.data.toJSON());
         } catch {
-          userId = robloxInput;
+            console.log(`❌ Error en ${cmd.data?.name}`);
         }
+    });
 
-        if (!userId) {
-          return interaction.reply({
-            content: "❌ Usuario de Roblox no encontrado",
-            ephemeral: true
-          });
-        }
+    console.log("📦 Comandos:");
+    commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));
 
-        // 🔍 Obtener perfil
-        let perfil;
-        try {
-          perfil = await axios.get(
-            `https://users.roblox.com/v1/users/${userId}`,
-            { timeout: 5000 }
-          );
-        } catch (err) {
-          console.error("Roblox error:", err.message);
-          return interaction.reply({
-            content: "❌ Error con Roblox, intenta otro usuario.",
-            ephemeral: true
-          });
-        }
+    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
-        const username = perfil.data.name;
-        const avatar = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=420&height=420&format=png`;
+    try {
+        console.log("⏳ Registrando comandos...");
 
-        solicitudes.set(interaction.user.id, {
-          historia,
-          userId,
-          username,
-          avatar
-        });
-
-        const embed = new EmbedBuilder()
-          .setColor("#5865f2")
-          .setTitle("🔍 Confirmar cuenta")
-          .setDescription("¿Esta es tu cuenta?")
-          .setImage(avatar)
-          .addFields({ name: "👤 Usuario", value: username });
-
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("confirmar_roblox")
-            .setLabel("Sí")
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId("cancelar_roblox")
-            .setLabel("No")
-            .setStyle(ButtonStyle.Danger)
+        await rest.put(
+            Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+            { body: commands }
         );
 
-        await interaction.reply({
-          embeds: [embed],
-          components: [row],
-          ephemeral: true
-        });
-
-      } catch (error) {
-        console.error("ERROR:", error);
-        return interaction.reply({
-          content: "❌ Error inesperado",
-          ephemeral: true
-        });
-      }
+        console.log(`✅ ${commands.length} comandos registrados`);
+    } catch (error) {
+        console.error("❌ Error registrando comandos:", error);
     }
+});
 
-    // ==============================
-    // ❌ CANCELAR
-    // ==============================
-    if (interaction.isButton() && interaction.customId === "cancelar_roblox") {
-      solicitudes.delete(interaction.user.id);
-      return interaction.update({
-        content: "❌ Cancelado.",
-        embeds: [],
-        components: []
-      });
+// ==============================
+// 🎯 INTERACCIONES
+// ==============================
+
+client.on("interactionCreate", async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+
+    interaction.pool = pool;
+
+    try {
+        await command.execute(interaction);
+    } catch (error) {
+        console.error(`❌ Error en ${interaction.commandName}:`, error);
+
+        const msg = "❌ Error ejecutando el comando";
+
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: msg, ephemeral: true });
+        } else {
+            await interaction.reply({ content: msg, ephemeral: true });
+        }
     }
+});
 
-    // ==============================
-    // ✅ CONFIRMAR → ENVIAR A STAFF
-    // ==============================
-    if (interaction.isButton() && interaction.customId === "confirmar_roblox") {
-
-      const data = solicitudes.get(interaction.user.id);
-      if (!data) return;
-
-      const canalLogs = interaction.guild.channels.cache.get(CANAL_LOGS);
-
-      const embed = new EmbedBuilder()
-        .setColor("#f1c40f")
-        .setTitle("📥 Nueva verificación")
-        .setImage(data.avatar)
-        .addFields(
-          { name: "Discord", value: `<@${interaction.user.id}>` },
-          { name: "Roblox", value: data.username },
-          { name: "Historia", value: data.historia }
-        );
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`aprobar_${interaction.user.id}`)
-          .setLabel("Aprobar")
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId(`rechazar_${interaction.user.id}`)
-          .setLabel("Rechazar")
-          .setStyle(ButtonStyle.Danger)
-      );
-
-      await canalLogs.send({ embeds: [embed], components: [row] });
-
-      await interaction.update({
-        content: "✅ Enviado a staff",
-        embeds: [],
-        components: []
-      });
-    }
-
-    // ==============================
-    // 👮 STAFF
-    // ==============================
-    if (interaction.isButton()) {
-
-      if (!interaction.member.roles.cache.has(ROL_STAFF)) {
-        return interaction.reply({
-          content: "❌ No eres staff",
-          ephemeral: true
-        });
-      }
-
-      const [accion, userId] = interaction.customId.split("_");
-
-      const miembro = await interaction.guild.members.fetch(userId).catch(() => null);
-      const data = solicitudes.get(userId);
-
-      if (!miembro || !data) return;
-
-      // ✅ APROBAR
-      if (accion === "aprobar") {
-
-        await miembro.setNickname(data.username).catch(() => {});
-        await miembro.roles.add(ROL_VERIFICADO).catch(() => {});
-
-        solicitudes.delete(userId);
-
-        return interaction.update({
-          content: `✅ Verificado: <@${userId}>`,
-          embeds: [],
-          components: []
-        });
-      }
-
-      // ❌ RECHAZAR
-      if (accion === "rechazar") {
-
-        solicitudes.delete(userId);
-
-        return interaction.update({
-          content: `❌ Rechazado: <@${userId}>`,
-          embeds: [],
-          components: []
-        });
-      }
-    }
-
-  });
-
-};
+// 🔐 LOGIN
+client.login(process.env.TOKEN);
