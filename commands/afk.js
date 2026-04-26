@@ -19,17 +19,26 @@ module.exports = {
 
     const motivo = interaction.options.getString("motivo") || "Sin motivo";
 
+    // 💾 guardar datos (incluye nickname original)
     afkUsers.set(interaction.user.id, {
       motivo,
-      tiempo: Date.now()
+      tiempo: Date.now(),
+      nickOriginal: interaction.member.nickname || interaction.user.username
     });
+
+    // ✏️ CAMBIAR NICKNAME
+    try {
+      await interaction.member.setNickname(`[AFK] ${interaction.member.displayName}`);
+    } catch {
+      // si no tiene permisos no pasa nada
+    }
 
     const embed = new EmbedBuilder()
       .setColor("#2b2d31")
       .setTitle("🌙 Modo AFK activado")
       .setDescription(`Has entrado en AFK correctamente.`)
       .addFields(
-        { name: "📝 Motivo", value: motivo, inline: false }
+        { name: "📝 Motivo", value: motivo }
       )
       .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
       .setFooter({
@@ -42,5 +51,5 @@ module.exports = {
   }
 };
 
-// exportar memoria
+// exportar
 module.exports.afkUsers = afkUsers;
