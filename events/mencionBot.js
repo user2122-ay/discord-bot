@@ -1,8 +1,7 @@
 const {
   EmbedBuilder,
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
+  StringSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle
@@ -22,6 +21,9 @@ module.exports = (client) => {
 
     if (message.mentions.has(client.user)) {
 
+      // 🔒 borrar mensaje del usuario (para que sea "privado")
+      await message.delete().catch(() => {});
+
       const embed = new EmbedBuilder()
         .setColor("#2b2d31")
         .setDescription(
@@ -29,111 +31,125 @@ module.exports = (client) => {
 
 ━━━━━━━━━━━━━━━━━━
 
-❓ **Dudas generales**  
-🎫 **Crear ticket**  
-📜 **Normativa**  
-📘 **Conceptos RP**  
-🟢 **Estado del servidor**
+❓ Dudas generales  
+🎫 Crear ticket  
+📜 Normativa  
+📘 Conceptos RP  
+🟢 Estado del servidor  
 
 ━━━━━━━━━━━━━━━━━━`
         )
         .setTimestamp();
 
-      const botones = new ActionRowBuilder().addComponents(
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId("menu_soporte")
+        .setPlaceholder("Selecciona una opción")
+        .addOptions([
+          {
+            label: "Dudas generales",
+            value: "dudas",
+            emoji: "❓"
+          },
+          {
+            label: "Crear ticket",
+            value: "ticket",
+            emoji: "🎫"
+          },
+          {
+            label: "Normativa",
+            value: "normativa",
+            emoji: "📜"
+          },
+          {
+            label: "Conceptos RP",
+            value: "conceptos",
+            emoji: "📘"
+          },
+          {
+            label: "Estado del servidor",
+            value: "estado",
+            emoji: "🟢"
+          }
+        ]);
 
-        new ButtonBuilder()
-          .setCustomId("dudas")
-          .setLabel("Dudas")
-          .setEmoji("❓")
-          .setStyle(ButtonStyle.Primary),
+      const row = new ActionRowBuilder().addComponents(menu);
 
-        new ButtonBuilder()
-          .setCustomId("ticket")
-          .setLabel("Ticket")
-          .setEmoji("🎫")
-          .setStyle(ButtonStyle.Secondary),
-
-        new ButtonBuilder()
-          .setCustomId("normativa")
-          .setLabel("Normativa")
-          .setEmoji("📜")
-          .setStyle(ButtonStyle.Secondary),
-
-        new ButtonBuilder()
-          .setCustomId("conceptos")
-          .setLabel("Conceptos")
-          .setEmoji("📘")
-          .setStyle(ButtonStyle.Secondary),
-
-        new ButtonBuilder()
-          .setCustomId("estado")
-          .setLabel("Estado")
-          .setEmoji("🟢")
-          .setStyle(ButtonStyle.Success)
-      );
-
-      await message.reply({
+      const msg = await message.channel.send({
+        content: `<@${message.author.id}>`,
         embeds: [embed],
-        components: [botones]
+        components: [row]
       });
+
+      // 🧠 auto borrar panel después de 30s (opcional pero GOD)
+      setTimeout(() => {
+        msg.delete().catch(() => {});
+      }, 30000);
     }
 
   });
 
   // ==============================
-  // 🎯 BOTONES + MODAL
+  // 🎯 SELECT MENU + MODAL
   // ==============================
   client.on("interactionCreate", async (interaction) => {
 
-    // ❓ DUDAS → MODAL
-    if (interaction.isButton() && interaction.customId === "dudas") {
+    if (!interaction.isStringSelectMenu()) return;
 
-      const modal = new ModalBuilder()
-        .setCustomId("modal_duda")
-        .setTitle("Enviar duda");
+    if (interaction.customId === "menu_soporte") {
 
-      const input = new TextInputBuilder()
-        .setCustomId("duda_texto")
-        .setLabel("Escribe tu duda")
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true);
+      const value = interaction.values[0];
 
-      const row = new ActionRowBuilder().addComponents(input);
-      modal.addComponents(row);
+      // ❓ DUDAS → MODAL
+      if (value === "dudas") {
 
-      return interaction.showModal(modal);
-    }
+        const modal = new ModalBuilder()
+          .setCustomId("modal_duda")
+          .setTitle("Enviar duda");
 
-    // 🎫 TICKET
-    if (interaction.isButton() && interaction.customId === "ticket") {
-      return interaction.reply({
-        content: "🎫 Ve a este canal para crear un ticket:\nhttps://discord.com/channels/1345956472986796183/1451018705528946923",
-        ephemeral: true
-      });
-    }
+        const input = new TextInputBuilder()
+          .setCustomId("duda_texto")
+          .setLabel("Escribe tu duda")
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true);
 
-    // 📜 NORMATIVA
-    if (interaction.isButton() && interaction.customId === "normativa") {
-      return interaction.reply({
-        content: "📜 Consulta la normativa aquí:\nhttps://discord.com/channels/1345956472986796183/1451018653259792536",
-        ephemeral: true
-      });
-    }
+        const row = new ActionRowBuilder().addComponents(input);
+        modal.addComponents(row);
 
-    // 📘 CONCEPTOS
-    if (interaction.isButton() && interaction.customId === "conceptos") {
-      return interaction.reply({
-        content: "📘 Conceptos RP:\nhttps://discord.com/channels/1345956472986796183/1451771796918636697",
-        ephemeral: true
-      });
-    }
+        return interaction.showModal(modal);
+      }
 
-    // 🟢 ESTADO
-    if (interaction.isButton() && interaction.customId === "estado") {
-      return interaction.reply({
-        content: "🟢 Estado del servidor:\nhttps://discord.com/channels/1345956472986796183/1451018683383156827",
-        ephemeral: true
-      });
+      // 🎫 TICKET
+      if (value === "ticket") {
+        return interaction.reply({
+          content: "🎫 Ve aquí:\nhttps://discord.com/channels/1345956472986796183/1451018705528946923",
+          ephemeral: true
+        });
+      }
+
+      // 📜 NORMATIVA
+      if (value === "normativa") {
+        return interaction.reply({
+          content: "📜 Normativa:\nhttps://discord.com/channels/1345956472986796183/1451018653259792536",
+          ephemeral: true
+        });
+      }
+
+      // 📘 CONCEPTOS
+      if (value === "conceptos") {
+        return interaction.reply({
+          content: "📘 Conceptos RP:\nhttps://discord.com/channels/1345956472986796183/1451771796918636697",
+          ephemeral: true
+        });
+      }
+
+      // 🟢 ESTADO
+      if (value === "estado") {
+        return interaction.reply({
+          content: "🟢 Estado:\nhttps://discord.com/channels/1345956472986796183/1451018683383156827",
+          ephemeral: true
+        });
+      }
+
     }
 
     // ==============================
