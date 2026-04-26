@@ -14,9 +14,9 @@ const axios = require("axios");
 const CANAL_PANEL = "1459259725131809069";
 const CANAL_LOGS = "1452365736927301764";
 const ROL_STAFF = "1451217784444027163";
-const ROL_VERIFICADO = "ID_ROL_VERIFICADO"; // 👈 pon esto
+const ROL_VERIFICADO = "1451018445998260266"; // ⚠️ CAMBIA ESTO
 
-// 🧠 memoria temporal
+// 🧠 memoria
 const solicitudes = new Map();
 
 module.exports = (client) => {
@@ -29,18 +29,13 @@ module.exports = (client) => {
     const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
     if (!canal) return;
 
-    // limpiar
     const mensajes = await canal.messages.fetch();
     await canal.bulkDelete(mensajes, true).catch(() => {});
 
     const embed = new EmbedBuilder()
       .setColor("#2b2d31")
       .setTitle("🔗 Verificación Roblox")
-      .setDescription(
-`Para ingresar al servidor debes verificar tu cuenta.
-
-Presiona el botón para comenzar.`
-      );
+      .setDescription("Presiona el botón para verificar tu cuenta.");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -50,8 +45,7 @@ Presiona el botón para comenzar.`
     );
 
     await canal.send({ embeds: [embed], components: [row] });
-
-    console.log("✅ Panel de verificación enviado");
+    console.log("✅ Panel enviado");
   });
 
   // ==============================
@@ -59,7 +53,9 @@ Presiona el botón para comenzar.`
   // ==============================
   client.on("interactionCreate", async (interaction) => {
 
+    // ==============================
     // 🔘 BOTÓN → MODAL
+    // ==============================
     if (interaction.isButton() && interaction.customId === "verificar_inicio") {
 
       const modal = new ModalBuilder()
@@ -86,87 +82,111 @@ Presiona el botón para comenzar.`
       return interaction.showModal(modal);
     }
 
-    // 📥 MODAL → BUSCAR ROBLOX
+    // ==============================
+    // 📥 MODAL → PROCESAR
+    // ==============================
     if (interaction.isModalSubmit() && interaction.customId === "modal_verificacion") {
 
-      const historia = interaction.fields.getTextInputValue("historia");
-      const robloxInput = interaction.fields.getTextInputValue("roblox_id");
-
-      let userId;
-
       try {
-        // 🔍 buscar por username
-        const res = await axios.post(
-          "https://users.roblox.com/v1/usernames/users",
-          { usernames: [robloxInput] }
+
+        const historia = interaction.fields.getTextInputValue("historia");
+        const robloxInput = interaction.fields.getTextInputValue("roblox_id");
+
+        let userId;
+
+        // 🔍 Buscar usuario Roblox
+        try {
+          const res = await axios.post(
+            "https://users.roblox.com/v1/usernames/users",
+            { usernames: [robloxInput] },
+            { timeout: 5000 }
+          );
+
+          userId = res.data.data[0]?.id;
+        } catch {
+          userId = robloxInput;
+        }
+
+        if (!userId) {
+          return interaction.reply({
+            content: "❌ Usuario de Roblox no encontrado",
+            ephemeral: true
+          });
+        }
+
+        // 🔍 Obtener perfil
+        let perfil;
+        try {
+          perfil = await axios.get(
+            `https://users.roblox.com/v1/users/${userId}`,
+            { timeout: 5000 }
+          );
+        } catch (err) {
+          console.error("Roblox error:", err.message);
+          return interaction.reply({
+            content: "❌ Error con Roblox, intenta otro usuario.",
+            ephemeral: true
+          });
+        }
+
+        const username = perfil.data.name;
+        const avatar = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=420&height=420&format=png`;
+
+        solicitudes.set(interaction.user.id, {
+          historia,
+          userId,
+          username,
+          avatar
+        });
+
+        const embed = new EmbedBuilder()
+          .setColor("#5865f2")
+          .setTitle("🔍 Confirmar cuenta")
+          .setDescription("¿Esta es tu cuenta?")
+          .setImage(avatar)
+          .addFields({ name: "👤 Usuario", value: username });
+
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("confirmar_roblox")
+            .setLabel("Sí")
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId("cancelar_roblox")
+            .setLabel("No")
+            .setStyle(ButtonStyle.Danger)
         );
 
-        userId = res.data.data[0]?.id;
-      } catch {
-        userId = robloxInput; // si puso ID directo
-      }
+        await interaction.reply({
+          embeds: [embed],
+          components: [row],
+          ephemeral: true
+        });
 
-      if (!userId) {
+      } catch (error) {
+        console.error("ERROR:", error);
         return interaction.reply({
-          content: "❌ Usuario de Roblox no encontrado",
+          content: "❌ Error inesperado",
           ephemeral: true
         });
       }
-
-      // 🔍 perfil
-      const perfil = await axios.get(
-        `https://users.roblox.com/v1/users/${userId}`
-      );
-
-      const username = perfil.data.name;
-      const avatar = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=420&height=420&format=png`;
-
-      solicitudes.set(interaction.user.id, {
-        historia,
-        userId,
-        username,
-        avatar
-      });
-
-      const embed = new EmbedBuilder()
-        .setColor("#5865f2")
-        .setTitle("🔍 Confirmar cuenta")
-        .setDescription(`¿Esta es tu cuenta de Roblox?`)
-        .setImage(avatar)
-        .addFields(
-          { name: "👤 Usuario", value: username }
-        );
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("confirmar_roblox")
-          .setLabel("Sí, es mío")
-          .setStyle(ButtonStyle.Success),
-
-        new ButtonBuilder()
-          .setCustomId("cancelar_roblox")
-          .setLabel("No")
-          .setStyle(ButtonStyle.Danger)
-      );
-
-      return interaction.reply({
-        embeds: [embed],
-        components: [row],
-        ephemeral: true
-      });
     }
 
+    // ==============================
     // ❌ CANCELAR
+    // ==============================
     if (interaction.isButton() && interaction.customId === "cancelar_roblox") {
       solicitudes.delete(interaction.user.id);
       return interaction.update({
-        content: "❌ Verificación cancelada.",
+        content: "❌ Cancelado.",
         embeds: [],
         components: []
       });
     }
 
-    // ✅ CONFIRMAR → ENVIAR A LOGS
+    // ==============================
+    // ✅ CONFIRMAR → ENVIAR A STAFF
+    // ==============================
     if (interaction.isButton() && interaction.customId === "confirmar_roblox") {
 
       const data = solicitudes.get(interaction.user.id);
@@ -179,9 +199,9 @@ Presiona el botón para comenzar.`
         .setTitle("📥 Nueva verificación")
         .setImage(data.avatar)
         .addFields(
-          { name: "👤 Usuario Discord", value: `<@${interaction.user.id}>` },
-          { name: "🎮 Roblox", value: data.username },
-          { name: "📖 Historia", value: data.historia }
+          { name: "Discord", value: `<@${interaction.user.id}>` },
+          { name: "Roblox", value: data.username },
+          { name: "Historia", value: data.historia }
         );
 
       const row = new ActionRowBuilder().addComponents(
@@ -189,17 +209,16 @@ Presiona el botón para comenzar.`
           .setCustomId(`aprobar_${interaction.user.id}`)
           .setLabel("Aprobar")
           .setStyle(ButtonStyle.Success),
-
         new ButtonBuilder()
           .setCustomId(`rechazar_${interaction.user.id}`)
           .setLabel("Rechazar")
           .setStyle(ButtonStyle.Danger)
       );
 
-      canalLogs.send({ embeds: [embed], components: [row] });
+      await canalLogs.send({ embeds: [embed], components: [row] });
 
       await interaction.update({
-        content: "✅ Solicitud enviada a staff.",
+        content: "✅ Enviado a staff",
         embeds: [],
         components: []
       });
@@ -212,7 +231,7 @@ Presiona el botón para comenzar.`
 
       if (!interaction.member.roles.cache.has(ROL_STAFF)) {
         return interaction.reply({
-          content: "❌ No eres staff.",
+          content: "❌ No eres staff",
           ephemeral: true
         });
       }
