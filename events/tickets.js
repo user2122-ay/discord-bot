@@ -93,11 +93,11 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
             .setCustomId("ticket_select")
             .setPlaceholder("Selecciona una opción")
             .addOptions([
-                { label: "<:owner:1459210903911141487> Soporte General", value: "soporte" },
+                { label: "Soporte General", value: "soporte" },
                 { label: "Reportar Usuario", value: "usuario" },
                 { label: "Reportar Staff", value: "staff" },
                 { label: "Alianza", value: "alianza" },
-                { label: "Fundación", value: "fundacion" }
+                { label: "Soporte Fundación", value: "fundacion" }
             ]);
 
         const row = new ActionRowBuilder().addComponents(menu);
