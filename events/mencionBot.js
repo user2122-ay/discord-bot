@@ -1,120 +1,115 @@
 const {
-    EmbedBuilder,
-    ActionRowBuilder,
-    StringSelectMenuBuilder
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } = require("discord.js");
 
-// 📢 Canal donde se avisa al staff
-const CANAL_AVISO = "1455970934535225518";
+const CANAL_PANEL = "1463192291211477008";
+const CANAL_DUDAS = "1451018706779115655";
 
 module.exports = (client) => {
 
-    client.on("messageCreate", async (message) => {
+  // ==============================
+  // 🚀 PANEL (SOLO 1 VEZ)
+  // ==============================
+  client.once("ready", async () => {
 
-        if (message.author.bot) return;
+    const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
+    if (!canal) return;
 
-        // 🔥 Detectar mención al bot
-        if (!message.mentions.has(client.user)) return;
+    // 🧹 borrar mensajes anteriores
+    const mensajes = await canal.messages.fetch();
+    await canal.bulkDelete(mensajes, true).catch(() => {});
 
-        // 📌 EMBED
-        const embed = new EmbedBuilder()
-            .setColor("#2c2f33")
-            .setTitle("🤖┃Soporte Automático")
-            .setDescription(`Hola <@${message.author.id}>, ¿en qué puedo ayudarte?
+    const embed = new EmbedBuilder()
+      .setColor("#2b2d31")
+      .setTitle("📩 Sistema de Dudas")
+      .setDescription(
+`Bienvenido al sistema de dudas.
 
-━━━━━━━━━━━━━━━━━━
+Si tienes alguna pregunta, presiona el botón de abajo y escribe tu duda.
 
-❓ Dudas generales  
-🎫 Crear ticket  
-📜 Normativa  
-📘 Conceptos RP  
-🟢 Estado del servidor  
-💬 Hablar con staff  
+El equipo la revisará lo antes posible.`
+      )
+      .setFooter({
+        text: "Panamá RP V2",
+        iconURL: client.user.displayAvatarURL()
+      })
+      .setTimestamp();
 
-━━━━━━━━━━━━━━━━━━`)
-            .setFooter({ text: "Sistema de Soporte • Velaryon RP" });
+    const botones = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("enviar_duda")
+        .setLabel("Enviar duda")
+        .setStyle(ButtonStyle.Primary)
+    );
 
-        // 📌 MENÚ
-        const menu = new StringSelectMenuBuilder()
-            .setCustomId("menu_soporte")
-            .setPlaceholder("Selecciona una opción")
-            .addOptions([
-                { label: "Dudas generales", value: "dudas", emoji: "❓" },
-                { label: "Crear ticket", value: "ticket", emoji: "🎫" },
-                { label: "Normativa", value: "normas", emoji: "📜" },
-                { label: "Conceptos RP", value: "rp", emoji: "📘" },
-                { label: "Estado del servidor", value: "estado", emoji: "🟢" },
-                { label: "Hablar con staff", value: "staff", emoji: "💬" }
-            ]);
+    await canal.send({
+      embeds: [embed],
+      components: [botones]
+    });
 
-        const row = new ActionRowBuilder().addComponents(menu);
+    console.log("✅ Panel de dudas enviado");
+  });
 
-        await message.reply({
-            embeds: [embed],
-            components: [row]
+  // ==============================
+  // 🎯 INTERACCIONES
+  // ==============================
+  client.on("interactionCreate", async interaction => {
+
+    // 🔘 BOTÓN → ABRIR MODAL
+    if (interaction.isButton() && interaction.customId === "enviar_duda") {
+
+      const modal = new ModalBuilder()
+        .setCustomId("modal_duda")
+        .setTitle("Enviar duda");
+
+      const input = new TextInputBuilder()
+        .setCustomId("duda_texto")
+        .setLabel("Escribe tu duda")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+
+      const row = new ActionRowBuilder().addComponents(input);
+      modal.addComponents(row);
+
+      return interaction.showModal(modal);
+    }
+
+    // 📥 ENVIAR DUDA
+    if (interaction.isModalSubmit() && interaction.customId === "modal_duda") {
+
+      const duda = interaction.fields.getTextInputValue("duda_texto");
+
+      const canal = interaction.guild.channels.cache.get(CANAL_DUDAS);
+
+      const embed = new EmbedBuilder()
+        .setColor("#5865f2")
+        .setTitle("📩 Nueva Duda")
+        .setDescription(duda)
+        .addFields(
+          { name: "👤 Usuario", value: `<@${interaction.user.id}>` }
+        )
+        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+        .setTimestamp();
+
+      if (canal) {
+        canal.send({
+          content: `<@${interaction.user.id}>`,
+          embeds: [embed]
         });
+      }
 
-    });
+      await interaction.reply({
+        content: "✅ Tu duda fue enviada correctamente.",
+        ephemeral: true
+      });
+    }
 
-    // 🎯 INTERACCIONES
-    client.on("interactionCreate", async interaction => {
-
-        if (!interaction.isStringSelectMenu()) return;
-        if (interaction.customId !== "menu_soporte") return;
-
-        const opcion = interaction.values[0];
-
-        if (opcion === "dudas") {
-            return interaction.reply({
-                content: "❓ Escribe tu duda y el staff te responderá.",
-                ephemeral: true
-            });
-        }
-
-        if (opcion === "ticket") {
-            return interaction.reply({
-                content: "🎫 Tickets aquí:\nhttps://discord.com/channels/1345956472986796183/1451018705528946923",
-                ephemeral: true
-            });
-        }
-
-        if (opcion === "normas") {
-            return interaction.reply({
-                content: "📜 Normativa:\nhttps://discord.com/channels/1345956472986796183/1451018653259792536",
-                ephemeral: true
-            });
-        }
-
-        if (opcion === "rp") {
-            return interaction.reply({
-                content: "📘 Conceptos RP:\nhttps://discord.com/channels/1345956472986796183/1451771796918636697",
-                ephemeral: true
-            });
-        }
-
-        if (opcion === "estado") {
-            return interaction.reply({
-                content: "🟢 Estado del servidor:\nhttps://discord.com/channels/1345956472986796183/1451018683383156827",
-                ephemeral: true
-            });
-        }
-
-        if (opcion === "staff") {
-
-            const canal = interaction.guild.channels.cache.get(CANAL_AVISO);
-
-            if (canal) {
-                canal.send({
-                    content: `🚨 <@${interaction.user.id}> necesita ayuda. Fue desde mención al bot.<@&1451018406537986168>`
-                });
-            }
-
-            return interaction.reply({
-                content: "💬 Se ha notificado al staff.",
-                ephemeral: true
-            });
-        }
-
-    });
+  });
 
 };
