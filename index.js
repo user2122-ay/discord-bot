@@ -36,6 +36,7 @@ require("./events/presence")(client);
 require("./events/mencionBot")(client);
 require("./events/tickets")(client); 
 require("./events/afk")(client);
+require("./events/proteccionFundacion")(client);
 
 // ==============================
 // 📦 COMANDOS
