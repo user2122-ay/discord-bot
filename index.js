@@ -37,6 +37,7 @@ require("./events/mencionBot")(client);
 require("./events/tickets")(client); 
 require("./events/afk")(client);
 require("./events/proteccionFundacion")(client);
+require("./events/verificacionRoblox")(client);
 
 // ==============================
 // 📦 COMANDOS
