@@ -8,72 +8,85 @@ const {
   TextInputStyle
 } = require("discord.js");
 
-const CANAL_PANEL = "1463192291211477008";
+// 📌 CANALES
 const CANAL_DUDAS = "1451018706779115655";
 
 module.exports = (client) => {
 
   // ==============================
-  // 🚀 PANEL INTELIGENTE SIN JSON
+  // 💬 MENCIÓN → PANEL
   // ==============================
-  client.once("ready", async () => {
+  client.on("messageCreate", async (message) => {
 
-    const canal = await client.channels.fetch(CANAL_PANEL).catch(() => null);
-    if (!canal) return;
+    if (message.author.bot) return;
 
-    // 🔍 Buscar si ya existe el panel
-    const mensajes = await canal.messages.fetch({ limit: 20 });
+    if (message.mentions.has(client.user)) {
 
-    const existe = mensajes.find(msg =>
-      msg.author.id === client.user.id &&
-      msg.embeds.length > 0 &&
-      msg.embeds[0].title === "📩 Sistema de Dudas"
-    );
+      const embed = new EmbedBuilder()
+        .setColor("#2b2d31")
+        .setDescription(
+`Hola <@${message.author.id}>, ¿en qué puedo ayudarte?
 
-    if (existe) {
-      console.log("🟡 Panel ya existe");
-      return;
+━━━━━━━━━━━━━━━━━━
+
+❓ **Dudas generales**  
+🎫 **Crear ticket**  
+📜 **Normativa**  
+📘 **Conceptos RP**  
+🟢 **Estado del servidor**
+
+━━━━━━━━━━━━━━━━━━`
+        )
+        .setTimestamp();
+
+      const botones = new ActionRowBuilder().addComponents(
+
+        new ButtonBuilder()
+          .setCustomId("dudas")
+          .setLabel("Dudas")
+          .setEmoji("❓")
+          .setStyle(ButtonStyle.Primary),
+
+        new ButtonBuilder()
+          .setCustomId("ticket")
+          .setLabel("Ticket")
+          .setEmoji("🎫")
+          .setStyle(ButtonStyle.Secondary),
+
+        new ButtonBuilder()
+          .setCustomId("normativa")
+          .setLabel("Normativa")
+          .setEmoji("📜")
+          .setStyle(ButtonStyle.Secondary),
+
+        new ButtonBuilder()
+          .setCustomId("conceptos")
+          .setLabel("Conceptos")
+          .setEmoji("📘")
+          .setStyle(ButtonStyle.Secondary),
+
+        new ButtonBuilder()
+          .setCustomId("estado")
+          .setLabel("Estado")
+          .setEmoji("🟢")
+          .setStyle(ButtonStyle.Success)
+      );
+
+      await message.reply({
+        embeds: [embed],
+        components: [botones]
+      });
     }
 
-    // ✅ Crear panel
-    const embed = new EmbedBuilder()
-      .setColor("#2b2d31")
-      .setTitle("📩 Sistema de Dudas")
-      .setDescription(
-`Bienvenido al sistema de dudas.
-
-Si tienes alguna pregunta, presiona el botón o menciona al bot escribiendo tu duda.
-
-El equipo responderá lo antes posible.`
-      )
-      .setFooter({
-        text: "Panamá RP V2",
-        iconURL: client.user.displayAvatarURL()
-      })
-      .setTimestamp();
-
-    const botones = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("enviar_duda")
-        .setLabel("Enviar duda")
-        .setStyle(ButtonStyle.Primary)
-    );
-
-    await canal.send({
-      embeds: [embed],
-      components: [botones]
-    });
-
-    console.log("✅ Panel creado");
   });
 
   // ==============================
-  // 🎯 INTERACCIONES
+  // 🎯 BOTONES + MODAL
   // ==============================
-  client.on("interactionCreate", async interaction => {
+  client.on("interactionCreate", async (interaction) => {
 
-    // 🔘 BOTÓN → MODAL
-    if (interaction.isButton() && interaction.customId === "enviar_duda") {
+    // ❓ DUDAS → MODAL
+    if (interaction.isButton() && interaction.customId === "dudas") {
 
       const modal = new ModalBuilder()
         .setCustomId("modal_duda")
@@ -91,7 +104,41 @@ El equipo responderá lo antes posible.`
       return interaction.showModal(modal);
     }
 
+    // 🎫 TICKET
+    if (interaction.isButton() && interaction.customId === "ticket") {
+      return interaction.reply({
+        content: "🎫 Ve a este canal para crear un ticket:\nhttps://discord.com/channels/1345956472986796183/1451018705528946923",
+        ephemeral: true
+      });
+    }
+
+    // 📜 NORMATIVA
+    if (interaction.isButton() && interaction.customId === "normativa") {
+      return interaction.reply({
+        content: "📜 Consulta la normativa aquí:\nhttps://discord.com/channels/1345956472986796183/1451018653259792536",
+        ephemeral: true
+      });
+    }
+
+    // 📘 CONCEPTOS
+    if (interaction.isButton() && interaction.customId === "conceptos") {
+      return interaction.reply({
+        content: "📘 Conceptos RP:\nhttps://discord.com/channels/1345956472986796183/1451771796918636697",
+        ephemeral: true
+      });
+    }
+
+    // 🟢 ESTADO
+    if (interaction.isButton() && interaction.customId === "estado") {
+      return interaction.reply({
+        content: "🟢 Estado del servidor:\nhttps://discord.com/channels/1345956472986796183/1451018683383156827",
+        ephemeral: true
+      });
+    }
+
+    // ==============================
     // 📥 MODAL → ENVIAR DUDA
+    // ==============================
     if (interaction.isModalSubmit() && interaction.customId === "modal_duda") {
 
       const duda = interaction.fields.getTextInputValue("duda_texto");
@@ -117,65 +164,6 @@ El equipo responderá lo antes posible.`
         content: "✅ Tu duda fue enviada correctamente.",
         ephemeral: true
       });
-    }
-
-  });
-
-  // ==============================
-  // 💬 MENCIÓN AL BOT
-  // ==============================
-  client.on("messageCreate", async (message) => {
-
-    if (message.author.bot) return;
-
-    if (message.mentions.has(client.user)) {
-
-      const duda = message.content
-        .replace(`<@${client.user.id}>`, "")
-        .replace(`<@!${client.user.id}>`, "")
-        .trim();
-
-      // ❓ Solo mención
-      if (!duda) {
-        const embed = new EmbedBuilder()
-          .setColor("#2b2d31")
-          .setTitle("📩 Sistema de Dudas")
-          .setDescription(
-`Hola <@${message.author.id}> 👋
-
-Puedes:
-
-🔹 Usar el botón del panel  
-🔹 O mencionar al bot escribiendo tu duda  
-
-Ejemplo:
-\`@Bot ¿Cómo saco mi cédula?\``
-          )
-          .setTimestamp();
-
-        return message.reply({ embeds: [embed] });
-      }
-
-      // 📤 Enviar duda
-      const canal = message.guild.channels.cache.get(CANAL_DUDAS);
-
-      const embed = new EmbedBuilder()
-        .setColor("#5865f2")
-        .setTitle("📩 Nueva Duda (por mención)")
-        .setDescription(duda)
-        .addFields({
-          name: "👤 Usuario",
-          value: `<@${message.author.id}>`
-        })
-        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
-        .setTimestamp();
-
-      canal?.send({
-        content: `<@${message.author.id}>`,
-        embeds: [embed]
-      });
-
-      message.reply("✅ Tu duda fue enviada correctamente.");
     }
 
   });
