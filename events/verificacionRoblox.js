@@ -191,32 +191,48 @@ module.exports = (client) => {
 
       const data = solicitudes.get(interaction.user.id);
       if (!data) return;
+// 🔍 Obtener canal correctamente (NO usar cache directo)
+const canalLogs = await interaction.guild.channels.fetch(CANAL_LOGS).catch(() => null);
 
-      const canalLogs = interaction.guild.channels.cache.get(CANAL_LOGS);
+// ❌ Si no existe el canal
+if (!canalLogs) {
+  return interaction.update({
+    content: "❌ Error: no se encontró el canal de logs",
+    embeds: [],
+    components: []
+  });
+}
 
-      const embed = new EmbedBuilder()
-        .setColor("#f1c40f")
-        .setTitle("📥 Nueva verificación")
-        .setImage(data.avatar)
-        .addFields(
-          { name: "Discord", value: `<@${interaction.user.id}>` },
-          { name: "Roblox", value: data.username },
-          { name: "Historia", value: data.historia }
-        );
+// 📄 Crear embed
+const embed = new EmbedBuilder()
+  .setColor("#f1c40f")
+  .setTitle("📥 Nueva verificación")
+  .setImage(data.avatar)
+  .addFields(
+    { name: "Discord", value: `<@${interaction.user.id}>` },
+    { name: "Roblox", value: data.username },
+    { name: "Historia", value: data.historia }
+  );
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`aprobar_${interaction.user.id}`)
-          .setLabel("Aprobar")
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId(`rechazar_${interaction.user.id}`)
-          .setLabel("Rechazar")
-          .setStyle(ButtonStyle.Danger)
-      );
+// 🔘 Botones staff
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId(`aprobar_${interaction.user.id}`)
+    .setLabel("Aprobar")
+    .setStyle(ButtonStyle.Success),
 
-      await canalLogs.send({ embeds: [embed], components: [row] });
+  new ButtonBuilder()
+    .setCustomId(`rechazar_${interaction.user.id}`)
+    .setLabel("Rechazar")
+    .setStyle(ButtonStyle.Danger)
+);
 
+// 🚀 Enviar
+await canalLogs.send({
+  embeds: [embed],
+  components: [row]
+});
+      
       await interaction.update({
         content: "✅ Enviado a staff",
         embeds: [],
