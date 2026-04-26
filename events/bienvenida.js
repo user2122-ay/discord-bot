@@ -34,8 +34,8 @@ https://discord.com/channels/1345956472986796183/1451018653259792536
 🎭 Aprende los conceptos de rol aquí:
 https://discord.com/channels/1345956472986796183/1451771796918636697
 
-🎫 ¿Tienes dudas? Abre ticket aquí:
-https://discord.com/channels/1345956472986796183/1451018705528946923`
+🎫 ¿Tienes dudas? Escribela aquí:
+https://discord.com/channels/1345956472986796183/1451018706779115655`
             )
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({
