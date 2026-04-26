@@ -7,7 +7,7 @@ const {
   TextInputStyle
 } = require("discord.js");
 
-// 📌 CANALES
+// 📌 CANAL DE DUDAS
 const CANAL_DUDAS = "1451018706779115655";
 
 module.exports = (client) => {
@@ -21,7 +21,7 @@ module.exports = (client) => {
 
     if (message.mentions.has(client.user)) {
 
-      // 🔒 borrar mensaje del usuario (para que sea "privado")
+      // 🔒 borrar SIEMPRE
       await message.delete().catch(() => {});
 
       const embed = new EmbedBuilder()
@@ -38,38 +38,17 @@ module.exports = (client) => {
 🟢 Estado del servidor  
 
 ━━━━━━━━━━━━━━━━━━`
-        )
-        .setTimestamp();
+        );
 
       const menu = new StringSelectMenuBuilder()
-        .setCustomId("menu_soporte")
+        .setCustomId(`menu_${message.author.id}`) // 🔥 PROTECCIÓN USER
         .setPlaceholder("Selecciona una opción")
         .addOptions([
-          {
-            label: "Dudas generales",
-            value: "dudas",
-            emoji: "❓"
-          },
-          {
-            label: "Crear ticket",
-            value: "ticket",
-            emoji: "🎫"
-          },
-          {
-            label: "Normativa",
-            value: "normativa",
-            emoji: "📜"
-          },
-          {
-            label: "Conceptos RP",
-            value: "conceptos",
-            emoji: "📘"
-          },
-          {
-            label: "Estado del servidor",
-            value: "estado",
-            emoji: "🟢"
-          }
+          { label: "Dudas generales", value: "dudas", emoji: "❓" },
+          { label: "Crear ticket", value: "ticket", emoji: "🎫" },
+          { label: "Normativa", value: "normativa", emoji: "📜" },
+          { label: "Conceptos RP", value: "conceptos", emoji: "📘" },
+          { label: "Estado del servidor", value: "estado", emoji: "🟢" }
         ]);
 
       const row = new ActionRowBuilder().addComponents(menu);
@@ -80,7 +59,7 @@ module.exports = (client) => {
         components: [row]
       });
 
-      // 🧠 auto borrar panel después de 30s (opcional pero GOD)
+      // ⏳ borrar panel luego
       setTimeout(() => {
         msg.delete().catch(() => {});
       }, 30000);
@@ -89,21 +68,29 @@ module.exports = (client) => {
   });
 
   // ==============================
-  // 🎯 SELECT MENU + MODAL
+  // 🎯 SELECT MENU
   // ==============================
   client.on("interactionCreate", async (interaction) => {
 
-    if (!interaction.isStringSelectMenu()) return;
+    if (interaction.isStringSelectMenu()) {
 
-    if (interaction.customId === "menu_soporte") {
+      // 🔒 SOLO EL USUARIO ORIGINAL
+      const userId = interaction.customId.split("_")[1];
+
+      if (interaction.user.id !== userId) {
+        return interaction.reply({
+          content: "❌ Este panel no es para ti.",
+          ephemeral: true
+        });
+      }
 
       const value = interaction.values[0];
 
-      // ❓ DUDAS → MODAL
+      // ❓ DUDAS
       if (value === "dudas") {
 
         const modal = new ModalBuilder()
-          .setCustomId("modal_duda")
+          .setCustomId(`modal_${interaction.user.id}`)
           .setTitle("Enviar duda");
 
         const input = new TextInputBuilder()
@@ -112,8 +99,9 @@ module.exports = (client) => {
           .setStyle(TextInputStyle.Paragraph)
           .setRequired(true);
 
-        const row = new ActionRowBuilder().addComponents(input);
-        modal.addComponents(row);
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(input)
+        );
 
         return interaction.showModal(modal);
       }
@@ -121,7 +109,7 @@ module.exports = (client) => {
       // 🎫 TICKET
       if (value === "ticket") {
         return interaction.reply({
-          content: "🎫 Ve aquí:\nhttps://discord.com/channels/1345956472986796183/1451018705528946923",
+          content: "🎫 https://discord.com/channels/1345956472986796183/1451018705528946923",
           ephemeral: true
         });
       }
@@ -129,7 +117,7 @@ module.exports = (client) => {
       // 📜 NORMATIVA
       if (value === "normativa") {
         return interaction.reply({
-          content: "📜 Normativa:\nhttps://discord.com/channels/1345956472986796183/1451018653259792536",
+          content: "📜 https://discord.com/channels/1345956472986796183/1451018653259792536",
           ephemeral: true
         });
       }
@@ -137,7 +125,7 @@ module.exports = (client) => {
       // 📘 CONCEPTOS
       if (value === "conceptos") {
         return interaction.reply({
-          content: "📘 Conceptos RP:\nhttps://discord.com/channels/1345956472986796183/1451771796918636697",
+          content: "📘 https://discord.com/channels/1345956472986796183/1451771796918636697",
           ephemeral: true
         });
       }
@@ -145,20 +133,30 @@ module.exports = (client) => {
       // 🟢 ESTADO
       if (value === "estado") {
         return interaction.reply({
-          content: "🟢 Estado:\nhttps://discord.com/channels/1345956472986796183/1451018683383156827",
+          content: "🟢 https://discord.com/channels/1345956472986796183/1451018683383156827",
           ephemeral: true
         });
       }
-
     }
 
     // ==============================
-    // 📥 MODAL → ENVIAR DUDA
+    // 📥 MODAL
     // ==============================
-    if (interaction.isModalSubmit() && interaction.customId === "modal_duda") {
+    if (interaction.isModalSubmit()) {
+
+      if (!interaction.customId.startsWith("modal_")) return;
 
       const duda = interaction.fields.getTextInputValue("duda_texto");
-      const canal = interaction.guild.channels.cache.get(CANAL_DUDAS);
+
+      // 🔥 FETCH REAL (ARREGLA ERROR)
+      const canal = await interaction.client.channels.fetch(CANAL_DUDAS).catch(() => null);
+
+      if (!canal) {
+        return interaction.reply({
+          content: "❌ No se encontró el canal de dudas.",
+          ephemeral: true
+        });
+      }
 
       const embed = new EmbedBuilder()
         .setColor("#5865f2")
@@ -168,10 +166,9 @@ module.exports = (client) => {
           name: "👤 Usuario",
           value: `<@${interaction.user.id}>`
         })
-        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
         .setTimestamp();
 
-      canal?.send({
+      await canal.send({
         content: `<@${interaction.user.id}>`,
         embeds: [embed]
       });
