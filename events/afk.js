@@ -16,12 +16,17 @@ module.exports = (client) => {
 
       const tiempo = Math.floor((Date.now() - data.tiempo) / 1000);
 
+      // 🔄 RESTAURAR NICKNAME
+      try {
+        await message.member.setNickname(data.nickOriginal);
+      } catch {}
+
       const embed = new EmbedBuilder()
         .setColor("#57f287")
         .setTitle("👋 Bienvenido de vuelta")
         .setDescription("Ya no estás en modo AFK")
         .addFields(
-          { name: "⏱ Tiempo AFK", value: `${tiempo}s`, inline: true }
+          { name: "⏱ Tiempo AFK", value: `${tiempo}s` }
         )
         .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
         .setTimestamp();
@@ -41,8 +46,8 @@ module.exports = (client) => {
           .setTitle("🌙 Usuario AFK")
           .setDescription(`<@${user.id}> está ausente`)
           .addFields(
-            { name: "📝 Motivo", value: data.motivo, inline: false },
-            { name: "⏱ Tiempo", value: `${tiempo}s`, inline: true }
+            { name: "📝 Motivo", value: data.motivo },
+            { name: "⏱ Tiempo", value: `${tiempo}s` }
           )
           .setThumbnail(user.displayAvatarURL({ dynamic: true }))
           .setTimestamp();
