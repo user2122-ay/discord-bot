@@ -3,19 +3,15 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle,
-  PermissionFlagsBits
+  ButtonStyle
 } = require("discord.js");
 
 module.exports = {
-  permisos: "👑 Administradores",
+  permisos: "🌍 Todos",
 
   data: new SlashCommandBuilder()
     .setName("embed")
     .setDescription("Crear un embed personalizado")
-
-    .setDMPermission(false) // ❌ No funciona en MD
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // 🔒 Solo admins lo ven
 
     .addStringOption(o =>
       o.setName("descripcion")
@@ -37,7 +33,7 @@ module.exports = {
 
     .addStringOption(o =>
       o.setName("imagen")
-        .setDescription("URL de imagen grande")
+        .setDescription("URL imagen grande")
         .setRequired(false)
     )
 
@@ -61,15 +57,16 @@ module.exports = {
 
     .addStringOption(o =>
       o.setName("boton_emoji")
-        .setDescription("Emoji del botón (opcional)")
+        .setDescription("Emoji del botón")
         .setRequired(false)
     ),
 
   async execute(interaction) {
 
+    // 🔒 Validación de admin (pero SIN ocultar comando)
     if (!interaction.member.permissions.has("Administrator")) {
       return interaction.reply({
-        content: "❌ No tienes permisos",
+        content: "❌ No tienes permisos para usar este comando",
         ephemeral: true
       });
     }
@@ -109,11 +106,13 @@ module.exports = {
       );
     }
 
+    // ✔ Respuesta privada
     await interaction.reply({
-      content: "✅ Embed enviado",
+      content: "✅ Embed enviado correctamente",
       ephemeral: true
     });
 
+    // ✔ Enviar embed al canal
     await interaction.channel.send({
       embeds: [embed],
       components
