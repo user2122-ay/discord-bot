@@ -3,7 +3,8 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  PermissionFlagsBits
 } = require("discord.js");
 
 module.exports = {
@@ -12,6 +13,9 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("embed")
     .setDescription("Crear un embed personalizado")
+
+    .setDMPermission(false) // ❌ No funciona en MD
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // 🔒 Solo admins lo ven
 
     .addStringOption(o =>
       o.setName("descripcion")
