@@ -1,0 +1,320 @@
+const {
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  Events
+} = require("discord.js");
+
+const axios = require("axios");
+
+// Canal donde llegan solicitudes
+const CANAL_STAFF = "1452365736927301764";
+
+// Rol al aprobar
+const ROL_VERIFICADO = "1451018445998260266";
+
+// Rol staff que puede aprobar
+const ROL_STAFF = "1451217784444027163";
+
+// Memoria temporal
+const verificaciones = new Map();
+
+module.exports = (client) => {
+
+  client.on(Events.InteractionCreate, async (interaction) => {
+
+    // =====================
+    // BOTÓN INICIAL
+    // =====================
+
+    if (
+      interaction.isButton() &&
+      interaction.customId === "roblox_verificar"
+    ) {
+
+      const modal = new ModalBuilder()
+        .setCustomId("modal_roblox")
+        .setTitle("Verificación Roblox");
+
+      const usuario = new TextInputBuilder()
+        .setCustomId("usuario")
+        .setLabel("Usuario de Roblox")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(usuario)
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    // =====================
+    // MODAL
+    // =====================
+
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId === "modal_roblox"
+    ) {
+
+      const usuario = interaction.fields.getTextInputValue("usuario");
+
+      const codigo =
+        "PANAMA-" +
+        Math.floor(1000 + Math.random() * 9000);
+
+      verificaciones.set(interaction.user.id, {
+        usuario,
+        codigo
+      });
+
+      const embed = new EmbedBuilder()
+        .setColor("#2b2d31")
+        .setTitle("🔐 Código generado")
+        .setDescription(
+          `Coloca este código en tu descripción de Roblox:\n\n\`${codigo}\``
+        );
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("comprobar_roblox")
+          .setLabel("Comprobar")
+          .setEmoji("🔍")
+          .setStyle(ButtonStyle.Primary)
+      );
+
+      return interaction.reply({
+        embeds: [embed],
+        components: [row],
+        ephemeral: true
+      });
+    }
+
+    // =====================
+    // COMPROBAR
+    // =====================
+
+    if (
+      interaction.isButton() &&
+      interaction.customId === "comprobar_roblox"
+    ) {
+
+      const data = verificaciones.get(interaction.user.id);
+
+      if (!data) {
+        return interaction.reply({
+          content: "❌ No encontré tu proceso de verificación.",
+          ephemeral: true
+        });
+      }
+
+      try {
+
+        // Buscar ID Roblox
+        const userSearch = await axios.post(
+          "https://users.roblox.com/v1/usernames/users",
+          {
+            usernames: [data.usuario]
+          }
+        );
+
+        const robloxUser = userSearch.data.data[0];
+
+        if (!robloxUser) {
+          return interaction.reply({
+            content: "❌ Usuario Roblox no encontrado.",
+            ephemeral: true
+          });
+        }
+
+        // Perfil
+        const profile = await axios.get(
+          `https://users.roblox.com/v1/users/${robloxUser.id}`
+        );
+
+        const descripcion = profile.data.description || "";
+
+        if (!descripcion.includes(data.codigo)) {
+          return interaction.reply({
+            content:
+              "❌ No encontré el código en tu descripción de Roblox.",
+            ephemeral: true
+          });
+        }
+
+        const canal =
+          client.channels.cache.get(CANAL_STAFF);
+
+        const embed = new EmbedBuilder()
+          .setColor("Yellow")
+          .setTitle("📋 Solicitud de Verificación")
+          .addFields(
+            {
+              name: "Discord",
+              value: `${interaction.user.tag}`,
+              inline: true
+            },
+            {
+              name: "Roblox",
+              value: data.usuario,
+              inline: true
+            },
+            {
+              name: "Código",
+              value: data.codigo
+            }
+          )
+          .setThumbnail(
+            interaction.user.displayAvatarURL()
+          );
+
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(
+              `aprobar_${interaction.user.id}_${data.usuario}`
+            )
+            .setLabel("Aprobar")
+            .setStyle(ButtonStyle.Success),
+
+          new ButtonBuilder()
+            .setCustomId(
+              `rechazar_${interaction.user.id}`
+            )
+            .setLabel("Rechazar")
+            .setStyle(ButtonStyle.Danger)
+        );
+
+        await canal.send({
+          embeds: [embed],
+          components: [row]
+        });
+
+        return interaction.reply({
+          content:
+            "✅ Solicitud enviada al staff.",
+          ephemeral: true
+        });
+
+      } catch (err) {
+
+        console.error(err);
+
+        return interaction.reply({
+          content:
+            "❌ Error obteniendo datos de Roblox.",
+          ephemeral: true
+        });
+      }
+    }
+
+    // =====================
+    // APROBAR
+    // =====================
+
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("aprobar_")
+    ) {
+
+      if (
+        !interaction.member.roles.cache.has(
+          ROL_STAFF
+        )
+      ) {
+        return interaction.reply({
+          content:
+            "❌ No tienes permisos.",
+          ephemeral: true
+        });
+      }
+
+      const datos =
+        interaction.customId.split("_");
+
+      const userId = datos[1];
+      const usuarioRoblox = datos[2];
+
+      const miembro =
+        await interaction.guild.members
+          .fetch(userId)
+          .catch(() => null);
+
+      if (!miembro) {
+        return interaction.reply({
+          content:
+            "❌ Usuario no encontrado.",
+          ephemeral: true
+        });
+      }
+
+      await miembro.roles
+        .add(ROL_VERIFICADO)
+        .catch(() => {});
+
+      await miembro
+        .setNickname(usuarioRoblox)
+        .catch(() => {});
+
+      await interaction.update({
+        content:
+          `✅ Verificado por ${interaction.user.tag}`,
+        embeds: [],
+        components: []
+      });
+
+      await miembro.send(
+        "✅ Tu verificación fue aprobada."
+      ).catch(() => {});
+    }
+
+    // =====================
+    // RECHAZAR
+    // =====================
+
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("rechazar_")
+    ) {
+
+      if (
+        !interaction.member.roles.cache.has(
+          ROL_STAFF
+        )
+      ) {
+        return interaction.reply({
+          content:
+            "❌ No tienes permisos.",
+          ephemeral: true
+        });
+      }
+
+      const userId =
+        interaction.customId.split("_")[1];
+
+      const miembro =
+        await interaction.guild.members
+          .fetch(userId)
+          .catch(() => null);
+
+      await interaction.update({
+        content:
+          `❌ Solicitud rechazada por ${interaction.user.tag}`,
+        embeds: [],
+        components: []
+      });
+
+      if (miembro) {
+        miembro.send(
+          "❌ Tu verificación fue rechazada."
+        ).catch(() => {});
+      }
+    }
+
+  });
+
+};
