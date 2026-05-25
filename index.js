@@ -6,32 +6,32 @@ const mongoose = require("mongoose");
 
 // 🔹 CONEXIÓN POSTGRES
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+connectionString: process.env.DATABASE_URL,
+ssl: { rejectUnauthorized: false }
 });
 
 pool.connect()
-    .then(() => console.log("✅ Conectado a Postgres"))
-    .catch(err => console.log("⚠️ Postgres no conectado:", err.message));
+.then(() => console.log("✅ Conectado a Postgres"))
+.catch(err => console.log("⚠️ Postgres no conectado:", err.message));
 
 // 🤖 CLIENTE
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.DirectMessages
-    ],
-    partials: ["CHANNEL"]
+intents: [
+GatewayIntentBits.Guilds,
+GatewayIntentBits.GuildMessages,
+GatewayIntentBits.MessageContent,
+GatewayIntentBits.GuildMembers,
+GatewayIntentBits.DirectMessages
+],
+partials: ["CHANNEL"]
 });
 // BD
 mongoose.connect(process.env.MONGO_URI)
 .then(() => {
-    console.log("✅ MongoDB conectado");
+console.log("✅ MongoDB conectado");
 })
 .catch(err => {
-    console.error("❌ Error MongoDB:", err);
+console.error("❌ Error MongoDB:", err);
 });
 // ==============================
 // 🔥 SISTEMAS (EVENTOS)
@@ -45,47 +45,42 @@ require("./events/mencionBot")(client);
 require("./events/tickets")(client);
 require("./events/verificacionRoblox")(client);
 
-
 // ==============================
 // 📦 COMANDOS
 // ==============================
 
 client.commands = new Collection();
 
-const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 
+for (const file of commandFiles) {
 try {
+const command = require(./commands/${file});
 
-console.log("🗑️ Eliminando comandos globales...");
+// múltiples comandos en un archivo  
+    if (typeof command === "object" && !command.data) {  
+        for (const key in command) {  
+            const cmd = command[key];  
+            if (cmd?.data?.name) {  
+                client.commands.set(cmd.data.name, cmd);  
+                console.log(`✅ Cargado: ${cmd.data.name}`);  
+            }  
+        }  
+    }  
 
-await rest.put(
-Routes.applicationCommands(client.user.id),
-{ body: [] }
-);
+    // comando normal  
+    else if (command?.data?.name) {  
+        client.commands.set(command.data.name, command);  
+        console.log(`✅ Cargado: ${command.data.name}`);  
+    }  
 
-console.log("🗑️ Comandos globales eliminados");
+    else {  
+        console.log(`❌ ${file} inválido`);  
+    }  
 
-console.log("🗑️ Eliminando comandos del servidor...");
-
-await rest.put(
-Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-{ body: [] }
-);
-
-console.log("🗑️ Comandos del servidor eliminados");
-
-console.log("⏳ Registrando comandos nuevos...");
-
-await rest.put(
-Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-{ body: commands }
-);
-
-console.log("✅ ${commands.length} comandos registrados");
-
-} catch (error) {
-
-console.error(error);
+} catch (err) {  
+    console.log(`❌ Error en ${file}:`, err.message);  
+}
 
 }
 
@@ -100,42 +95,38 @@ const GUILD_ID = "1463192289974157334";
 // ==============================
 
 client.once("ready", async () => {
-    console.log(`🔥 Bot conectado como ${client.user.tag}`);
+console.log(🔥 Bot conectado como ${client.user.tag});
 
-    const commands = [];
+const commands = [];  
 
-    client.commands.forEach(cmd => {
-        try {
-            commands.push(cmd.data.toJSON());
-        } catch {
-            console.log(`❌ Error en ${cmd.data?.name}`);
-        }
-    });
+client.commands.forEach(cmd => {  
+    try {  
+        commands.push(cmd.data.toJSON());  
+    } catch {  
+        console.log(`❌ Error en ${cmd.data?.name}`);  
+    }  
+});  
 
-    console.log("📦 Comandos:");
-    commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));
+console.log("📦 Comandos:");  
+commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));  
 
-    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);  
 
-    try {
-        console.log("⏳ Registrando comandos...");
+try {  
+    console.log("⏳ Registrando comandos...");  
 
-        await rest.put(
-    Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-    { body: [] }
+    await rest.put(  
+Routes.applicationGuildCommands(client.user.id, GUILD_ID),  
+{ body: [] }
+
 );
 
-console.log("🗑️ Slash commands eliminados");
-        
-        await rest.put(
-            Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-            { body: commands }
-        );
 
-        console.log(`✅ ${commands.length} comandos registrados`);
-    } catch (error) {
-        console.error("❌ Error registrando comandos:", error);
-    }
+    console.log(`✅ ${commands.length} comandos registrados`);  
+} catch (error) {  
+    console.error("❌ Error registrando comandos:", error);  
+}
+
 });
 
 // ==============================
@@ -143,26 +134,27 @@ console.log("🗑️ Slash commands eliminados");
 // ==============================
 
 client.on("interactionCreate", async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+if (!interaction.isChatInputCommand()) return;
 
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
+const command = client.commands.get(interaction.commandName);  
+if (!command) return;  
 
-    interaction.pool = pool;
+interaction.pool = pool;  
 
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(`❌ Error en ${interaction.commandName}:`, error);
+try {  
+    await command.execute(interaction);  
+} catch (error) {  
+    console.error(`❌ Error en ${interaction.commandName}:`, error);  
 
-        const msg = "❌ Error ejecutando el comando";
+    const msg = "❌ Error ejecutando el comando";  
 
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: msg, ephemeral: true });
-        } else {
-            await interaction.reply({ content: msg, ephemeral: true });
-        }
-    }
+    if (interaction.replied || interaction.deferred) {  
+        await interaction.followUp({ content: msg, ephemeral: true });  
+    } else {  
+        await interaction.reply({ content: msg, ephemeral: true });  
+    }  
+}
+
 });
 
 // 🔐 LOGIN
