@@ -52,36 +52,41 @@ require("./events/verificacionRoblox")(client);
 
 client.commands = new Collection();
 
-const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
-for (const file of commandFiles) {
-    try {
-        const command = require(`./commands/${file}`);
+try {
 
-        // múltiples comandos en un archivo
-        if (typeof command === "object" && !command.data) {
-            for (const key in command) {
-                const cmd = command[key];
-                if (cmd?.data?.name) {
-                    client.commands.set(cmd.data.name, cmd);
-                    console.log(`✅ Cargado: ${cmd.data.name}`);
-                }
-            }
-        }
+console.log("🗑️ Eliminando comandos globales...");
 
-        // comando normal
-        else if (command?.data?.name) {
-            client.commands.set(command.data.name, command);
-            console.log(`✅ Cargado: ${command.data.name}`);
-        }
+await rest.put(
+Routes.applicationCommands(client.user.id),
+{ body: [] }
+);
 
-        else {
-            console.log(`❌ ${file} inválido`);
-        }
+console.log("🗑️ Comandos globales eliminados");
 
-    } catch (err) {
-        console.log(`❌ Error en ${file}:`, err.message);
-    }
+console.log("🗑️ Eliminando comandos del servidor...");
+
+await rest.put(
+Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+{ body: [] }
+);
+
+console.log("🗑️ Comandos del servidor eliminados");
+
+console.log("⏳ Registrando comandos nuevos...");
+
+await rest.put(
+Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+{ body: commands }
+);
+
+console.log("✅ ${commands.length} comandos registrados");
+
+} catch (error) {
+
+console.error(error);
+
 }
 
 // ==============================
