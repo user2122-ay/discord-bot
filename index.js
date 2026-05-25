@@ -1,3 +1,4 @@
+No bor nose boreaoen,
 require("dotenv").config();
 const fs = require("fs");
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require("discord.js");
@@ -115,12 +116,11 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 try {  
     console.log("⏳ Registrando comandos...");  
 
-    await rest.put(  
-Routes.applicationGuildCommands(client.user.id, GUILD_ID),  
-{ body: [] }
+await rest.put(  
+        Routes.applicationGuildCommands(client.user.id, GUILD_ID),  
+        { body: commands }  
+    );  
 
-);
-});  
     console.log(`✅ ${commands.length} comandos registrados`);  
 } catch (error) {  
     console.error("❌ Error registrando comandos:", error);  
