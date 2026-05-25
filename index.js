@@ -2,6 +2,7 @@ require("dotenv").config();
 const fs = require("fs");
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require("discord.js");
 const { Pool } = require("pg");
+const mongoose = require("mongoose");
 
 // 🔹 CONEXIÓN POSTGRES
 const pool = new Pool({
@@ -24,7 +25,14 @@ const client = new Client({
     ],
     partials: ["CHANNEL"]
 });
-
+// BD
+mongoose.connect(process.env.MONGO_URI)
+.then(() => {
+    console.log("✅ MongoDB conectado");
+})
+.catch(err => {
+    console.error("❌ Error MongoDB:", err);
+});
 // ==============================
 // 🔥 SISTEMAS (EVENTOS)
 // ==============================
