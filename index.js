@@ -116,6 +116,13 @@ client.once("ready", async () => {
         console.log("⏳ Registrando comandos...");
 
         await rest.put(
+    Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+    { body: [] }
+);
+
+console.log("🗑️ Slash commands eliminados");
+        
+        await rest.put(
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
             { body: commands }
         );
