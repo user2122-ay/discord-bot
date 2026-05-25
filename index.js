@@ -120,8 +120,7 @@ Routes.applicationGuildCommands(client.user.id, GUILD_ID),
 { body: [] }
 
 );
-
-
+});  
     console.log(`✅ ${commands.length} comandos registrados`);  
 } catch (error) {  
     console.error("❌ Error registrando comandos:", error);  
