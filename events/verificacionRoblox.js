@@ -26,6 +26,9 @@ const ROL_NO_VERIFICADO = "1451018447482916904";
 // Memoria temporal
 const verificaciones = new Map();
 
+// base de datos 
+const RobloxVerificado = require("../models/RobloxVerificado"); 
+
 
 module.exports = (client) => {
 
