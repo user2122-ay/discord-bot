@@ -20,8 +20,12 @@ const ROL_VERIFICADO = "1451018445998260266";
 // Rol staff que puede aprobar
 const ROL_STAFF = "1451217784444027163";
 
+// Rol No verificado 
+const ROL_NO_VERIFICADO = "1451018447482916904"; 
+
 // Memoria temporal
 const verificaciones = new Map();
+
 
 module.exports = (client) => {
 
@@ -51,6 +55,13 @@ module.exports = (client) => {
       );
 
       return interaction.showModal(modal);
+    }
+
+    if (interaction.member.roles.cache.has(ROL_VERIFICADO)) {
+  return interaction.reply({
+    content: "❌ Ya estás verificado.",
+    ephemeral: true
+  });
     }
 
     // =====================
@@ -279,6 +290,8 @@ if (
       await miembro.roles
         .add(ROL_VERIFICADO)
         .catch(() => {});
+
+      await miembro.roles.remove(ROL_NO_VERIFICADO).catch(() => {});
 
       await miembro
         .setNickname(usuarioRoblox)
