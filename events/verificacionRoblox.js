@@ -59,7 +59,10 @@ module.exports = (client) => {
 
       return interaction.showModal(modal);
     }
-
+if (
+  interaction.isButton() &&
+  interaction.customId === "roblox_verificar"
+)
     if (interaction.member.roles.cache.has(ROL_VERIFICADO)) {
   return interaction.reply({
     content: "❌ Ya estás verificado.",
