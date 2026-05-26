@@ -95,29 +95,10 @@ module.exports = (client) => {
       });
     }
 
-    // =====================
-    // COMPROBAR
-    // =====================
+// =====================
+// COMPROBAR
+// =====================
 
-    if (
-      interaction.isButton() &&
-      interaction.customId === "comprobar_roblox"
-    ) {
-
-      const data = verificaciones.get(interaction.user.id);
-
-      if (!data) {
-        return interaction.reply({
-          content: "❌ No encontré tu proceso de verificación.",
-          ephemeral: true
-        });
-      }
-
-      try {
-
-        // Buscar ID Roblox
-        const userSearch = await axios.post(
-          "https://users.roblox.com/v1/usernames/users",
 if (
   interaction.isButton() &&
   interaction.customId === "comprobar_roblox"
@@ -132,6 +113,9 @@ if (
     });
   }
 
+
+        // Buscar ID Roblox
+        
   try {
 
     const userSearch = await axios.post(
