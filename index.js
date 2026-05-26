@@ -126,6 +126,29 @@ client.once("ready", async () => {
     }
 });
 
+const axios = require("axios");
+
+try {
+
+    const res = await axios.get(
+        "https://api.erlc.gg/v2/server",
+        {
+            headers: {
+                "server-key": process.env.ROBLOX_API_KEY
+            }
+        }
+    );
+
+    console.log("========== ERLC ==========");
+    console.log(JSON.stringify(res.data, null, 2));
+    console.log("==========================");
+
+} catch (err) {
+
+    console.log("ERROR ERLC:");
+    console.log(err.response?.data || err.message);
+
+}
 // ==============================
 // 🎯 INTERACCIONES
 // ==============================
