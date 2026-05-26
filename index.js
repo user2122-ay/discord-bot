@@ -93,43 +93,44 @@ const GUILD_ID = "1463192289974157334";
 // ==============================
 // 🚀 READY
 // ==============================
-
 client.once("ready", async () => {
 console.log(`🔥 Bot conectado como ${client.user.tag}`);
 
-const commands = [];  
+const commands = [];
 
-client.commands.forEach(cmd => {  
-    try {  
-        commands.push(cmd.data.toJSON());  
-    } catch {  
-        console.log(`❌ Error en ${cmd.data?.name}`);  
-    }  
-});  
+client.commands.forEach(cmd => {
+    try {
+        commands.push(cmd.data.toJSON());
+    } catch {
+        console.log(`❌ Error en ${cmd.data?.name}`);
+    }
+});
 
-    await rest.put(
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+
+// 🗑️ BORRAR COMANDOS VIEJOS
+await rest.put(
     Routes.applicationGuildCommands(client.user.id, GUILD_ID),
     { body: [] }
 );
 
 console.log("🗑️ Comandos eliminados");
-    
-console.log("📦 Comandos:");  
-commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));  
 
-const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);  
+console.log("📦 Comandos:");
+commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));
 
-try {  
-    console.log("⏳ Registrando comandos...");  
+try {
+    console.log("⏳ Registrando comandos...");
 
-await rest.put(  
-        Routes.applicationGuildCommands(client.user.id, GUILD_ID),  
-        { body: commands }  
-    );  
+    await rest.put(
+        Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+        { body: commands }
+    );
 
-    console.log(`✅ ${commands.length} comandos registrados`);  
-} catch (error) {  
-    console.error("❌ Error registrando comandos:", error);  
+    console.log(`✅ ${commands.length} comandos registrados`);
+
+} catch (error) {
+    console.error("❌ Error registrando comandos:", error);
 }
 
 });
