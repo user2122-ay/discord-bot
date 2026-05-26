@@ -1,15 +1,15 @@
-# fly.toml app configuration file generated for bot-panama-rp on 2026-05-25T01:30:23Z
+# fly.toml app configuration file generated for bot-panama-rp on 2026-05-26T18:38:16Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'bot-panama-rp'
-primary_region = 'lax'
+primary_region = 'dfw'
 
 [build]
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
