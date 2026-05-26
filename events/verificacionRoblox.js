@@ -149,6 +149,18 @@ if (
       });
     }
 
+    const existe = await RobloxVerificado.findOne({
+  robloxId: robloxUser.id.toString()
+});
+
+if (existe) {
+  return interaction.reply({
+    content: "❌ Esta cuenta Roblox ya está vinculada a otro usuario.",
+    ephemeral: true
+  });
+}
+    
+
     const profile = await axios.get(
       `https://users.roblox.com/v1/users/${robloxUser.id}`
     );
@@ -212,8 +224,8 @@ if (
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(
-          `aprobar_${interaction.user.id}_${robloxUser.name}`
-        )
+  `aprobar_${interaction.user.id}_${robloxUser.id}_${robloxUser.name}`
+)
         .setLabel("Aprobar")
         .setStyle(ButtonStyle.Success),
 
@@ -275,7 +287,8 @@ if (
         interaction.customId.split("_");
 
       const userId = datos[1];
-      const usuarioRoblox = datos[2];
+const robloxUserId = datos[2];
+const usuarioRoblox = datos.slice(3).join("_");
 
       const miembro =
         await interaction.guild.members
@@ -293,6 +306,12 @@ if (
       await miembro.roles
         .add(ROL_VERIFICADO)
         .catch(() => {});
+
+      await RobloxVerificado.create({
+  discordId: miembro.id,
+  robloxId: robloxUserId,
+  robloxUser: usuarioRoblox
+});
 
       await miembro.roles.remove(ROL_NO_VERIFICADO).catch(() => {});
 
