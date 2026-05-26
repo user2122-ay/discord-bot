@@ -118,99 +118,139 @@ module.exports = (client) => {
         // Buscar ID Roblox
         const userSearch = await axios.post(
           "https://users.roblox.com/v1/usernames/users",
-          {
-            usernames: [data.usuario]
-          }
-        );
+if (
+  interaction.isButton() &&
+  interaction.customId === "comprobar_roblox"
+) {
 
-        const robloxUser = userSearch.data.data[0];
+  const data = verificaciones.get(interaction.user.id);
 
-        if (!robloxUser) {
-          return interaction.reply({
-            content: "❌ Usuario Roblox no encontrado.",
-            ephemeral: true
-          });
-        }
+  if (!data) {
+    return interaction.reply({
+      content: "❌ No encontré tu proceso de verificación.",
+      ephemeral: true
+    });
+  }
 
-        // Perfil
-        const profile = await axios.get(
-          `https://users.roblox.com/v1/users/${robloxUser.id}`
-        );
+  try {
 
-        const descripcion = profile.data.description || "";
-
-        if (!descripcion.includes(data.codigo)) {
-          return interaction.reply({
-            content:
-              "❌ No encontré el código en tu descripción de Roblox.",
-            ephemeral: true
-          });
-        }
-
-        const canal =
-          client.channels.cache.get(CANAL_STAFF);
-
-        const embed = new EmbedBuilder()
-          .setColor("Yellow")
-          .setTitle("📋 Solicitud de Verificación")
-          .addFields(
-            {
-              name: "Discord",
-              value: `${interaction.user.tag}`,
-              inline: true
-            },
-            {
-              name: "Roblox",
-              value: data.usuario,
-              inline: true
-            },
-            {
-              name: "Código",
-              value: data.codigo
-            }
-          )
-          .setThumbnail(
-            interaction.user.displayAvatarURL()
-          );
-
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId(
-              `aprobar_${interaction.user.id}_${data.usuario}`
-            )
-            .setLabel("Aprobar")
-            .setStyle(ButtonStyle.Success),
-
-          new ButtonBuilder()
-            .setCustomId(
-              `rechazar_${interaction.user.id}`
-            )
-            .setLabel("Rechazar")
-            .setStyle(ButtonStyle.Danger)
-        );
-
-        await canal.send({
-          embeds: [embed],
-          components: [row]
-        });
-
-        return interaction.reply({
-          content:
-            "✅ Solicitud enviada al staff.",
-          ephemeral: true
-        });
-
-      } catch (err) {
-
-        console.error(err);
-
-        return interaction.reply({
-          content:
-            "❌ Error obteniendo datos de Roblox.",
-          ephemeral: true
-        });
+    const userSearch = await axios.post(
+      "https://users.roblox.com/v1/usernames/users",
+      {
+        usernames: [data.usuario],
+        excludeBannedUsers: false
       }
+    );
+
+    const robloxUser = userSearch.data?.data?.[0];
+
+    if (!robloxUser) {
+      return interaction.reply({
+        content: "❌ Usuario Roblox no encontrado.",
+        ephemeral: true
+      });
     }
+
+    const profile = await axios.get(
+      `https://users.roblox.com/v1/users/${robloxUser.id}`
+    );
+
+    console.log("ROBLOX PROFILE:", profile.data);
+
+    const descripcion =
+      profile.data?.description ?? "";
+
+    console.log("Usuario Roblox:", robloxUser.name);
+    console.log("Descripción:", descripcion);
+    console.log("Código esperado:", data.codigo);
+
+    if (!descripcion.includes(data.codigo)) {
+      return interaction.reply({
+        content:
+          "❌ No encontré el código en tu descripción de Roblox.",
+        ephemeral: true
+      });
+    }
+
+    const canal =
+      client.channels.cache.get(CANAL_STAFF);
+
+    if (!canal) {
+      return interaction.reply({
+        content:
+          "❌ No encontré el canal de staff.",
+        ephemeral: true
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setTitle("📋 Solicitud de Verificación")
+      .addFields(
+        {
+          name: "Discord",
+          value: interaction.user.tag,
+          inline: true
+        },
+        {
+          name: "Roblox",
+          value: robloxUser.name,
+          inline: true
+        },
+        {
+          name: "ID Roblox",
+          value: `${robloxUser.id}`,
+          inline: true
+        },
+        {
+          name: "Código",
+          value: data.codigo
+        }
+      )
+      .setThumbnail(
+        interaction.user.displayAvatarURL()
+      );
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(
+          `aprobar_${interaction.user.id}_${robloxUser.name}`
+        )
+        .setLabel("Aprobar")
+        .setStyle(ButtonStyle.Success),
+
+      new ButtonBuilder()
+        .setCustomId(
+          `rechazar_${interaction.user.id}`
+        )
+        .setLabel("Rechazar")
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    await canal.send({
+      embeds: [embed],
+      components: [row]
+    });
+
+    return interaction.reply({
+      content:
+        "✅ Solicitud enviada al staff.",
+      ephemeral: true
+    });
+
+  } catch (err) {
+
+    console.log("========== ERROR ROBLOX ==========");
+    console.log(err.response?.data || err.message || err);
+    console.log("==================================");
+
+    return interaction.reply({
+      content:
+        "❌ Error obteniendo datos de Roblox.",
+      ephemeral: true
+    });
+  }
+  }
 
     // =====================
     // APROBAR
