@@ -96,19 +96,33 @@ const GUILD_ID = "1345956472986796183";
 client.once("ready", async () => {
     console.log(`🔥 Bot conectado como ${client.user.tag}`);
 
+    const commands = [];
+
+    client.commands.forEach(cmd => {
+        try {
+            commands.push(cmd.data.toJSON());
+        } catch {
+            console.log(`❌ Error en ${cmd.data?.name}`);
+        }
+    });
+
+    console.log("📦 Comandos:");
+    commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));
+
     const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     try {
+        console.log("⏳ Registrando comandos...");
 
         await rest.put(
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-            { body: [] }
+            { body: commands }
         );
 
-        console.log("🗑️ Todos los comandos eliminados");
+        console.log(`✅ ${commands.length} comandos registrados`);
 
     } catch (error) {
-        console.error("❌ Error eliminando comandos:", error);
+        console.error("❌ Error registrando comandos:", error);
     }
 });
 
