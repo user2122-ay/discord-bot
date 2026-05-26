@@ -144,12 +144,15 @@ module.exports = (client) => {
     // ==============================
     if (interaction.isModalSubmit()) {
 
-      if (!interaction.customId.startsWith("modal_")) return;
+  if (
+    !interaction.customId.startsWith("modal_") ||
+    interaction.customId === "modal_roblox"
+  ) return;
 
-      console.log("Modal ID:", interaction.customId);
-console.log("Fields:", interaction.fields.fields);
+  console.log("Modal ID:", interaction.customId);
+  console.log("Fields:", interaction.fields.fields);
 
-const duda = interaction.fields.getTextInputValue("duda_texto");
+  const duda = interaction.fields.getTextInputValue("duda_texto");
 
       // 🔥 FETCH REAL (ARREGLA ERROR)
       const canal = await interaction.client.channels.fetch(CANAL_DUDAS).catch(() => null);
