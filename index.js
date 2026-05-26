@@ -1,4 +1,3 @@
-No bor nose boreaoen,
 require("dotenv").config();
 const fs = require("fs");
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require("discord.js");
