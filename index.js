@@ -107,6 +107,13 @@ client.commands.forEach(cmd => {
     }  
 });  
 
+    await rest.put(
+    Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+    { body: [] }
+);
+
+console.log("🗑️ Comandos eliminados");
+    
 console.log("📦 Comandos:");  
 commands.forEach(cmd => console.log(`➡️ ${cmd.name}`));  
 
