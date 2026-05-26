@@ -55,7 +55,7 @@ const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith("
 
 for (const file of commandFiles) {
 try {
-const command = require(./commands/${file});
+const command = require(`./commands/${file}`);
 
 // múltiples comandos en un archivo  
     if (typeof command === "object" && !command.data) {  
@@ -95,7 +95,7 @@ const GUILD_ID = "1463192289974157334";
 // ==============================
 
 client.once("ready", async () => {
-console.log(🔥 Bot conectado como ${client.user.tag});
+console.log(`🔥 Bot conectado como ${client.user.tag}`);
 
 const commands = [];  
 
