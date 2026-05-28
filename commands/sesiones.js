@@ -48,12 +48,12 @@ Activa el modo mantenimiento del servidor.
 
 ━━━━━━━━━━━━━━━━━━
 
-«⚠️ Usa los botones inferiores para administrar el estado del servidor.`
+⚠️ Usa los botones inferiores para administrar el estado del servidor.`
 )
 .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
 .setFooter({
 text: "Sistema Oficial • Panamá RP V2"
-});»
+});
 
 const botones = new ActionRowBuilder().addComponents(
 
