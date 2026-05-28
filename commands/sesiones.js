@@ -22,74 +22,77 @@ if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
 return interaction.reply({ content: "⛔ No tienes permisos.", ephemeral: true });
 }
 
-const panel = new EmbedBuilder()
-.setColor("#1e1f22")
-.setAuthor({
-name: "Panamá RP V2",
-iconURL: interaction.guild.iconURL({ dynamic: true })
-})
-.setTitle("📊 Panel de Control de Sesiones")
-.setDescription(
-`Gestiona el estado oficial del servidor roleplay.
+const panel = new ContainerBuilder()
+
+.addSectionComponents(
+new SectionBuilder()
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`# 📊 Panel de Control de Sesiones
+
+Gestiona el estado oficial del servidor roleplay.
 
 ━━━━━━━━━━━━━━━━━━
 
 🟢 Abrir Sesión
-Permite iniciar oficialmente las actividades de roleplay.
+Permite iniciar oficialmente las actividades.
 
 🔴 Cerrar Sesión
-Finaliza todas las actividades del servidor.
+Finaliza las actividades del servidor.
 
 🗳️ Iniciar Votación
 Los usuarios podrán votar para abrir sesión.
 
 🛠️ Mantenimiento
-Activa el modo mantenimiento del servidor.
+Activa el modo mantenimiento.
 
 ━━━━━━━━━━━━━━━━━━
 
-⚠️ Usa los botones inferiores para administrar el estado del servidor.`
+⚠️ Usa los botones inferiores para administrar el servidor.`
 )
-.setThumbnail(interaction.guild.iconURL({ dynamic: true }))
-.setFooter({
-text: "Sistema Oficial • Panamá RP V2"
-});
+)
+)
 
-const botones = new ActionRowBuilder().addComponents(
+.addSeparatorComponents(
+new SeparatorBuilder()
+)
 
-new ButtonBuilder()
-.setCustomId("abrir")
-.setLabel("Abrir")
-.setEmoji("🟢")
-.setStyle(ButtonStyle.Success),
+.addActionRowComponents(
+new ActionRowBuilder().addComponents(
 
-new ButtonBuilder()
-.setCustomId("cerrar")
-.setLabel("Cerrar")
-.setEmoji("🔴")
-.setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+        .setCustomId("abrir")
+        .setLabel("Abrir")
+        .setEmoji("🟢")
+        .setStyle(ButtonStyle.Success),
 
-new ButtonBuilder()
-.setCustomId("votar")
-.setLabel("Votación")
-.setEmoji("🗳️")
-.setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+        .setCustomId("cerrar")
+        .setLabel("Cerrar")
+        .setEmoji("🔴")
+        .setStyle(ButtonStyle.Danger),
 
-new ButtonBuilder()
-.setCustomId("mantenimiento")
-.setLabel("Mantenimiento")
-.setEmoji("🛠️")
-.setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder()
+        .setCustomId("votar")
+        .setLabel("Votación")
+        .setEmoji("🗳️")
+        .setStyle(ButtonStyle.Primary),
+
+    new ButtonBuilder()
+        .setCustomId("mantenimiento")
+        .setLabel("Mantenimiento")
+        .setEmoji("🛠️")
+        .setStyle(ButtonStyle.Secondary)
+)
 
 );
 
 await interaction.reply({
-embeds: [panel],
-components: [botones],
+components: [panel],
+flags: MessageFlags.IsComponentsV2,
 ephemeral: true
 });
-const collector = interaction.channel.createMessageComponentCollector({ time: 600000 });
-
+  
 collector.on("collect", async i => {
 
 if (i.user.id !== interaction.user.id) {
