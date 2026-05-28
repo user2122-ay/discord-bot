@@ -34,7 +34,7 @@ if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
 return interaction.reply({ content: "⛔ No tienes permisos.", ephemeral: true });
 }
 
-const panel = new ContainerBuilder()
+
 const panel = new ContainerBuilder()
     .addSectionComponents(
         new SectionBuilder()
@@ -103,16 +103,20 @@ await interaction.reply({
    const collector = interaction.channel.createMessageComponentCollector({
     time: 600000
 });
-    
+
 collector.on("collect", async i => {
 
-if (i.user.id !== interaction.user.id) {
-return i.reply({ content: "❌ No puedes usar esto.", ephemeral: true });
-}
+    if (i.user.id !== interaction.user.id) {
+        return i.reply({
+            content: "❌ No puedes usar esto.",
+            ephemeral: true
+        });
+    }
 
-const canal = interaction.guild.channels.cache.get(CANAL_SESION);
-const logs = interaction.guild.channels.cache.get(CANAL_LOGS);
+    const canal = interaction.guild.channels.cache.get(CANAL_SESION);
+    const logs = interaction.guild.channels.cache.get(CANAL_LOGS);
 
+   
 // 🟢 ABRIR
 if (i.customId === "abrir") {
 
