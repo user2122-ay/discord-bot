@@ -22,23 +22,84 @@ if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
 return interaction.reply({ content: "⛔ No tienes permisos.", ephemeral: true });
 }
 
-const panel = new EmbedBuilder()
-.setTitle("📊 Panel de Control de Sesiones")
+const embedPrincipal = new EmbedBuilder()
+.setColor(0x2b2d31)
+.setTitle("📊 PANEL DE SESIONES")
 .setDescription(
-"Desde este panel podrás gestionar el estado del servidor.\n\n" +
-"🔹 Abrir sesión\n🔹 Cerrar sesión\n🔹 Iniciar votación\n🔹 Activar mantenimiento\n\n" +
-"📌 Usa los botones de abajo."
+"Administra el estado del servidor desde este panel."
 )
-.setColor(0x3498db);
+.setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+.setFooter({
+text: `Sistema administrativo • ${interaction.guild.name}`
+});
 
-const botones = new ActionRowBuilder().addComponents(
-new ButtonBuilder().setCustomId("abrir").setLabel("🟢 Abrir").setStyle(ButtonStyle.Success),
-new ButtonBuilder().setCustomId("cerrar").setLabel("🔴 Cerrar").setStyle(ButtonStyle.Danger),
-new ButtonBuilder().setCustomId("votar").setLabel("🗳️ Votación").setStyle(ButtonStyle.Primary),
-new ButtonBuilder().setCustomId("mantenimiento").setLabel("🛠️ Mantenimiento").setStyle(ButtonStyle.Secondary)
+const estadoEmbed = new EmbedBuilder()
+.setColor(0x3498db)
+.setTitle("🟢 Gestión de Sesión")
+.setDescription(
+"Controla aperturas y cierres del servidor."
+)
+.addFields(
+{ name: "🟢 Abrir", value: "Inicia sesión oficial", inline: true },
+{ name: "🔴 Cerrar", value: "Finaliza la sesión", inline: true }
 );
 
-await interaction.reply({ embeds: [panel], components: [botones], ephemeral: true });
+const votacionEmbed = new EmbedBuilder()
+.setColor(0xf1c40f)
+.setTitle("🗳️ Sistema de Votación")
+.setDescription(
+"Permite abrir sesión mediante votos."
+)
+.addFields(
+{ name: "👥 Requeridos", value: "8 votos", inline: true },
+{ name: "⏳ Tiempo", value: "20 minutos", inline: true }
+);
+
+const mantenimientoEmbed = new EmbedBuilder()
+.setColor(0x95a5a6)
+.setTitle("🛠️ Mantenimiento")
+.setDescription(
+"Activa avisos de mantenimiento del servidor."
+);
+
+const fila1 = new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId("abrir")
+.setLabel("Abrir Sesión")
+.setEmoji("🟢")
+.setStyle(ButtonStyle.Success),
+
+new ButtonBuilder()
+.setCustomId("cerrar")
+.setLabel("Cerrar Sesión")
+.setEmoji("🔴")
+.setStyle(ButtonStyle.Danger)
+);
+
+const fila2 = new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId("votar")
+.setLabel("Iniciar Votación")
+.setEmoji("🗳️")
+.setStyle(ButtonStyle.Primary),
+
+new ButtonBuilder()
+.setCustomId("mantenimiento")
+.setLabel("Mantenimiento")
+.setEmoji("🛠️")
+.setStyle(ButtonStyle.Secondary)
+);
+
+await interaction.reply({
+embeds: [
+embedPrincipal,
+estadoEmbed,
+votacionEmbed,
+mantenimientoEmbed
+],
+components: [fila1, fila2],
+ephemeral: true
+});
 
 const collector = interaction.channel.createMessageComponentCollector({ time: 600000 });
 
