@@ -160,12 +160,12 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
 
             const botones = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId("reclamar")
+                    .setCustomId("ticket_reclamar")
                     .setLabel("Reclamar")
                     .setStyle(ButtonStyle.Primary),
 
                 new ButtonBuilder()
-                    .setCustomId("cerrar")
+                   .setCustomId("ticket_cerrar")
                     .setLabel("Cerrar")
                     .setStyle(ButtonStyle.Danger)
             );
@@ -189,7 +189,7 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
             const canal = interaction.channel;
 
             // 🔒 RECLAMAR
-            if (interaction.customId === "reclamar") {
+            if (interaction.customId === "ticket_reclamar")
 
                 // ❌ Ya reclamado
                 if (ticketsReclamados.has(canal.id)) {
@@ -227,8 +227,7 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
             }
 
             // ❌ CERRAR
-            if (interaction.customId === "cerrar") {
-
+            if (interaction.customId === "ticket_cerrar")
                 const tipo = canal.name.split("-")[0];
                 const rolesPermitidos = ROLES_TICKET[tipo] || [];
 
