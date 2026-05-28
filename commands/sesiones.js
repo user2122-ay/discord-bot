@@ -35,11 +35,11 @@ return interaction.reply({ content: "⛔ No tienes permisos.", ephemeral: true }
 }
 
 const panel = new ContainerBuilder()
-
-.addSectionComponents(
-    new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
+const panel = new ContainerBuilder()
+    .addSectionComponents(
+        new SectionBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
 `# 📊 Panel de Control de Sesiones
 
 Gestiona el estado oficial del servidor roleplay.
@@ -61,46 +61,43 @@ Activa el modo mantenimiento.
 ━━━━━━━━━━━━━━━━━━
 
 ⚠️ Usa los botones inferiores para administrar el servidor.`
+                )
             )
-        )
-)
+            .setButtonAccessory(
+                new ButtonBuilder()
+                    .setCustomId("abrir")
+                    .setLabel("Abrir")
+                    .setEmoji("🟢")
+                    .setStyle(ButtonStyle.Success)
+            )
+    )
 
-.addSeparatorComponents(
-    new SeparatorBuilder()
-)
+    .addSeparatorComponents(
+        new SeparatorBuilder()
+    )
 
-.addActionRowComponents(
+    .addActionRowComponents(
+        new ButtonBuilder()
+            .setCustomId("cerrar")
+            .setLabel("Cerrar")
+            .setEmoji("🔴")
+            .setStyle(ButtonStyle.Danger),
 
-    new ButtonBuilder()
-        .setCustomId("abrir")
-        .setLabel("Abrir")
-        .setEmoji("🟢")
-        .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+            .setCustomId("votar")
+            .setLabel("Votación")
+            .setEmoji("🗳️")
+            .setStyle(ButtonStyle.Primary),
 
-    new ButtonBuilder()
-        .setCustomId("cerrar")
-        .setLabel("Cerrar")
-        .setEmoji("🔴")
-        .setStyle(ButtonStyle.Danger),
-
-    new ButtonBuilder()
-        .setCustomId("votar")
-        .setLabel("Votación")
-        .setEmoji("🗳️")
-        .setStyle(ButtonStyle.Primary),
-
-    new ButtonBuilder()
-        .setCustomId("mantenimiento")
-        .setLabel("Mantenimiento")
-        .setEmoji("🛠️")
-        .setStyle(ButtonStyle.Secondary)
-);
-
+        new ButtonBuilder()
+            .setCustomId("mantenimiento")
+            .setLabel("Mantenimiento")
+            .setEmoji("🛠️")
+            .setStyle(ButtonStyle.Secondary)
+    );
 await interaction.reply({
     components: [panel],
-    flags:
-        MessageFlags.Ephemeral |
-        MessageFlags.IsComponentsV2
+    flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
 });
 
    const collector = interaction.channel.createMessageComponentCollector({
