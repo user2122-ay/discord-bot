@@ -37,9 +37,9 @@ return interaction.reply({ content: "⛔ No tienes permisos.", ephemeral: true }
 const panel = new ContainerBuilder()
 
 .addSectionComponents(
-new SectionBuilder()
-.addTextDisplayComponents(
-new TextDisplayBuilder().setContent(
+    new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
 `# 📊 Panel de Control de Sesiones
 
 Gestiona el estado oficial del servidor roleplay.
@@ -61,16 +61,15 @@ Activa el modo mantenimiento.
 ━━━━━━━━━━━━━━━━━━
 
 ⚠️ Usa los botones inferiores para administrar el servidor.`
-)
-)
+            )
+        )
 )
 
 .addSeparatorComponents(
-new SeparatorBuilder()
+    new SeparatorBuilder()
 )
 
 .addActionRowComponents(
-new ActionRowBuilder().addComponents(
 
     new ButtonBuilder()
         .setCustomId("abrir")
@@ -95,8 +94,6 @@ new ActionRowBuilder().addComponents(
         .setLabel("Mantenimiento")
         .setEmoji("🛠️")
         .setStyle(ButtonStyle.Secondary)
-)
-
 );
 
 await interaction.reply({
