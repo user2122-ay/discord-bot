@@ -6,7 +6,7 @@
   "start": "node index.cjs"
   },
   "dependencies": {
-"discord.js": "^14.19.3"
+"discord.js": "^14.19.3", 
     "dotenv": "^16.4.5",
     "mongoose": "^8.1.1",
     "pg": "^8.11.3",
