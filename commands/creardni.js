@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const Ciudadano = require("../models/Ciudadano");
 
 // 🧾 ROL QUE SE DA AL CREAR DNI
 const ROL_DNI = "1451018398874996966";
@@ -74,24 +75,28 @@ module.exports = {
 
     // 🔍 Verificar si ya tiene cédula
     try {
-      const check = await interaction.pool.query(
-        `SELECT * FROM "CIUDADANOS_PTY" WHERE discord_id = $1`,
-        [interaction.user.id]
-      );
 
-      if (check.rows.length > 0) {
-        return interaction.reply({
-          content: "❌ Ya tienes una cédula registrada.",
-          ephemeral: true
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      return interaction.reply({
-        content: "❌ Error verificando datos",
-        ephemeral: true
-      });
-    }
+  const check = await Ciudadano.findOne({
+    discord_id: interaction.user.id
+  });
+
+  if (check) {
+    return interaction.reply({
+      content: "❌ Ya tienes una cédula registrada.",
+      ephemeral: true
+    });
+  }
+
+} catch (err) {
+
+  console.error(err);
+
+  return interaction.reply({
+    content: "❌ Error verificando datos",
+    ephemeral: true
+  });
+
+}
 
     // 🔢 Generar cédula
     const tomo = Math.floor(100 + Math.random() * 900);
@@ -100,21 +105,16 @@ module.exports = {
 
     // 💾 Guardar en DB
     try {
-      await interaction.pool.query(
-        `INSERT INTO "CIUDADANOS_PTY"
-        (discord_id, nombre_ic, apellido_ic, edad_ic, nacimiento_ic, tipo_sangre, provincia_codigo, numero_cedula)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [
-          interaction.user.id,
-          nombre,
-          apellido,
-          edad,
-          nacimiento,
-          sangre,
-          provincia,
-          cedula
-        ]
-      );
+      await Ciudadano.create({
+  discord_id: interaction.user.id,
+  nombre_ic: nombre,
+  apellido_ic: apellido,
+  edad_ic: edad,
+  nacimiento_ic: nacimiento,
+  tipo_sangre: sangre,
+  provincia_codigo: provincia,
+  numero_cedula: cedula
+});
     } catch (err) {
       console.error(err);
       return interaction.reply({
