@@ -115,11 +115,7 @@ collector.on("collect", async i => {
 if (i.user.id !== interaction.user.id) {
 return i.reply({ content: "❌ No puedes usar esto.", ephemeral: true });
 }
-});
 
-}
-
-};
 const canal = interaction.guild.channels.cache.get(CANAL_SESION);
 const logs = interaction.guild.channels.cache.get(CANAL_LOGS);
 
