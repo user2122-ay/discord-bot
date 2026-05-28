@@ -31,19 +31,20 @@ module.exports = {
     const user = interaction.options.getUser("usuario");
 
     try {
-      const result = await interaction.pool.query(
-        `SELECT * FROM "CIUDADANOS_PTY" WHERE discord_id = $1`,
-        [user.id]
-      );
+      const Ciudadano = require("../models/Ciudadano");
 
-      if (result.rows.length === 0) {
+const result = await Ciudadano.findOne({
+  discord_id: user.id
+});
+
+if (!result) {
         return interaction.reply({
           content: "❌ Ese usuario no tiene cédula registrada.",
           ephemeral: true
         });
       }
 
-      const d = result.rows[0];
+      const d = result;
 
       // 🔥 AQUÍ ESTÁ EL FIX
       const provinciaNombre = provincias[d.provincia_codigo] || "Desconocida";
