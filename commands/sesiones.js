@@ -1,4 +1,12 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, 
+      
+    // Componente 
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    MessageFlags
+      } = require("discord.js");
 
 const ROL_AUTORIZADO = "1451018406537986168";
 const ROL_PING = "1451018397352595579";
@@ -92,7 +100,10 @@ components: [panel],
 flags: MessageFlags.IsComponentsV2,
 ephemeral: true
 });
-  
+
+   const collector = interaction.channel.createMessageComponentCollector({
+    time: 600000
+});
 collector.on("collect", async i => {
 
 if (i.user.id !== interaction.user.id) {
