@@ -76,7 +76,9 @@ Activa el modo mantenimiento.
         new SeparatorBuilder()
     )
 
-    .addActionRowComponents(
+.addActionRowComponents(
+    new ActionRowBuilder().addComponents(
+
         new ButtonBuilder()
             .setCustomId("cerrar")
             .setLabel("Cerrar")
@@ -94,7 +96,9 @@ Activa el modo mantenimiento.
             .setLabel("Mantenimiento")
             .setEmoji("🛠️")
             .setStyle(ButtonStyle.Secondary)
-    );
+
+    )
+);
 await interaction.reply({
     components: [panel],
     flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
