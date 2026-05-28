@@ -4,13 +4,14 @@ const {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
+
     ContainerBuilder,
     SectionBuilder,
     TextDisplayBuilder,
     SeparatorBuilder,
     MessageFlags
-} = require("discord.js");
 
+} = require("discord.js");
 const ROL_AUTORIZADO = "1451018406537986168";
 const ROL_PING = "1451018397352595579";
 
@@ -99,20 +100,26 @@ new ActionRowBuilder().addComponents(
 );
 
 await interaction.reply({
-components: [panel],
-flags: MessageFlags.IsComponentsV2,
-ephemeral: true
+    components: [panel],
+    flags:
+        MessageFlags.Ephemeral |
+        MessageFlags.IsComponentsV2
 });
 
    const collector = interaction.channel.createMessageComponentCollector({
     time: 600000
 });
+    
 collector.on("collect", async i => {
 
 if (i.user.id !== interaction.user.id) {
 return i.reply({ content: "❌ No puedes usar esto.", ephemeral: true });
 }
+});
 
+}
+
+};
 const canal = interaction.guild.channels.cache.get(CANAL_SESION);
 const logs = interaction.guild.channels.cache.get(CANAL_LOGS);
 
