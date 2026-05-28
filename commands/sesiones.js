@@ -1,12 +1,15 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, 
-      
-    // Componente 
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     ContainerBuilder,
     SectionBuilder,
     TextDisplayBuilder,
     SeparatorBuilder,
     MessageFlags
-      } = require("discord.js");
+} = require("discord.js");
 
 const ROL_AUTORIZADO = "1451018406537986168";
 const ROL_PING = "1451018397352595579";
