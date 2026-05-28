@@ -227,7 +227,7 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
             }
 
             // ❌ CERRAR
-            if (interaction.customId === "ticket_cerrar")
+            if (interaction.customId === "ticket_cerrar") {
                 const tipo = canal.name.split("-")[0];
                 const rolesPermitidos = ROLES_TICKET[tipo] || [];
 
