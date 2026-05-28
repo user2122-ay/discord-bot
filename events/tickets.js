@@ -189,7 +189,7 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
             const canal = interaction.channel;
 
             // 🔒 RECLAMAR
-            if (interaction.customId === "ticket_reclamar")
+            if (interaction.customId === "ticket_reclamar") {
 
                 // ❌ Ya reclamado
                 if (ticketsReclamados.has(canal.id)) {
