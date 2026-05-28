@@ -125,44 +125,69 @@ collector.on("collect", async i => {
 if (i.customId === "abrir") {
 
 const embed = new EmbedBuilder()
-.setTitle("📢 SESIÓN ABIERTA — SERVIDOR ROLEPLAY")
+.setColor("#2B5DFF") // borde azul
+.setAuthor({
+    name: "SERVIDOR ROLEPLAY",
+    iconURL: interaction.guild.iconURL({ dynamic: true })
+})
+.setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+.setTitle("🟢 Servidor Abierto")
 .setDescription(
-"Se declara oficialmente ABIERTA la sesión en el servidor. A partir de este momento, se da inicio a las actividades dentro de la comunidad.\n\n" +
-"🗳️ Participación requerida: Activa\n" +
-"⏳ Estado: En curso\n\n" +
-"Es fundamental la participación de todos los miembros para garantizar un entorno organizado, activo y realista.\n\n" +
-"⚠️ Indicaciones:\n" +
-"• Mantener el orden y el respeto.\n" +
-"• Seguir instrucciones del staff.\n" +
-"• Priorizar el rol serio.\n\n" +
-"🔥 La sesión ha comenzado… el roleplay está en tus manos. 🔥"
+`╭────────────────╮
+> El servidor ha sido oficialmente abierto.
+
+╰────────────────╯
+
+### 📌 Estado de la sesión
+> 🟢 Servidor: En línea  
+> 👥 Roleplay: Activo  
+> ⏰ Estado: Disponible  
+
+━━━━━━━━━━━━━━━━━━
+
+### ⚠️ Indicaciones
+> • Mantener el rol serio  
+> • Respetar las normas  
+> • Seguir indicaciones del staff  
+
+━━━━━━━━━━━━━━━━━━
+
+🔥 ¡La sesión ha comenzado, disfruten el roleplay!`
 )
-.setColor(0x2ecc71)
+.setImage("https://i.imgur.com/ZV7KQ5T.png") // línea decorativa
 .setFooter({
-text: `Apertura realizada por ${i.user.tag}`,
-iconURL: i.user.displayAvatarURL()
+    text: `Apertura realizada por ${i.user.tag}`,
+    iconURL: i.user.displayAvatarURL()
 })
 .setTimestamp();
 
-canal.send({
-content: `<@&${ROL_PING}>`,
-embeds: [embed],
-allowedMentions: { roles: [ROL_PING] }
+await canal.send({
+    content: `<@&${ROL_PING}>`,
+    embeds: [embed],
+    allowedMentions: {
+        roles: [ROL_PING]
+    }
 });
 
-logs.send({
-embeds: [
-new EmbedBuilder()
-.setTitle("📊 LOG SESIÓN")
-.setDescription(`🟢 Sesión abierta por <@${i.user.id}>`)
-.setColor(0x2ecc71)
-]
+await logs.send({
+    embeds: [
+        new EmbedBuilder()
+        .setColor("#2B5DFF")
+        .setDescription(`🟢 Sesión abierta por <@${i.user.id}>`)
+        .setTimestamp()
+    ]
 });
 
-return i.update({ content: "✅ Sesión abierta", components: [] });
+// ✅ EDITA EL PANEL Y DESACTIVA BOTONES
+collector.stop();
+
+return i.update({
+    content: "✅ Servidor abierto correctamente.",
+    embeds: [],
+    components: []
+});
 
 }
-
 // 🔴 CERRAR
 if (i.customId === "cerrar") {
 
