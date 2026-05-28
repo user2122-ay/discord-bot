@@ -124,61 +124,75 @@ collector.on("collect", async i => {
 // 🟢 ABRIR
 if (i.customId === "abrir") {
 
-const embed = new EmbedBuilder()
-.setColor("#2B5DFF") // borde azul
-.setAuthor({
-    name: "SERVIDOR ROLEPLAY",
-    iconURL: interaction.guild.iconURL({ dynamic: true })
-})
-.setThumbnail(interaction.guild.iconURL({ dynamic: true }))
-.setTitle("🟢 Servidor Abierto")
-.setDescription(
-`╭────────────────╮
+const abrirPanel = new ContainerBuilder()
+
+.addSectionComponents(
+    new SectionBuilder()
+        .addTextDisplayComponents(
+
+            new TextDisplayBuilder().setContent(
+`# 🟢 Servidor Abierto
+
 > El servidor ha sido oficialmente abierto.
 
-╰────────────────╯
+━━━━━━━━━━━━━━━━━━
 
-### 📌 Estado de la sesión
-> 🟢 Servidor: En línea  
-> 👥 Roleplay: Activo  
-> ⏰ Estado: Disponible  
+### 📌 Estado
+• 🟢 Sesión activa  
+• 👥 Roleplay habilitado  
+• ⏰ Disponible para ingresar  
 
 ━━━━━━━━━━━━━━━━━━
 
 ### ⚠️ Indicaciones
-> • Mantener el rol serio  
-> • Respetar las normas  
-> • Seguir indicaciones del staff  
+• Mantener rol serio  
+• Respetar las normas  
+• Seguir órdenes del staff  
 
 ━━━━━━━━━━━━━━━━━━
 
-🔥 ¡La sesión ha comenzado, disfruten el roleplay!`
+🔥 ¡Disfruten la sesión roleplay!`
+            )
+
+        )
+        .setThumbnailAccessory(
+            interaction.guild.iconURL()
+        )
 )
-.setImage("https://i.imgur.com/ZV7KQ5T.png") // línea decorativa
-.setFooter({
-    text: `Apertura realizada por ${i.user.tag}`,
-    iconURL: i.user.displayAvatarURL()
-})
-.setTimestamp();
+
+.addSeparatorComponents(
+    new SeparatorBuilder()
+)
+
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`-# Apertura realizada por ${i.user.tag}`
+    )
+);
 
 await canal.send({
     content: `<@&${ROL_PING}>`,
-    embeds: [embed],
+    components: [abrirPanel],
+    flags: MessageFlags.IsComponentsV2,
     allowedMentions: {
         roles: [ROL_PING]
     }
 });
 
 await logs.send({
-    embeds: [
-        new EmbedBuilder()
-        .setColor("#2B5DFF")
-        .setDescription(`🟢 Sesión abierta por <@${i.user.id}>`)
-        .setTimestamp()
-    ]
+    components: [
+        new ContainerBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+`# 📊 Log de Sesión
+
+🟢 Sesión abierta por <@${i.user.id}>`
+            )
+        )
+    ],
+    flags: MessageFlags.IsComponentsV2
 });
 
-// ✅ EDITA EL PANEL Y DESACTIVA BOTONES
 collector.stop();
 
 return i.update({
