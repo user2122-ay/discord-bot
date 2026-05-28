@@ -22,64 +22,56 @@ if (!interaction.member.roles.cache.has(ROL_AUTORIZADO)) {
 return interaction.reply({ content: "⛔ No tienes permisos.", ephemeral: true });
 }
 
-const embedPrincipal = new EmbedBuilder()
-.setColor(0x2b2d31)
-.setTitle("📊 PANEL DE SESIONES")
+const panel = new EmbedBuilder()
+.setColor("#1e1f22")
+.setAuthor({
+name: "Panamá RP V2",
+iconURL: interaction.guild.iconURL({ dynamic: true })
+})
+.setTitle("📊 Panel de Control de Sesiones")
 .setDescription(
-"Administra el estado del servidor desde este panel."
+`Gestiona el estado oficial del servidor roleplay.
+
+━━━━━━━━━━━━━━━━━━
+
+🟢 Abrir Sesión
+Permite iniciar oficialmente las actividades de roleplay.
+
+🔴 Cerrar Sesión
+Finaliza todas las actividades del servidor.
+
+🗳️ Iniciar Votación
+Los usuarios podrán votar para abrir sesión.
+
+🛠️ Mantenimiento
+Activa el modo mantenimiento del servidor.
+
+━━━━━━━━━━━━━━━━━━
+
+«⚠️ Usa los botones inferiores para administrar el estado del servidor.`
 )
 .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
 .setFooter({
-text: `Sistema administrativo • ${interaction.guild.name}`
-});
+text: "Sistema Oficial • Panamá RP V2"
+});»
 
-const estadoEmbed = new EmbedBuilder()
-.setColor(0x3498db)
-.setTitle("🟢 Gestión de Sesión")
-.setDescription(
-"Controla aperturas y cierres del servidor."
-)
-.addFields(
-{ name: "🟢 Abrir", value: "Inicia sesión oficial", inline: true },
-{ name: "🔴 Cerrar", value: "Finaliza la sesión", inline: true }
-);
+const botones = new ActionRowBuilder().addComponents(
 
-const votacionEmbed = new EmbedBuilder()
-.setColor(0xf1c40f)
-.setTitle("🗳️ Sistema de Votación")
-.setDescription(
-"Permite abrir sesión mediante votos."
-)
-.addFields(
-{ name: "👥 Requeridos", value: "8 votos", inline: true },
-{ name: "⏳ Tiempo", value: "20 minutos", inline: true }
-);
-
-const mantenimientoEmbed = new EmbedBuilder()
-.setColor(0x95a5a6)
-.setTitle("🛠️ Mantenimiento")
-.setDescription(
-"Activa avisos de mantenimiento del servidor."
-);
-
-const fila1 = new ActionRowBuilder().addComponents(
 new ButtonBuilder()
 .setCustomId("abrir")
-.setLabel("Abrir Sesión")
+.setLabel("Abrir")
 .setEmoji("🟢")
 .setStyle(ButtonStyle.Success),
 
 new ButtonBuilder()
 .setCustomId("cerrar")
-.setLabel("Cerrar Sesión")
+.setLabel("Cerrar")
 .setEmoji("🔴")
-.setStyle(ButtonStyle.Danger)
-);
+.setStyle(ButtonStyle.Danger),
 
-const fila2 = new ActionRowBuilder().addComponents(
 new ButtonBuilder()
 .setCustomId("votar")
-.setLabel("Iniciar Votación")
+.setLabel("Votación")
 .setEmoji("🗳️")
 .setStyle(ButtonStyle.Primary),
 
@@ -88,19 +80,14 @@ new ButtonBuilder()
 .setLabel("Mantenimiento")
 .setEmoji("🛠️")
 .setStyle(ButtonStyle.Secondary)
+
 );
 
 await interaction.reply({
-embeds: [
-embedPrincipal,
-estadoEmbed,
-votacionEmbed,
-mantenimientoEmbed
-],
-components: [fila1, fila2],
+embeds: [panel],
+components: [botones],
 ephemeral: true
 });
-
 const collector = interaction.channel.createMessageComponentCollector({ time: 600000 });
 
 collector.on("collect", async i => {
