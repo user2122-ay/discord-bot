@@ -151,7 +151,7 @@ const apertura = new ContainerBuilder()
         )
         .setThumbnailAccessory(
             {
-                url: "https://TU-LOGO-AQUI.png"
+                url: "https://gifgifs.com/es/webdesign-elements/lines/12880-chaning-colors-bar.html"
             }
         )
 )
