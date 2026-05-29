@@ -125,6 +125,16 @@ if (i.customId === "abrir") {
 
 const apertura = new ContainerBuilder()
 
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`<@&${ROL_PING}>`
+    )
+)
+
+.addSeparatorComponents(
+    new SeparatorBuilder()
+)
+
 .addSectionComponents(
     new SectionBuilder()
         .addTextDisplayComponents(
