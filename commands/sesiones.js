@@ -124,15 +124,12 @@ collector.on("collect", async i => {
 if (i.customId === "abrir") {
 
 const apertura = new ContainerBuilder()
+.setAccentColor(0x57F287) // verde Discord
 
 .addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
 `<@&${ROL_PING}>`
     )
-)
-
-.addSeparatorComponents(
-    new SeparatorBuilder()
 )
 
 .addSectionComponents(
@@ -145,23 +142,23 @@ const apertura = new ContainerBuilder()
 
 ╭━━━━━━━━━━━━━━━━╮
 > ✅ La sesión ha sido abierta oficialmente.
-> 
+>
 > 👥 Los usuarios ya pueden ingresar
 > y comenzar el roleplay.
 ╰━━━━━━━━━━━━━━━━╯
 
 ### 📌 Indicaciones
-• Mantener el rol serio  
-• Respetar las normas  
-• Seguir instrucciones del staff  
+• Mantener el rol serio
+• Respetar las normas
+• Seguir instrucciones del staff
 
 🔥 ¡El roleplay comienza ahora!`
             )
         )
-        .setThumbnailAccessory(
-    new ThumbnailBuilder()
-        .setURL("https://i.imgur.com/8Km9tLL.png")
 
+        .setThumbnailAccessory(
+            new ThumbnailBuilder()
+                .setURL("https://i.imgur.com/8Km9tLL.png")
         )
 )
 
@@ -171,7 +168,14 @@ const apertura = new ContainerBuilder()
 
 .addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-`🟢 Apertura realizada por <@${i.user.id}>`
+`━━━━━━━━━━━━━━━━━━
+🌐 PANAMÁ RP V2 • SISTEMA OFICIAL`
+    )
+);
+
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`https://i.imgur.com/zquK4J5.gif`
     )
 );
 
