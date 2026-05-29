@@ -138,7 +138,7 @@ const apertura = new ContainerBuilder()
             new TextDisplayBuilder().setContent(
 `# 🟢 Servidor Abierto
 
-### 『Tu servidor RP』
+### 『PANAMÁ RP V2』
 
 ╭━━━━━━━━━━━━━━━━╮
 > ✅ La sesión ha sido abierta oficialmente.
