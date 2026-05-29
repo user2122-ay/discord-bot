@@ -500,188 +500,38 @@ filter: btn => btn.customId === "votar_si"
 
 collectorV.on("collect", async btn => {
 
-// ✅ QUITAR VOTO
 if (votos.has(btn.user.id)) {
-
-votos.delete(btn.user.id);
-
-const listaQuitada = votos.size
-? [...votos].map(id => `<@${id}>`).join("\n")
-: "Aún no hay votos registrados.";
-
-const votacionActualizada = new ContainerBuilder()
-.setAccentColor(0xF1C40F)
-
-.addTextDisplayComponents(
-new TextDisplayBuilder().setContent(
-`<@&${ROL_PING}>`
-)
-)
-
-.addSectionComponents(
-new SectionBuilder()
-.addTextDisplayComponents(
-new TextDisplayBuilder().setContent(
-`# 📢 Sesión de Votación
-
-### 『PANAMÁ RP V2』
-
-╭━━━━━━━━━━━━━━━━╮
-> 🗳️ La votación continúa activa.
-
-> 📊 Votos requeridos:
-\`\`\`${votos.size}/8\`\`\`
-
-> 👥 Votantes:
-\`\`\`
-${listaQuitada}
-\`\`\`
-
-> ⏳ Tiempo restante:
-\`\`\`En curso\`\`\`
-╰━━━━━━━━━━━━━━━━╯
-
-⚠️ Puedes volver a votar usando el botón.
-
-🔥 ¡Tu voz tiene poder! 🔥`
-)
-)
-
-.setThumbnailAccessory(
-new ThumbnailBuilder()
-.setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
-)
-)
-
-.addSeparatorComponents(
-new SeparatorBuilder()
-)
-
-.addActionRowComponents(
-new ActionRowBuilder().addComponents(
-new ButtonBuilder()
-.setCustomId("votar_si")
-.setLabel("✅ Votar / Quitar voto")
-.setStyle(ButtonStyle.Success)
-)
-);
-
-await msg.edit({
-components: [votacionActualizada],
-flags: MessageFlags.IsComponentsV2
-});
-
 return btn.reply({
-content: "❌ Quitaste tu voto.",
+content: "❌ Ya votaste.",
 ephemeral: true
 });
-
 }
 
-// ✅ AGREGAR VOTO
 votos.add(btn.user.id);
-
-const lista = [...votos].map(id => `<@${id}>`).join("\n");
-
-const votacionActualizada = new ContainerBuilder()
-.setAccentColor(0xF1C40F)
-
-.addTextDisplayComponents(
-new TextDisplayBuilder().setContent(
-`<@&${ROL_PING}>`
-)
-)
-
-.addSectionComponents(
-new SectionBuilder()
-.addTextDisplayComponents(
-new TextDisplayBuilder().setContent(
-`# 📢 Sesión de Votación
-
-### 『PANAMÁ RP V2』
-
-╭━━━━━━━━━━━━━━━━╮
-> 🗳️ La votación continúa activa.
-
-> 📊 Votos requeridos:
-\`\`\`${votos.size}/8\`\`\`
-
-> 👥 Votantes:
-\`\`\`
-${lista}
-\`\`\`
-
-> ⏳ Tiempo restante:
-\`\`\`En curso\`\`\`
-╰━━━━━━━━━━━━━━━━╯
-
-🔥 ¡Tu voto decide el futuro del servidor! 🔥`
-)
-)
-
-.setThumbnailAccessory(
-new ThumbnailBuilder()
-.setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
-)
-)
-
-.addSeparatorComponents(
-new SeparatorBuilder()
-)
-
-.addActionRowComponents(
-new ActionRowBuilder().addComponents(
-new ButtonBuilder()
-.setCustomId("votar_si")
-.setLabel("✅ Votar / Quitar voto")
-.setStyle(ButtonStyle.Success)
-)
-);
-
-await msg.edit({
-components: [votacionActualizada],
-flags: MessageFlags.IsComponentsV2
-});
 
 await btn.reply({
 content: "✅ Votaste correctamente.",
 ephemeral: true
 });
 
+// ✅ SI LLEGA AL VOTO NECESARIO
 if (votos.size >= 1) {
-collectorV.stop();
+
+collectorV.stop("aprobada");
+
 }
 
 });
 
-collectorV.on("end", async () => {
+collectorV.on("end", async (_, reason) => {
 
 votacionActiva = false;
 
-// ✅ DESACTIVAR BOTÓN
-await msg.edit({
-components: [
-new ContainerBuilder()
-.setAccentColor(0x95A5A6)
-
-.addSectionComponents(
-new SectionBuilder()
-.addTextDisplayComponents(
-new TextDisplayBuilder().setContent(
-`# 🔒 Votación Finalizada
-
-### 『PANAMÁ RP V2』
-
-La sesión de votación ha terminado oficialmente.`
-)
-)
-)
-],
-flags: MessageFlags.IsComponentsV2
-});
+// 🗑️ BORRAR MENSAJE DE VOTACIÓN
+await msg.delete().catch(() => {});
 
 // ✅ APROBADA
-if (votos.size >= 1) {
+if (reason === "aprobada") {
 
 const aprobado = new ContainerBuilder()
 .setAccentColor(0x57F287)
@@ -701,11 +551,9 @@ new TextDisplayBuilder().setContent(
 ### 『PANAMÁ RP V2』
 
 ╭━━━━━━━━━━━━━━━━╮
-> 🎉 Se alcanzaron los votos necesarios.
+> ✅ Se alcanzaron los votos necesarios.
 
-> ✅ El servidor queda oficialmente abierto.
-
-> ⏳ Tienen 10 minutos para ingresar.
+> 🎉 El servidor queda oficialmente abierto.
 ╰━━━━━━━━━━━━━━━━╯
 
 🔥 ¡El roleplay comienza ahora! 🔥`
@@ -737,9 +585,6 @@ new TextDisplayBuilder().setContent(
 
 ╭━━━━━━━━━━━━━━━━╮
 > ❌ No se alcanzaron los votos necesarios.
-
-> 📊 Resultado:
-\`\`\`${votos.size}/8\`\`\`
 ╰━━━━━━━━━━━━━━━━╯
 
 🔥 Gracias por participar.`
@@ -754,37 +599,9 @@ flags: MessageFlags.IsComponentsV2
 
 }
 
-// 📊 LOGS
-await logs.send({
-embeds: [
-new EmbedBuilder()
-.setTitle("📊 LOG VOTACIÓN")
-.setDescription(
-`👥 Votos finales: ${votos.size}/8\n🛡️ Responsable: <@${i.user.id}>`
-)
-.setColor(0xF1C40F)
-]
 });
 
-});
+} 
 
-// ✅ RESPUESTA PANEL
-return i.update({
-components: [
-new ContainerBuilder()
-.setAccentColor(0xF1C40F)
-.addTextDisplayComponents(
-new TextDisplayBuilder()
-.setContent("🗳️ Votación iniciada correctamente.")
-)
-],
-flags: MessageFlags.IsComponentsV2
-});
-
-} // ← cierre if (i.customId === "votar")
-
-}); // ← cierre collector.on("collect")
-
-} // ← cierre execute
-
-}; // ← cierre module.exports
+}:
+    
