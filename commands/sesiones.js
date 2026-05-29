@@ -182,7 +182,7 @@ const apertura = new ContainerBuilder()
 .addMediaGalleryComponents(
   new MediaGalleryBuilder().addItems(
     new MediaGalleryItemBuilder()
-      .setURL("https://in.pinterest.com/pin/928656385666484185/")
+      .setURL("https://cdn.discordapp.com/attachments/1455970934535225518/1509727251342823578/sidistroatribut01-progress-100-transparent-22958.gif?ex=6a1a3a92&is=6a18e912&hm=712861e4f7c631a31c374f6603680e081bdbb440664dfc1f0940c8e097989213&")
   )
 );
 
