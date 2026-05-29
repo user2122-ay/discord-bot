@@ -158,7 +158,7 @@ const apertura = new ContainerBuilder()
 
         .setThumbnailAccessory(
             new ThumbnailBuilder()
-                .setURL("https://i.imgur.com/8Km9tLL.png")
+                .setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png?ex=6a1a35e6&is=6a18e466&hm=8f27e223e994b963d68c0945d6d4b3f04e79d193eb7f8dbace121ff849ec115e&")
         )
 )
 
