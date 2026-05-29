@@ -273,7 +273,7 @@ const cierre = new ContainerBuilder()
 .addMediaGalleryComponents(
   new MediaGalleryBuilder().addItems(
     new MediaGalleryItemBuilder()
-      .setURL("https://cdn.discordapp.com/attachments/1455970934535225518/1509727251342823578/sidistroatribut01-progress-100-transparent-22958.gif")
+      .setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509752792137597080/l102-0961-closed-animated-led-sign.gif?ex=6a1a525b&is=6a1900db&hm=0dd043efe79018c7e6e99ed98e95bce8ea8ee3a9023edad3e9bf3aeca36db9f9&")
   )
 );
 
