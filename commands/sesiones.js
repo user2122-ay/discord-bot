@@ -398,46 +398,113 @@ return i.update({
 if (i.customId === "votar") {
 
 if (votacionActiva) {
-return i.reply({ content: "❌ Ya hay una votación.", ephemeral: true });
+return i.reply({
+content: "❌ Ya hay una votación activa.",
+ephemeral: true
+});
 }
 
 votacionActiva = true;
 votos.clear();
 
-const embed = new EmbedBuilder()
-.setTitle("📢 SESIÓN DE VOTACIÓN ABIERTA — SERVIDOR ROLEPLAY")
-.setDescription(
-"Se declara oficialmente ABIERTA la sesión de votación en el servidor.\n\n" +
-"🗳️ Votos requeridos: 0/8\n\n" +
-"👥 Votantes:\nAún no hay votos registrados.\n\n" +
-"⏳ Tiempo restante: 20 minutos\n\n" +
-"Cada voto cuenta y puede marcar la diferencia.\n\n" +
-"⚠️ Recuerda:\n" +
-"• Solo se permite un voto por persona.\n" +
-"• Mantén el respeto.\n" +
-"• La decisión es democrática.\n\n" +
-"🔥 ¡Tu voz tiene poder, hazla valer! 🔥"
-)
-.setColor(0xf1c40f)
-.setFooter({
-text: `Votación iniciada por ${i.user.tag}`,
-iconURL: i.user.displayAvatarURL()
-});
+const votacion = new ContainerBuilder()
+.setAccentColor(0xF1C40F)
 
-const boton = new ActionRowBuilder().addComponents(
-new ButtonBuilder()
-.setCustomId("votar_si")
-.setLabel("✅ Votar")
-.setStyle(ButtonStyle.Success)
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`<@&${ROL_PING}>`
+    )
+)
+
+.addSectionComponents(
+    new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+`# 📢 Sesión de Votación
+
+### 『PANAMÁ RP V2』
+
+╭━━━━━━━━━━━━━━━━╮
+> 🗳️ La votación ha sido iniciada oficialmente.
+
+> 📊 Votos requeridos:
+\`\`\`0/8\`\`\`
+
+> 👥 Votantes:
+\`\`\`
+Aún no hay votos registrados.
+\`\`\`
+
+> ⏳ Tiempo restante:
+\`\`\`20 minutos\`\`\`
+╰━━━━━━━━━━━━━━━━╯
+
+### ⚠️ Indicaciones
+• Solo se permite un voto por usuario
+• El mismo botón sirve para quitar voto
+• Mantener el respeto en el chat
+• La decisión es democrática
+
+🔥 ¡Tu voz tiene poder, hazla valer! 🔥`
+            )
+        )
+
+        .setThumbnailAccessory(
+            new ThumbnailBuilder()
+                .setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
+        )
+)
+
+.addSeparatorComponents(
+    new SeparatorBuilder()
+)
+
+.addActionRowComponents(
+    new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId("votar_si")
+            .setLabel("✅ Votar / Quitar voto")
+            .setStyle(ButtonStyle.Success)
+    )
+)
+
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`🌐 **PANAMÁ RP V2**
+### Sistema Oficial de Votaciones
+
+> Participación democrática • Administración oficial`
+    )
+)
+
+.addMediaGalleryComponents(
+  new MediaGalleryBuilder().addItems(
+    new MediaGalleryItemBuilder()
+      .setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509756643548725288/11-00-13-565_512.gif?ex=6a1a55f1&is=6a190471&hm=e91668b6d3aae2e5ad582640c9cd41565599495440858fad763b6a279d5a61e3&")
+  )
 );
 
 const msg = await canal.send({
-content: `<@&${ROL_PING}>`,
-embeds: [embed],
-components: [boton],
-allowedMentions: { roles: [ROL_PING] }
+components: [votacion],
+flags: MessageFlags.IsComponentsV2,
+allowedMentions: {
+roles: [ROL_PING]
+}
 });
 
+return i.update({
+components: [
+new ContainerBuilder()
+.setAccentColor(0xF1C40F)
+.addTextDisplayComponents(
+new TextDisplayBuilder()
+.setContent("🗳️ Votación iniciada correctamente.")
+)
+],
+flags: MessageFlags.IsComponentsV2
+});
+
+}
 // ✅ FIX REAL
 const collectorV = msg.createMessageComponentCollector({
 time: 20 * 60 * 1000,
