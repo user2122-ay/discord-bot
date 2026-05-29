@@ -1,16 +1,15 @@
-const {
+const { 
     SlashCommandBuilder,
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
-
     ContainerBuilder,
     SectionBuilder,
     TextDisplayBuilder,
     SeparatorBuilder,
+    ThumbnailBuilder,
     MessageFlags
-
 } = require("discord.js");
 const ROL_AUTORIZADO = "1451018406537986168";
 const ROL_PING = "1451018397352595579";
@@ -150,9 +149,9 @@ const apertura = new ContainerBuilder()
             )
         )
         .setThumbnailAccessory(
-            {
-                url: "https://gifgifs.com/es/webdesign-elements/lines/12880-chaning-colors-bar.html"
-            }
+    new ThumbnailBuilder()
+        .setURL("https://i.imgur.com/8Km9tLL.png")
+
         )
 )
 
@@ -184,11 +183,16 @@ await logs.send({
 });
 
 return i.update({
-    content: "✅ Sesión abierta con éxito.",
-    components: []
+    components: [
+        new ContainerBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent("✅ Sesión abierta con éxito.")
+            )
+    ],
+    flags: MessageFlags.IsComponentsV2
 });
-
-}
+    
 // 🔴 CERRAR
 if (i.customId === "cerrar") {
 
