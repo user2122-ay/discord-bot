@@ -780,4 +780,11 @@ new TextDisplayBuilder()
 ],
 flags: MessageFlags.IsComponentsV2
 });
-}
+
+} // ← cierre if (i.customId === "votar")
+
+}); // ← cierre collector.on("collect")
+
+} // ← cierre execute
+
+}; // ← cierre module.exports
