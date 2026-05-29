@@ -144,7 +144,7 @@ const apertura = new ContainerBuilder()
 
 ╭━━━━━━━━━━━━━━━━╮
 > ✅ La sesión ha sido abierta oficialmente.
->
+> Código: ```hhhh```
 > 👥 Los usuarios ya pueden ingresar
 > y comenzar el roleplay.
 ╰━━━━━━━━━━━━━━━━╯
@@ -170,9 +170,7 @@ const apertura = new ContainerBuilder()
 
 .addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-`<a:linea:1344556789012345678>
-
-🌐 **PANAMÁ RP V2**
+`🌐 **PANAMÁ RP V2**
 ### Sistema Oficial de Sesiones
 
 > Roleplay serio • Comunidad activa • Administración oficial`
