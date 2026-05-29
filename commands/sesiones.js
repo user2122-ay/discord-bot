@@ -144,7 +144,9 @@ const apertura = new ContainerBuilder()
 
 ╭━━━━━━━━━━━━━━━━╮
 > ✅ La sesión ha sido abierta oficialmente.
-> Código: ```hhhh```
+
+> Código: \`\`\`hhhh\`\`\`
+
 > 👥 Los usuarios ya pueden ingresar
 > y comenzar el roleplay.
 ╰━━━━━━━━━━━━━━━━╯
