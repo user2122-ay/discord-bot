@@ -515,7 +515,7 @@ ephemeral: true
 });
 
 // ✅ SI LLEGA AL VOTO NECESARIO
-if (votos.size >= 1) {
+if (votos.size >= 8) {
 collectorV.stop("aprobada");
 }
 
