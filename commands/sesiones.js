@@ -494,7 +494,7 @@ roles: [ROL_PING]
 
 // ✅ FIX REAL
 const collectorV = msg.createMessageComponentCollector({
-time: 20 * 60 * 1000,
+time: 1 * 60 * 1000,
 filter: btn => btn.customId === "votar_si"
 });
 
@@ -648,7 +648,7 @@ content: "✅ Votaste correctamente.",
 ephemeral: true
 });
 
-if (votos.size >= 8) {
+if (votos.size >= 1) {
 collectorV.stop();
 }
 
@@ -681,7 +681,7 @@ flags: MessageFlags.IsComponentsV2
 });
 
 // ✅ APROBADA
-if (votos.size >= 8) {
+if (votos.size >= 1) {
 
 const aprobado = new ContainerBuilder()
 .setAccentColor(0x57F287)
