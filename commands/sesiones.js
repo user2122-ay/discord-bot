@@ -182,7 +182,7 @@ const apertura = new ContainerBuilder()
 .addMediaGalleryComponents(
   new MediaGalleryBuilder().addItems(
     new MediaGalleryItemBuilder()
-      .setURL("https://i.imgur.com/zquK4J5.gif")
+      .setURL("https://in.pinterest.com/pin/928656385666484185/")
   )
 );
 
