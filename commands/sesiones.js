@@ -168,15 +168,20 @@ const apertura = new ContainerBuilder()
 
 .addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-`━━━━━━━━━━━━━━━━━━
-🌐 PANAMÁ RP V2 • SISTEMA OFICIAL`
+`<a:linea:1344556789012345678>
+
+🌐 **PANAMÁ RP V2**
+### Sistema Oficial de Sesiones
+
+> Roleplay serio • Comunidad activa • Administración oficial`
     )
 )
 
-.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(
-`https://i.imgur.com/zquK4J5.gif`
-    )
+.addMediaGalleryComponents(
+  new MediaGalleryBuilder().addItems(
+    new MediaGalleryItemBuilder()
+      .setURL("https://i.imgur.com/zquK4J5.gif")
+  )
 );
 
 await canal.send({
