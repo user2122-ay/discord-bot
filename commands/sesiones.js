@@ -171,7 +171,7 @@ const apertura = new ContainerBuilder()
 `━━━━━━━━━━━━━━━━━━
 🌐 PANAMÁ RP V2 • SISTEMA OFICIAL`
     )
-);
+)
 
 .addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
