@@ -492,6 +492,283 @@ roles: [ROL_PING]
 }
 });
 
+// ✅ FIX REAL
+const collectorV = msg.createMessageComponentCollector({
+time: 20 * 60 * 1000,
+filter: btn => btn.customId === "votar_si"
+});
+
+collectorV.on("collect", async btn => {
+
+// ✅ QUITAR VOTO
+if (votos.has(btn.user.id)) {
+
+votos.delete(btn.user.id);
+
+const listaQuitada = votos.size
+? [...votos].map(id => `<@${id}>`).join("\n")
+: "Aún no hay votos registrados.";
+
+const votacionActualizada = new ContainerBuilder()
+.setAccentColor(0xF1C40F)
+
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`<@&${ROL_PING}>`
+)
+)
+
+.addSectionComponents(
+new SectionBuilder()
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`# 📢 Sesión de Votación
+
+### 『PANAMÁ RP V2』
+
+╭━━━━━━━━━━━━━━━━╮
+> 🗳️ La votación continúa activa.
+
+> 📊 Votos requeridos:
+\`\`\`${votos.size}/8\`\`\`
+
+> 👥 Votantes:
+\`\`\`
+${listaQuitada}
+\`\`\`
+
+> ⏳ Tiempo restante:
+\`\`\`En curso\`\`\`
+╰━━━━━━━━━━━━━━━━╯
+
+⚠️ Puedes volver a votar usando el botón.
+
+🔥 ¡Tu voz tiene poder! 🔥`
+)
+)
+
+.setThumbnailAccessory(
+new ThumbnailBuilder()
+.setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
+)
+)
+
+.addSeparatorComponents(
+new SeparatorBuilder()
+)
+
+.addActionRowComponents(
+new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId("votar_si")
+.setLabel("✅ Votar / Quitar voto")
+.setStyle(ButtonStyle.Success)
+)
+);
+
+await msg.edit({
+components: [votacionActualizada],
+flags: MessageFlags.IsComponentsV2
+});
+
+return btn.reply({
+content: "❌ Quitaste tu voto.",
+ephemeral: true
+});
+
+}
+
+// ✅ AGREGAR VOTO
+votos.add(btn.user.id);
+
+const lista = [...votos].map(id => `<@${id}>`).join("\n");
+
+const votacionActualizada = new ContainerBuilder()
+.setAccentColor(0xF1C40F)
+
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`<@&${ROL_PING}>`
+)
+)
+
+.addSectionComponents(
+new SectionBuilder()
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`# 📢 Sesión de Votación
+
+### 『PANAMÁ RP V2』
+
+╭━━━━━━━━━━━━━━━━╮
+> 🗳️ La votación continúa activa.
+
+> 📊 Votos requeridos:
+\`\`\`${votos.size}/8\`\`\`
+
+> 👥 Votantes:
+\`\`\`
+${lista}
+\`\`\`
+
+> ⏳ Tiempo restante:
+\`\`\`En curso\`\`\`
+╰━━━━━━━━━━━━━━━━╯
+
+🔥 ¡Tu voto decide el futuro del servidor! 🔥`
+)
+)
+
+.setThumbnailAccessory(
+new ThumbnailBuilder()
+.setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
+)
+)
+
+.addSeparatorComponents(
+new SeparatorBuilder()
+)
+
+.addActionRowComponents(
+new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId("votar_si")
+.setLabel("✅ Votar / Quitar voto")
+.setStyle(ButtonStyle.Success)
+)
+);
+
+await msg.edit({
+components: [votacionActualizada],
+flags: MessageFlags.IsComponentsV2
+});
+
+await btn.reply({
+content: "✅ Votaste correctamente.",
+ephemeral: true
+});
+
+if (votos.size >= 8) {
+collectorV.stop();
+}
+
+});
+
+collectorV.on("end", async () => {
+
+votacionActiva = false;
+
+// ✅ DESACTIVAR BOTÓN
+await msg.edit({
+components: [
+new ContainerBuilder()
+.setAccentColor(0x95A5A6)
+
+.addSectionComponents(
+new SectionBuilder()
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`# 🔒 Votación Finalizada
+
+### 『PANAMÁ RP V2』
+
+La sesión de votación ha terminado oficialmente.`
+)
+)
+)
+],
+flags: MessageFlags.IsComponentsV2
+});
+
+// ✅ APROBADA
+if (votos.size >= 8) {
+
+const aprobado = new ContainerBuilder()
+.setAccentColor(0x57F287)
+
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`<@&${ROL_PING}>`
+)
+)
+
+.addSectionComponents(
+new SectionBuilder()
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`# 🟢 Sesión Aprobada
+
+### 『PANAMÁ RP V2』
+
+╭━━━━━━━━━━━━━━━━╮
+> 🎉 Se alcanzaron los votos necesarios.
+
+> ✅ El servidor queda oficialmente abierto.
+
+> ⏳ Tienen 10 minutos para ingresar.
+╰━━━━━━━━━━━━━━━━╯
+
+🔥 ¡El roleplay comienza ahora! 🔥`
+)
+)
+);
+
+await canal.send({
+components: [aprobado],
+flags: MessageFlags.IsComponentsV2,
+allowedMentions: {
+roles: [ROL_PING]
+}
+});
+
+} else {
+
+// ❌ RECHAZADA
+const rechazada = new ContainerBuilder()
+.setAccentColor(0xED4245)
+
+.addSectionComponents(
+new SectionBuilder()
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`# 🔒 Votación Finalizada
+
+### 『PANAMÁ RP V2』
+
+╭━━━━━━━━━━━━━━━━╮
+> ❌ No se alcanzaron los votos necesarios.
+
+> 📊 Resultado:
+\`\`\`${votos.size}/8\`\`\`
+╰━━━━━━━━━━━━━━━━╯
+
+🔥 Gracias por participar.`
+)
+)
+);
+
+await canal.send({
+components: [rechazada],
+flags: MessageFlags.IsComponentsV2
+});
+
+}
+
+// 📊 LOGS
+await logs.send({
+embeds: [
+new EmbedBuilder()
+.setTitle("📊 LOG VOTACIÓN")
+.setDescription(
+`👥 Votos finales: ${votos.size}/8\n🛡️ Responsable: <@${i.user.id}>`
+)
+.setColor(0xF1C40F)
+]
+});
+
+});
+
+// ✅ RESPUESTA PANEL
 return i.update({
 components: [
 new ContainerBuilder()
@@ -503,99 +780,4 @@ new TextDisplayBuilder()
 ],
 flags: MessageFlags.IsComponentsV2
 });
-
 }
-// ✅ FIX REAL
-const collectorV = msg.createMessageComponentCollector({
-time: 20 * 60 * 1000,
-filter: btn => btn.customId === "votar_si"
-});
-
-collectorV.on("collect", async btn => {
-
-if (votos.has(btn.user.id)) {
-return btn.reply({ content: "❌ Ya votaste.", ephemeral: true });
-}
-
-votos.add(btn.user.id);
-
-const lista = [...votos].map(id => `<@${id}>`).join("\n");
-
-await msg.edit({
-embeds: [
-EmbedBuilder.from(embed).setDescription(
-"📢 SESIÓN DE VOTACIÓN ABIERTA — SERVIDOR ROLEPLAY\n\n" +
-`🗳️ Votos requeridos: ${votos.size}/8\n\n` +
-`👥 Votantes:\n${lista}\n\n` +
-"⏳ Tiempo restante: En curso\n\n" +
-"🔥 Tu voto decide el futuro del servidor. 🔥"
-)
-]
-});
-
-await btn.reply({ content: "✅ Votaste", ephemeral: true });
-
-if (votos.size >= 8) collectorV.stop();
-});
-
-collectorV.on("end", async () => {
-
-votacionActiva = false;
-
-if (votos.size >= 8) {
-
-canal.send({
-content: `<@&${ROL_PING}>`,
-embeds: [
-new EmbedBuilder()
-.setTitle("🟢 SESIÓN ABIERTA AUTOMÁTICAMENTE")
-.setDescription(
-"🎉 Se han alcanzado los votos necesarios.\n\n" +
-"El servidor queda oficialmente ABIERTO.\n\n" +
-"⏳ Tienen 10 minutos para ingresar y comenzar a rolear.\n\n" +
-"⚠️ El incumplimiento podrá ser sancionado.\n\n" +
-"🔥 ¡El roleplay comienza ahora! 🔥"
-)
-.setColor(0x2ecc71)
-],
-allowedMentions: { roles: [ROL_PING] }
-});
-
-} else {
-
-canal.send({
-embeds: [
-new EmbedBuilder()
-.setTitle("🔒 SESIÓN DE VOTACIÓN CERRADA — SERVIDOR ROLEPLAY")
-.setDescription(
-"No se alcanzaron los votos necesarios.\n\n" +
-"📊 Estado: Finalizado\n\n" +
-"🔥 Gracias por participar."
-)
-.setColor(0xe74c3c)
-]
-});
-
-}
-
-msg.edit({ components: [] });
-
-logs.send({
-embeds: [
-new EmbedBuilder()
-.setTitle("📊 LOG VOTACIÓN")
-.setDescription(`Votos: ${votos.size}/8\nResponsable: <@${i.user.id}>`)
-.setColor(0xf1c40f)
-]
-});
-
-});
-
-return i.update({ content: "🗳️ Votación iniciada", components: [] });
-
-}
-
-});
-
-}
-};
