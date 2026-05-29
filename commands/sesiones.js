@@ -525,10 +525,10 @@ collectorV.on("end", async (_, reason) => {
 
 votacionActiva = false;
 
-// 🗑️ BORRAR MENSAJE
+// 🗑️ BORRAR PANEL DE VOTACIÓN
 await msg.delete().catch(() => {});
 
-// ✅ APROBADA
+// ✅ SESIÓN APROBADA
 if (reason === "aprobada") {
 
 const aprobado = new ContainerBuilder()
@@ -552,10 +552,31 @@ new TextDisplayBuilder().setContent(
 > ✅ Se alcanzaron los votos necesarios.
 
 > 🎉 El servidor queda oficialmente abierto.
+
+> ⏳ Ya pueden ingresar y comenzar
+> el roleplay.
 ╰━━━━━━━━━━━━━━━━╯
 
 🔥 ¡El roleplay comienza ahora! 🔥`
 )
+)
+
+.setThumbnailAccessory(
+new ThumbnailBuilder()
+.setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
+)
+)
+
+.addSeparatorComponents(
+new SeparatorBuilder()
+)
+
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`🌐 **PANAMÁ RP V2**
+### Sistema Oficial de Sesiones
+
+> Sesión abierta automáticamente`
 )
 );
 
@@ -569,7 +590,7 @@ roles: [ROL_PING]
 
 } else {
 
-// ❌ RECHAZADA
+// ❌ SESIÓN RECHAZADA
 const rechazada = new ContainerBuilder()
 .setAccentColor(0xED4245)
 
@@ -583,10 +604,30 @@ new TextDisplayBuilder().setContent(
 
 ╭━━━━━━━━━━━━━━━━╮
 > ❌ No se alcanzaron los votos necesarios.
+
+> 📊 La sesión no fue aprobada.
 ╰━━━━━━━━━━━━━━━━╯
 
 🔥 Gracias por participar.`
 )
+)
+
+.setThumbnailAccessory(
+new ThumbnailBuilder()
+.setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
+)
+)
+
+.addSeparatorComponents(
+new SeparatorBuilder()
+)
+
+.addTextDisplayComponents(
+new TextDisplayBuilder().setContent(
+`🌐 **PANAMÁ RP V2**
+### Sistema Oficial de Votaciones
+
+> Votación finalizada`
 )
 );
 
