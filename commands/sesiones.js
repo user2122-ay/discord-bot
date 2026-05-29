@@ -166,7 +166,6 @@ const apertura = new ContainerBuilder()
 );
 
 await canal.send({
-    content: `<@&${ROL_PING}>`,
     components: [apertura],
     flags: MessageFlags.IsComponentsV2,
     allowedMentions: {
@@ -192,6 +191,7 @@ return i.update({
     ],
     flags: MessageFlags.IsComponentsV2
 });
+} 
     
 // 🔴 CERRAR
 if (i.customId === "cerrar") {
