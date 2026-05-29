@@ -145,7 +145,7 @@ const apertura = new ContainerBuilder()
 ╭━━━━━━━━━━━━━━━━╮
 > ✅ La sesión ha sido abierta oficialmente.
 
-> **Código:** \`\`\`hhhh\`\`\`
+> **Código:** \`\`\`cai\`\`\`
 > 👥 Los usuarios ya pueden ingresar
 > y comenzar el roleplay.
 ╰━━━━━━━━━━━━━━━━╯
@@ -494,7 +494,7 @@ roles: [ROL_PING]
 
 // ✅ FIX REAL
 const collectorV = msg.createMessageComponentCollector({
-time: 1 * 60 * 1000,
+time: 20 * 60 * 1000,
 filter: btn => btn.customId === "votar_si"
 });
 
@@ -551,6 +551,7 @@ new TextDisplayBuilder().setContent(
 ╭━━━━━━━━━━━━━━━━╮
 > ✅ Se alcanzaron los votos necesarios.
 
+> 🆔 **Código:** \`\`\`hhhh\`\`\`
 > 🎉 El servidor queda oficialmente abierto.
 
 > ⏳ Ya pueden ingresar y comenzar
