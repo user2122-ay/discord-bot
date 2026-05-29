@@ -307,30 +307,93 @@ return i.update({
 
 }
 // 🛠️ MANTENIMIENTO
-if (i.customId === "mantenimiento") {
+  if (i.customId === "mantenimiento") {
 
-const embed = new EmbedBuilder()
-.setTitle("🛠️ MANTENIMIENTO DEL SERVIDOR — ROLEPLAY")
-.setDescription(
-"Se informa a todos los miembros que el servidor se encuentra actualmente en MANTENIMIENTO.\n\n" +
-"⚙️ Durante este periodo se estarán realizando ajustes, mejoras y optimizaciones.\n\n" +
-"⏳ Estado: En progreso\n" +
-"🔧 Acceso: Limitado temporalmente\n\n" +
-"⚠️ Recomendaciones:\n" +
-"• Evitar realizar acciones dentro del servidor.\n" +
-"• Esperar indicaciones del staff.\n" +
-"• Mantenerse atentos a anuncios oficiales.\n\n" +
-"📢 Una vez finalizado el mantenimiento, se notificará la reapertura.\n\n" +
-"🔥 Estamos trabajando para darte una mejor experiencia. 🔥"
+const mantenimiento = new ContainerBuilder()
+.setAccentColor(0xFEE75C) // amarillo Discord
+
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`<@&${ROL_PING}>`
+    )
 )
-.setColor(0x95a5a6);
 
-canal.send({ embeds: [embed] });
+.addSectionComponents(
+    new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+`# 🛠️ Servidor en Mantenimiento
 
-return i.update({ content: "🛠️ Activado", components: [] });
+### 『PANAMÁ RP V2』
 
-}
+╭━━━━━━━━━━━━━━━━╮
+> ⚙️ El servidor se encuentra actualmente
+> en mantenimiento oficial.
 
+> ⏳ Estado: \`\`\`EN PROGRESO\`\`\`
+
+> 🔧 Se están realizando mejoras,
+> ajustes y optimizaciones.
+╰━━━━━━━━━━━━━━━━╯
+
+### ⚠️ Recomendaciones
+• Evitar acciones dentro del servidor
+• Esperar indicaciones del staff
+• Mantenerse atentos a anuncios oficiales
+
+📢 La reapertura será anunciada oficialmente.
+
+🔥 Trabajamos para darte una mejor experiencia 🔥`
+            )
+        )
+
+        .setThumbnailAccessory(
+            new ThumbnailBuilder()
+                .setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
+        )
+)
+
+.addSeparatorComponents(
+    new SeparatorBuilder()
+)
+
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`🌐 **PANAMÁ RP V2**
+### Sistema Oficial del Servidor
+
+> Mantenimiento activo • Administración oficial`
+    )
+)
+
+.addMediaGalleryComponents(
+  new MediaGalleryBuilder().addItems(
+    new MediaGalleryItemBuilder()
+      .setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509754798315012358/17688135.gif?ex=6a1a5439&is=6a1902b9&hm=16d67219d9af970d0103769fbfcfad61a28d5ed263734c9a015c5e42b8b4621b&")
+  )
+);
+
+await canal.send({
+    components: [mantenimiento],
+    flags: MessageFlags.IsComponentsV2,
+    allowedMentions: {
+        roles: [ROL_PING]
+    }
+});
+
+return i.update({
+    components: [
+        new ContainerBuilder()
+            .setAccentColor(0xFEE75C)
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent("🛠️ Mantenimiento activado correctamente.")
+            )
+    ],
+    flags: MessageFlags.IsComponentsV2
+});
+
+  }  
 // 🗳️ VOTACIÓN (ARREGLADO)
 if (i.customId === "votar") {
 
