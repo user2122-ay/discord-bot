@@ -516,9 +516,7 @@ ephemeral: true
 
 // ✅ SI LLEGA AL VOTO NECESARIO
 if (votos.size >= 1) {
-
 collectorV.stop("aprobada");
-
 }
 
 });
@@ -527,7 +525,7 @@ collectorV.on("end", async (_, reason) => {
 
 votacionActiva = false;
 
-// 🗑️ BORRAR MENSAJE DE VOTACIÓN
+// 🗑️ BORRAR MENSAJE
 await msg.delete().catch(() => {});
 
 // ✅ APROBADA
@@ -594,6 +592,23 @@ new TextDisplayBuilder().setContent(
 
 await canal.send({
 components: [rechazada],
+flags: MessageFlags.IsComponentsV2
+});
+
+}
+
+});
+
+// ✅ RESPUESTA PANEL
+return i.update({
+components: [
+new ContainerBuilder()
+.setAccentColor(0xF1C40F)
+.addTextDisplayComponents(
+new TextDisplayBuilder()
+.setContent("🗳️ Votación iniciada correctamente.")
+)
+],
 flags: MessageFlags.IsComponentsV2
 });
 
