@@ -9,7 +9,9 @@ const {
     TextDisplayBuilder,
     SeparatorBuilder,
     ThumbnailBuilder,
-    MessageFlags
+    MessageFlags, 
+    MediaGalleryBuilder,
+  MediaGalleryItemBuilder 
 } = require("discord.js");
 const ROL_AUTORIZADO = "1451018406537986168";
 const ROL_PING = "1451018397352595579";
