@@ -124,39 +124,35 @@ collector.on("collect", async i => {
 // 🟢 ABRIR
 if (i.customId === "abrir") {
 
-const abrirPanel = new ContainerBuilder()
+const apertura = new ContainerBuilder()
 
 .addSectionComponents(
     new SectionBuilder()
         .addTextDisplayComponents(
-
             new TextDisplayBuilder().setContent(
 `# 🟢 Servidor Abierto
 
-> El servidor ha sido oficialmente abierto.
+### 『Tu servidor RP』
 
-━━━━━━━━━━━━━━━━━━
+╭━━━━━━━━━━━━━━━━╮
+> ✅ La sesión ha sido abierta oficialmente.
+> 
+> 👥 Los usuarios ya pueden ingresar
+> y comenzar el roleplay.
+╰━━━━━━━━━━━━━━━━╯
 
-### 📌 Estado
-• 🟢 Sesión activa  
-• 👥 Roleplay habilitado  
-• ⏰ Disponible para ingresar  
-
-━━━━━━━━━━━━━━━━━━
-
-### ⚠️ Indicaciones
-• Mantener rol serio  
+### 📌 Indicaciones
+• Mantener el rol serio  
 • Respetar las normas  
-• Seguir órdenes del staff  
+• Seguir instrucciones del staff  
 
-━━━━━━━━━━━━━━━━━━
-
-🔥 ¡Disfruten la sesión roleplay!`
+🔥 ¡El roleplay comienza ahora!`
             )
-
         )
         .setThumbnailAccessory(
-            interaction.guild.iconURL()
+            {
+                url: "https://TU-LOGO-AQUI.png"
+            }
         )
 )
 
@@ -166,13 +162,13 @@ const abrirPanel = new ContainerBuilder()
 
 .addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-`-# Apertura realizada por ${i.user.tag}`
+`🟢 Apertura realizada por <@${i.user.id}>`
     )
 );
 
 await canal.send({
     content: `<@&${ROL_PING}>`,
-    components: [abrirPanel],
+    components: [apertura],
     flags: MessageFlags.IsComponentsV2,
     allowedMentions: {
         roles: [ROL_PING]
@@ -180,24 +176,15 @@ await canal.send({
 });
 
 await logs.send({
-    components: [
-        new ContainerBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-`# 📊 Log de Sesión
-
-🟢 Sesión abierta por <@${i.user.id}>`
-            )
-        )
-    ],
-    flags: MessageFlags.IsComponentsV2
+    embeds: [
+        new EmbedBuilder()
+        .setDescription(`🟢 Sesión abierta por <@${i.user.id}>`)
+        .setColor(0x2ecc71)
+    ]
 });
 
-collector.stop();
-
 return i.update({
-    content: "✅ Servidor abierto correctamente.",
-    embeds: [],
+    content: "✅ Sesión abierta con éxito.",
     components: []
 });
 
