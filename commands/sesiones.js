@@ -216,41 +216,96 @@ return i.update({
 // 🔴 CERRAR
 if (i.customId === "cerrar") {
 
-const embed = new EmbedBuilder()
-.setTitle("🔴 SESIÓN CERRADA — SERVIDOR ROLEPLAY")
-.setDescription(
-"Se declara oficialmente CERRADA la sesión en el servidor.\n\n" +
-"A partir de este momento, todas las actividades de roleplay quedan suspendidas hasta nuevo aviso.\n\n" +
-"📊 Estado: Finalizado\n\n" +
-"Agradecemos a todos los usuarios por su participación y compromiso durante la sesión.\n\n" +
-"📢 Mantente atento a futuros anuncios para la próxima apertura.\n\n" +
-"🔥 Gracias por formar parte de la comunidad. 🔥"
+const cierre = new ContainerBuilder()
+.setAccentColor(0xED4245) // rojo Discord
+
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`<@&${ROL_PING}>`
+    )
 )
-.setColor(0xe74c3c)
-.setFooter({
-text: `Cierre realizado por ${i.user.tag}`,
-iconURL: i.user.displayAvatarURL()
-})
-.setTimestamp();
 
-canal.send({
-content: `<@&${ROL_PING}>`,
-embeds: [embed],
-allowedMentions: { roles: [ROL_PING] }
+.addSectionComponents(
+    new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+`# 🔴 Servidor Cerrado
+
+### 『PANAMÁ RP V2』
+
+╭━━━━━━━━━━━━━━━━╮
+> ❌ La sesión ha sido cerrada oficialmente.
+
+> 📊 Estado: \`\`\`FINALIZADO\`\`\`
+
+> 🚫 Todas las actividades de roleplay
+> quedan suspendidas hasta nuevo aviso.
+╰━━━━━━━━━━━━━━━━╯
+
+### 📌 Información
+• El servidor entra en descanso
+• Espera próximos anuncios oficiales
+• Gracias por participar en la sesión
+
+🔥 Gracias por formar parte de la comunidad 🔥`
+            )
+        )
+
+        .setThumbnailAccessory(
+            new ThumbnailBuilder()
+                .setURL("https://cdn.discordapp.com/attachments/1456748347221344340/1509722237253451868/BackgroundEraser_20260506_190546633.png")
+        )
+)
+
+.addSeparatorComponents(
+    new SeparatorBuilder()
+)
+
+.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+`🌐 **PANAMÁ RP V2**
+### Sistema Oficial de Sesiones
+
+> Sesión finalizada • Administración oficial`
+    )
+)
+
+.addMediaGalleryComponents(
+  new MediaGalleryBuilder().addItems(
+    new MediaGalleryItemBuilder()
+      .setURL("https://cdn.discordapp.com/attachments/1455970934535225518/1509727251342823578/sidistroatribut01-progress-100-transparent-22958.gif")
+  )
+);
+
+await canal.send({
+    components: [cierre],
+    flags: MessageFlags.IsComponentsV2,
+    allowedMentions: {
+        roles: [ROL_PING]
+    }
 });
 
-logs.send({
-embeds: [
-new EmbedBuilder()
-.setDescription(`🔴 Sesión cerrada por <@${i.user.id}>`)
-.setColor(0xe74c3c)
-]
+await logs.send({
+    embeds: [
+        new EmbedBuilder()
+        .setDescription(`🔴 Sesión cerrada por <@${i.user.id}>`)
+        .setColor(0xe74c3c)
+    ]
 });
 
-return i.update({ content: "❌ Sesión cerrada", components: [] });
+return i.update({
+    components: [
+        new ContainerBuilder()
+            .setAccentColor(0xED4245)
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent("❌ Sesión cerrada correctamente.")
+            )
+    ],
+    flags: MessageFlags.IsComponentsV2
+});
 
 }
-
 // 🛠️ MANTENIMIENTO
 if (i.customId === "mantenimiento") {
 
