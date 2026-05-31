@@ -257,22 +257,56 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
 const messages = await canal.messages.fetch({ limit: 100 });
 const ordenados = messages.reverse();
 
-let transcript = "";
+let html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Transcript ${canal.name}</title>
+<style>
+body {
+  font-family: Arial;
+  background: #2b2d31;
+  color: white;
+  padding: 20px;
+}
+.message {
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #1e1f22;
+  border-radius: 8px;
+}
+.author {
+  font-weight: bold;
+  color: #5865F2;
+}
+</style>
+</head>
+<body>
+<h2>🎫 Ticket: ${canal.name}</h2>
+`;
 
 ordenados.forEach(msg => {
-  transcript += `${msg.author.tag}: ${msg.content}\n`;
+  html += `
+  <div class="message">
+    <div class="author">${msg.author.tag}</div>
+    <div class="content">${msg.content}</div>
+  </div>
+  `;
+});
+
+html += `</body></html>`;
 });
 
 // 📂 CANAL DE LOGS
-const LOG_CHANNEL = "1456786442071314442";
-const logChannel = interaction.guild.channels.cache.get(LOG_CHANNEL);
+const logChannel = interaction.guild.channels.cache.get("1456786442071314442");
 
 if (logChannel) {
   logChannel.send({
-    content: `📄 Transcripción del ticket: ${canal.name}`,
+    content: `📄 Transcript del ticket: ${canal.name}`,
     files: [{
-      attachment: Buffer.from(transcript, "utf-8"),
-      name: `${canal.name}.txt`
+      attachment: Buffer.from(html, "utf-8"),
+      name: `${canal.name}.html`
     }]
   });
 }
