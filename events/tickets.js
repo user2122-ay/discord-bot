@@ -253,7 +253,7 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
 
                 await interaction.reply("🔒 Cerrando ticket...");
 
-// 📄 TRANSCRIPCIÓN
+// 📄 TRANSCRIPCIÓN HTML
 const messages = await canal.messages.fetch({ limit: 100 });
 const ordenados = messages.reverse();
 
@@ -264,22 +264,9 @@ let html = `
 <meta charset="utf-8">
 <title>Transcript ${canal.name}</title>
 <style>
-body {
-  font-family: Arial;
-  background: #2b2d31;
-  color: white;
-  padding: 20px;
-}
-.message {
-  margin-bottom: 10px;
-  padding: 10px;
-  background: #1e1f22;
-  border-radius: 8px;
-}
-.author {
-  font-weight: bold;
-  color: #5865F2;
-}
+body { font-family: Arial; background: #2b2d31; color: white; padding: 20px; }
+.message { margin-bottom: 10px; padding: 10px; background: #1e1f22; border-radius: 8px; }
+.author { font-weight: bold; color: #5865F2; }
 </style>
 </head>
 <body>
@@ -296,9 +283,8 @@ ordenados.forEach(msg => {
 });
 
 html += `</body></html>`;
-});
 
-// 📂 CANAL DE LOGS
+// 📂 LOGS
 const logChannel = interaction.guild.channels.cache.get("1456786442071314442");
 
 if (logChannel) {
