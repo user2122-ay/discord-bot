@@ -252,7 +252,32 @@ Categoría destinada exclusivamente a asuntos directos con los Owners del servid
                 ticketsReclamados.delete(canal.id);
 
                 await interaction.reply("🔒 Cerrando ticket...");
-                setTimeout(() => canal.delete(), 3000);
+
+// 📄 TRANSCRIPCIÓN
+const messages = await canal.messages.fetch({ limit: 100 });
+const ordenados = messages.reverse();
+
+let transcript = "";
+
+ordenados.forEach(msg => {
+  transcript += `${msg.author.tag}: ${msg.content}\n`;
+});
+
+// 📂 CANAL DE LOGS
+const LOG_CHANNEL = "1456786442071314442";
+const logChannel = interaction.guild.channels.cache.get(LOG_CHANNEL);
+
+if (logChannel) {
+  logChannel.send({
+    content: `📄 Transcripción del ticket: ${canal.name}`,
+    files: [{
+      attachment: Buffer.from(transcript, "utf-8"),
+      name: `${canal.name}.txt`
+    }]
+  });
+}
+
+setTimeout(() => canal.delete(), 3000);
             }
         }
 
