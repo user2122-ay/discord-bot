@@ -58,17 +58,22 @@ song = {
     url: video.url || video.video_url
 };
             } else {
+// Buscar por nombre 
+    const results = await play.search(query, {
+        limit: 1
+    });
 
-                // Buscar por nombre
-                const results = await play.search(query, {
-                    limit: 1
-                });
+    if (!results.length) {
+        return interaction.editReply(
+            "❌ No encontré resultados."
+        );
+    }
 
-                if (!results.length) {
-                    return interaction.editReply(
-                        "❌ No encontré resultados."
-                    );
-                }
+    song = {
+        title: results[0].title,
+        url: results[0].url
+    };
+            }
 
                 song = {
                     title: results[0].title,
