@@ -8,6 +8,7 @@ const {
 
 const play = require("play-dl");
 
+// 🔥 IMPORTANTE: fuera del comando
 const queues = new Map();
 
 module.exports = {
@@ -42,22 +43,20 @@ module.exports = {
 
     const song = search[0];
 
+    // 🔥 crear cola por server
     if (!queues.has(interaction.guild.id)) {
       queues.set(interaction.guild.id, {
         songs: [],
         player: createAudioPlayer(),
         connection: null,
-        playing: false
+        playing: false,
+        channelId: voiceChannel.id
       });
     }
 
     const queue = queues.get(interaction.guild.id);
 
-    queue.songs.push({
-      title: song.title,
-      url: song.url,
-      user: interaction.user.id
-    });
+    queue.songs.push(song);
 
     await interaction.editReply({
       embeds: [
@@ -83,16 +82,10 @@ module.exports = {
 
       queue.playing = true;
 
-      const stream = await play.stream(current.url);
-
-      const resource = createAudioResource(stream.stream, {
-        inputType: stream.type
-      });
-
-      // 🔥 conectar seguro
+      // 🔥 conexión segura
       if (!queue.connection) {
         queue.connection = joinVoiceChannel({
-          channelId: voiceChannel.id,
+          channelId: queue.channelId,
           guildId: interaction.guild.id,
           adapterCreator: interaction.guild.voiceAdapterCreator
         });
@@ -100,9 +93,14 @@ module.exports = {
         queue.connection.subscribe(queue.player);
       }
 
+      const stream = await play.stream(current.url);
+
+      const resource = createAudioResource(stream.stream, {
+        inputType: stream.type
+      });
+
       queue.player.play(resource);
 
-      // 🔥 limpiar listener viejo (IMPORTANTE)
       queue.player.removeAllListeners(AudioPlayerStatus.Idle);
 
       queue.player.on(AudioPlayerStatus.Idle, () => {
