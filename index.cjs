@@ -51,7 +51,24 @@ require("./events/verificacionRoblox")(client);
 
 client.commands = new Collection();
 
-const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+function getFiles(dir) {
+  let files = [];
+  const items = fs.readdirSync(dir);
+
+  for (const item of items) {
+    const path = `${dir}/${item}`;
+
+    if (fs.lstatSync(path).isDirectory()) {
+      files = files.concat(getFiles(path));
+    } else if (item.endsWith(".js")) {
+      files.push(path);
+    }
+  }
+
+  return files;
+}
+
+const commandFiles = getFiles("./commands");
 
 for (const file of commandFiles) {
 try {
