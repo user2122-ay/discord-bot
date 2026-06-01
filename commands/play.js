@@ -89,6 +89,16 @@ module.exports = {
                     noSubscriber: NoSubscriberBehavior.Pause
                 }
             });
+            //logs error 
+            queue.player.on("error", error => {
+    console.error("❌ Error del reproductor:");
+    console.error(error);
+});
+
+queue.connection?.on?.("error", error => {
+    console.error("❌ Error de conexión:");
+    console.error(error);
+});
 
             queues.set(interaction.guild.id, {
                 songs: [],
@@ -137,29 +147,36 @@ module.exports = {
                 if (!queue.connection) {
 
                     queue.connection = joinVoiceChannel({
-                        channelId: queue.channelId,
-                        guildId: interaction.guild.id,
-                        adapterCreator:
-                            interaction.guild.voiceAdapterCreator,
-                        selfDeaf: true
-                    });
+    channelId: queue.channelId,
+    guildId: interaction.guild.id,
+    adapterCreator: interaction.guild.voiceAdapterCreator,
+    selfDeaf: true
+});
 
-                    queue.connection.subscribe(queue.player);
+queue.connection.on("error", error => {
+    console.error("❌ Error de conexión:");
+    console.error(error);
+});
 
+queue.connection.subscribe(queue.player);
                     console.log("✅ Conectado al canal");
                 }
 
-                console.log("🎵 Reproduciendo:", current.title);
+                console.log("🎵 Intentando reproducir:", current.url);
 
-                const stream = await play.stream(current.url);
+const stream = await play.stream(current.url);
 
-                const resource = createAudioResource(
-                    stream.stream,
-                    {
-                        inputType: stream.type,
-                        inlineVolume: true
-                    }
-                );
+console.log("✅ Stream obtenido");
+
+const resource = createAudioResource(
+    stream.stream,
+    {
+        inputType: stream.type,
+        inlineVolume: true
+    }
+);
+
+console.log("✅ Resource creada");
 
                 resource.volume?.setVolume(1);
 
