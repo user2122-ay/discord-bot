@@ -26,7 +26,6 @@ module.exports = {
     const query = interaction.options.getString("musica");
     const voiceChannel = interaction.member.voice.channel;
 
-    // ❌ usuario no está en VC
     if (!voiceChannel) {
       return interaction.reply({
         content: "❌ Debes estar en un canal de voz.",
@@ -43,7 +42,6 @@ module.exports = {
 
     const song = search[0];
 
-    // 🔥 crear o obtener cola
     if (!queues.has(interaction.guild.id)) {
       queues.set(interaction.guild.id, {
         songs: [],
@@ -61,15 +59,15 @@ module.exports = {
       user: interaction.user.id
     });
 
-    const embed = new EmbedBuilder()
-      .setColor("#2b2d31")
-      .setTitle("🎵 Añadido a la cola")
-      .setDescription(`**${song.title}**`)
-      .setFooter({ text: `Pedido por ${interaction.user.username}` });
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor("#2b2d31")
+          .setTitle("🎵 Añadido a la cola")
+          .setDescription(song.title)
+      ]
+    });
 
-    await interaction.editReply({ embeds: [embed] });
-
-    // 🔥 evitar doble reproducción
     if (queue.playing) return;
 
     const playSong = async () => {
@@ -85,23 +83,14 @@ module.exports = {
 
       queue.playing = true;
 
-      // 🔊 crear stream
       const stream = await play.stream(current.url);
 
       const resource = createAudioResource(stream.stream, {
         inputType: stream.type
       });
 
-      // 🔥 conectar si no está conectado
+      // 🔥 conectar seguro
       if (!queue.connection) {
-
-        const botVoice = interaction.guild.members.me.voice.channel;
-
-        if (botVoice && botVoice.id !== voiceChannel.id) {
-          queue.connection?.destroy();
-          queue.connection = null;
-        }
-
         queue.connection = joinVoiceChannel({
           channelId: voiceChannel.id,
           guildId: interaction.guild.id,
@@ -113,7 +102,10 @@ module.exports = {
 
       queue.player.play(resource);
 
-      queue.player.once(AudioPlayerStatus.Idle, () => {
+      // 🔥 limpiar listener viejo (IMPORTANTE)
+      queue.player.removeAllListeners(AudioPlayerStatus.Idle);
+
+      queue.player.on(AudioPlayerStatus.Idle, () => {
         queue.songs.shift();
         playSong();
       });
