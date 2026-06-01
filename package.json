@@ -16,7 +16,7 @@
     "@discordjs/voice": "^0.17.0",
     "@discordjs/opus": "^0.10.0",
 
-    "play-dl": "^1.9.7",
+    "@distube/ytdl-core": "^4.16.12",
     "prism-media": "^1.3.5",
     "ffmpeg-static": "^5.2.0"
   }
