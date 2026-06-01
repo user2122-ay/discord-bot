@@ -1,130 +1,174 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const {
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus
+    joinVoiceChannel,
+    createAudioPlayer,
+    createAudioResource,
+    AudioPlayerStatus,
+    NoSubscriberBehavior
 } = require("@discordjs/voice");
 
 const ytdl = require("@distube/ytdl-core");
 
-// 🔥 IMPORTANTE: fuera del comando
 const queues = new Map();
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Reproduce música")
-    .addStringOption(option =>
-      option
-        .setName("musica")
-        .setDescription("Nombre o URL")
-        .setRequired(true)
-    ),
+    data: new SlashCommandBuilder()
+        .setName("play")
+        .setDescription("Reproduce música desde YouTube")
+        .addStringOption(option =>
+            option
+                .setName("musica")
+                .setDescription("URL de YouTube")
+                .setRequired(true)
+        ),
 
-  async execute(interaction) {
+    async execute(interaction) {
 
-    const query = interaction.options.getString("musica");
-    const voiceChannel = interaction.member.voice.channel;
+        const query = interaction.options.getString("musica");
+        const voiceChannel = interaction.member.voice.channel;
 
-    if (!voiceChannel) {
-      return interaction.reply({
-        content: "❌ Debes estar en un canal de voz.",
-        ephemeral: true
-      });
-    }
+        if (!voiceChannel) {
+            return interaction.reply({
+                content: "❌ Debes estar en un canal de voz.",
+                ephemeral: true
+            });
+        }
 
-    await interaction.reply("🔎 Buscando canción...");
+        await interaction.reply("🔎 Buscando canción...");
 
-    if (!query.includes("youtube.com") && !query.includes("youtu.be")) {
-  return interaction.editReply(
-    "❌ Por ahora solo se aceptan enlaces de YouTube."
-  );
-}
-    const song = {
-  title: query,
-  url: query
-};
+        if (
+            !query.includes("youtube.com") &&
+            !query.includes("youtu.be")
+        ) {
+            return interaction.editReply(
+                "❌ Solo se permiten enlaces de YouTube."
+            );
+        }
 
-    // 🔥 crear cola por server
-    if (!queues.has(interaction.guild.id)) {
-      queues.set(interaction.guild.id, {
-        songs: [],
-        player: createAudioPlayer(),
-        connection: null,
-        playing: false,
-        channelId: voiceChannel.id
-      });
-    }
+        const song = {
+            title: query,
+            url: query
+        };
 
-    const queue = queues.get(interaction.guild.id);
+        if (!queues.has(interaction.guild.id)) {
 
-    queue.songs.push(song);
+            const player = createAudioPlayer({
+                behaviors: {
+                    noSubscriber: NoSubscriberBehavior.Play
+                }
+            });
 
-    await interaction.editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setColor("#2b2d31")
-          .setTitle("🎵 Añadido a la cola")
-          .setDescription(song.title)
-      ]
-    });
+            player.on("error", error => {
+                console.error("❌ Error del reproductor:");
+                console.error(error);
+            });
 
-    if (queue.playing) return;
+            queues.set(interaction.guild.id, {
+                songs: [],
+                player,
+                connection: null,
+                playing: false,
+                channelId: voiceChannel.id
+            });
+        }
 
-    const playSong = async () => {
+        const queue = queues.get(interaction.guild.id);
 
-      const current = queue.songs[0];
+        queue.songs.push(song);
 
-      if (!current) {
-        queue.playing = false;
-        queue.connection?.destroy();
-        queue.connection = null;
-        return;
-      }
-
-      queue.playing = true;
-
-      // 🔥 conexión segura
-      if (!queue.connection) {
-        queue.connection = joinVoiceChannel({
-          channelId: queue.channelId,
-          guildId: interaction.guild.id,
-          adapterCreator: interaction.guild.voiceAdapterCreator,
-          selfDeaf: true
+        await interaction.editReply({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor("#2b2d31")
+                    .setTitle("🎵 Añadido a la cola")
+                    .setDescription(song.url)
+            ]
         });
 
-        queue.connection.subscribe(queue.player);
-        console.log("✅ Conectado al canal de voz");
-      }
+        if (queue.playing) return;
 
-      console.log("🎵 Reproduciendo:", current);
-console.log("🔗 URL:", current.url); 
+        const playSong = async () => {
 
-      const stream = ytdl(current.url, {
-  filter: "audioonly",
-  highWaterMark: 1 << 25,
-  quality: "highestaudio"
-});
+            const current = queue.songs[0];
 
-      const resource = createAudioResource(stream);
+            if (!current) {
 
-      queue.player.play(resource);
-      console.log("▶️ Audio enviado al reproductor");
+                queue.playing = false;
 
-      queue.player.removeAllListeners(
-        AudioPlayerStatus.Idle
-      );
+                if (queue.connection) {
+                    queue.connection.destroy();
+                    queue.connection = null;
+                }
 
-      queue.player.once(
-        AudioPlayerStatus.Idle,
-        () => {
-          queue.songs.shift();
-          playSong();
-        }
-      );
-    };
+                return;
+            }
 
-    await playSong();
-  }
+            queue.playing = true;
+
+            try {
+
+                if (!queue.connection) {
+
+                    queue.connection = joinVoiceChannel({
+                        channelId: queue.channelId,
+                        guildId: interaction.guild.id,
+                        adapterCreator: interaction.guild.voiceAdapterCreator,
+                        selfDeaf: true
+                    });
+
+                    queue.connection.subscribe(queue.player);
+
+                    console.log("✅ Conectado al canal de voz");
+                }
+
+                console.log("🎵 Reproduciendo:", current.url);
+
+                const stream = ytdl(current.url, {
+                    filter: "audioonly",
+                    quality: "highestaudio",
+                    highWaterMark: 1 << 25
+                });
+
+                stream.on("error", error => {
+                    console.error("❌ Error del stream:");
+                    console.error(error);
+                });
+
+                const resource = createAudioResource(stream, {
+                    inlineVolume: true
+                });
+
+                if (resource.volume) {
+                    resource.volume.setVolume(1);
+                }
+
+                queue.player.play(resource);
+
+                console.log("▶️ Audio enviado al reproductor");
+
+                queue.player.removeAllListeners(
+                    AudioPlayerStatus.Idle
+                );
+
+                queue.player.once(
+                    AudioPlayerStatus.Idle,
+                    () => {
+                        console.log("⏭️ Canción terminada");
+                        queue.songs.shift();
+                        playSong();
+                    }
+                );
+
+            } catch (error) {
+
+                console.error("❌ Error general:");
+                console.error(error);
+
+                queue.songs.shift();
+                playSong();
+            }
+        };
+
+        await playSong();
+    }
 };
