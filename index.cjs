@@ -23,8 +23,8 @@ intents: [
   GatewayIntentBits.GuildMembers,
   GatewayIntentBits.DirectMessages,
   GatewayIntentBits.GuildVoiceStates
-]
-partials: ["CHANNEL"], 
+], 
+partials: ["CHANNEL"]
 });
 // BD
 mongoose.connect(process.env.MONGO_URI)
