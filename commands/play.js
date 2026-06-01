@@ -7,8 +7,9 @@ const {
     NoSubscriberBehavior
 } = require("@discordjs/voice");
 
-const ytdl = require("@distube/ytdl-core");
+const play = require("play-dl");
 
+// Cola global
 const queues = new Map();
 
 module.exports = {
@@ -18,7 +19,7 @@ module.exports = {
         .addStringOption(option =>
             option
                 .setName("musica")
-                .setDescription("URL de YouTube")
+                .setDescription("Nombre o URL")
                 .setRequired(true)
         ),
 
@@ -36,31 +37,57 @@ module.exports = {
 
         await interaction.reply("🔎 Buscando canción...");
 
-        if (
-            !query.includes("youtube.com") &&
-            !query.includes("youtu.be")
-        ) {
+        let song;
+
+        try {
+
+            // Si es URL
+            if (
+                query.includes("youtube.com") ||
+                query.includes("youtu.be")
+            ) {
+
+                const info = await play.video_basic_info(query);
+
+                song = {
+                    title: info.video_details.title,
+                    url: query
+                };
+
+            } else {
+
+                // Buscar por nombre
+                const results = await play.search(query, {
+                    limit: 1
+                });
+
+                if (!results.length) {
+                    return interaction.editReply(
+                        "❌ No encontré resultados."
+                    );
+                }
+
+                song = {
+                    title: results[0].title,
+                    url: results[0].url
+                };
+            }
+
+        } catch (err) {
+            console.error(err);
+
             return interaction.editReply(
-                "❌ Solo se permiten enlaces de YouTube."
+                "❌ Error obteniendo información de la canción."
             );
         }
 
-        const song = {
-            title: query,
-            url: query
-        };
-
+        // Crear cola
         if (!queues.has(interaction.guild.id)) {
 
             const player = createAudioPlayer({
                 behaviors: {
-                    noSubscriber: NoSubscriberBehavior.Play
+                    noSubscriber: NoSubscriberBehavior.Pause
                 }
-            });
-
-            player.on("error", error => {
-                console.error("❌ Error del reproductor:");
-                console.error(error);
             });
 
             queues.set(interaction.guild.id, {
@@ -79,9 +106,9 @@ module.exports = {
         await interaction.editReply({
             embeds: [
                 new EmbedBuilder()
-                    .setColor("#2b2d31")
+                    .setColor("#57F287")
                     .setTitle("🎵 Añadido a la cola")
-                    .setDescription(song.url)
+                    .setDescription(`**${song.title}**`)
             ]
         });
 
@@ -112,39 +139,31 @@ module.exports = {
                     queue.connection = joinVoiceChannel({
                         channelId: queue.channelId,
                         guildId: interaction.guild.id,
-                        adapterCreator: interaction.guild.voiceAdapterCreator,
+                        adapterCreator:
+                            interaction.guild.voiceAdapterCreator,
                         selfDeaf: true
                     });
 
                     queue.connection.subscribe(queue.player);
 
-                    console.log("✅ Conectado al canal de voz");
+                    console.log("✅ Conectado al canal");
                 }
 
-                console.log("🎵 Reproduciendo:", current.url);
+                console.log("🎵 Reproduciendo:", current.title);
 
-                const stream = ytdl(current.url, {
-                    filter: "audioonly",
-                    quality: "highestaudio",
-                    highWaterMark: 1 << 25
-                });
+                const stream = await play.stream(current.url);
 
-                stream.on("error", error => {
-                    console.error("❌ Error del stream:");
-                    console.error(error);
-                });
+                const resource = createAudioResource(
+                    stream.stream,
+                    {
+                        inputType: stream.type,
+                        inlineVolume: true
+                    }
+                );
 
-                const resource = createAudioResource(stream, {
-                    inlineVolume: true
-                });
-
-                if (resource.volume) {
-                    resource.volume.setVolume(1);
-                }
+                resource.volume?.setVolume(1);
 
                 queue.player.play(resource);
-
-                console.log("▶️ Audio enviado al reproductor");
 
                 queue.player.removeAllListeners(
                     AudioPlayerStatus.Idle
@@ -153,18 +172,24 @@ module.exports = {
                 queue.player.once(
                     AudioPlayerStatus.Idle,
                     () => {
+
                         console.log("⏭️ Canción terminada");
+
                         queue.songs.shift();
+
                         playSong();
                     }
                 );
 
             } catch (error) {
 
-                console.error("❌ Error general:");
-                console.error(error);
+                console.error(
+                    "❌ Error reproduciendo:",
+                    error
+                );
 
                 queue.songs.shift();
+
                 playSong();
             }
         };
