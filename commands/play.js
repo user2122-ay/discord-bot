@@ -87,31 +87,44 @@ module.exports = {
         queue.connection = joinVoiceChannel({
           channelId: queue.channelId,
           guildId: interaction.guild.id,
-          adapterCreator: interaction.guild.voiceAdapterCreator
+          adapterCreator: interaction.guild.voiceAdapterCreator,
+          selfDeaf: true
         });
 
         queue.connection.subscribe(queue.player);
       }
 
-      const stream = await play.stream(current.url);
+      console.log("🎵 Reproduciendo:", current);
 
-const resource = createAudioResource(stream.stream, {
-  inputType: stream.type,
-  inlineVolume: true
-});
+const streamData = await play.stream(current.url);
 
-resource.volume?.setVolume(1);
+      if (!streamData || !streamData.stream) {
+        queue.songs.shift();
+        return playSong();
+      }
+
+      const resource = createAudioResource(
+  streamData.stream,
+  {
+    inputType: streamData.type
+  }
+);
 
       queue.player.play(resource);
 
-      queue.player.removeAllListeners(AudioPlayerStatus.Idle);
+      queue.player.removeAllListeners(
+        AudioPlayerStatus.Idle
+      );
 
-      queue.player.on(AudioPlayerStatus.Idle, () => {
-        queue.songs.shift();
-        playSong();
-      });
+      queue.player.once(
+        AudioPlayerStatus.Idle,
+        () => {
+          queue.songs.shift();
+          playSong();
+        }
+      );
     };
 
-    playSong();
+    await playSong();
   }
 };
