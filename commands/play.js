@@ -6,7 +6,7 @@ const {
   AudioPlayerStatus
 } = require("@discordjs/voice");
 
-const play = require("play-dl");
+const ytdl = require("@distube/ytdl-core");
 
 // 🔥 IMPORTANTE: fuera del comando
 const queues = new Map();
@@ -36,12 +36,15 @@ module.exports = {
 
     await interaction.reply("🔎 Buscando canción...");
 
-    const search = await play.search(query, { limit: 1 });
-    if (!search.length) {
-      return interaction.editReply("❌ No se encontró la canción.");
-    }
-
-    const song = search[0];
+    if (!query.includes("youtube.com") && !query.includes("youtu.be")) {
+  return interaction.editReply(
+    "❌ Por ahora solo se aceptan enlaces de YouTube."
+  );
+}
+    const song = {
+  title: query,
+  url: query
+};
 
     // 🔥 crear cola por server
     if (!queues.has(interaction.guild.id)) {
@@ -97,18 +100,14 @@ module.exports = {
 
       console.log("🎵 Reproduciendo:", current);
 console.log("🔗 URL:", current.url); 
-const streamData = await play.stream(current.url);
-      if (!streamData || !streamData.stream) {
-        queue.songs.shift();
-        return playSong();
-      }
 
-      const resource = createAudioResource(
-  streamData.stream,
-  {
-    inputType: streamData.type
-  }
-);
+      const stream = ytdl(current.url, {
+  filter: "audioonly",
+  highWaterMark: 1 << 25,
+  quality: "highestaudio"
+});
+
+      const resource = createAudioResource(stream);
 
       queue.player.play(resource);
       console.log("▶️ Audio enviado al reproductor");
