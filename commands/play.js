@@ -41,53 +41,43 @@ module.exports = {
 
         try {
 
-            // Si es URL
-            if (
-                query.includes("youtube.com") ||
-                query.includes("youtu.be")
-            ) {
+    if (
+        query.includes("youtube.com") ||
+        query.includes("youtu.be")
+    ) {
 
-                const info = await play.video_basic_info(query);
+        const info = await play.video_basic_info(query);
 
-                const video = results[0];
+        song = {
+            title: info.video_details.title,
+            url: query
+        };
 
-console.log("RESULTADO:", video);
+    } else {
 
-song = {
-    title: video.title,
-    url: video.url || video.video_url
-};
-            } else {
-// Buscar por nombre 
-    const results = await play.search(query, {
-        limit: 1
-    });
+        const results = await play.search(query, {
+            limit: 1
+        });
 
-    if (!results.length) {
-        return interaction.editReply(
-            "❌ No encontré resultados."
-        );
-    }
-
-    song = {
-        title: results[0].title,
-        url: results[0].url
-    };
-            }
-
-                song = {
-                    title: results[0].title,
-                    url: results[0].url
-                };
-            }
-
-        } catch (err) {
-            console.error(err);
-
+        if (!results.length) {
             return interaction.editReply(
-                "❌ Error obteniendo información de la canción."
+                "❌ No encontré resultados."
             );
         }
+
+        song = {
+            title: results[0].title,
+            url: results[0].url
+        };
+    }
+
+} catch (err) {
+    console.error(err);
+
+    return interaction.editReply(
+        "❌ Error obteniendo información de la canción."
+    );
+}
 
         // Crear cola
         if (!queues.has(interaction.guild.id)) {
@@ -115,6 +105,7 @@ player.on("error", error => {
         const queue = queues.get(interaction.guild.id);
 
         queue.songs.push(song);
+        console.log("SONG:", song);
 
         await interaction.editReply({
             embeds: [
