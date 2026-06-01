@@ -95,9 +95,12 @@ module.exports = {
 
       const stream = await play.stream(current.url);
 
-      const resource = createAudioResource(stream.stream, {
-        inputType: stream.type
-      });
+const resource = createAudioResource(stream.stream, {
+  inputType: stream.type,
+  inlineVolume: true
+});
+
+resource.volume?.setVolume(1);
 
       queue.player.play(resource);
 
