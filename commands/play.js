@@ -92,12 +92,12 @@ module.exports = {
         });
 
         queue.connection.subscribe(queue.player);
+        console.log("✅ Conectado al canal de voz");
       }
 
       console.log("🎵 Reproduciendo:", current);
-
+console.log("🔗 URL:", current.url); 
 const streamData = await play.stream(current.url);
-
       if (!streamData || !streamData.stream) {
         queue.songs.shift();
         return playSong();
@@ -111,6 +111,7 @@ const streamData = await play.stream(current.url);
 );
 
       queue.player.play(resource);
+      console.log("▶️ Audio enviado al reproductor");
 
       queue.player.removeAllListeners(
         AudioPlayerStatus.Idle
