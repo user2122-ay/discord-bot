@@ -17,12 +17,13 @@ pool.connect()
 // 🤖 CLIENTE
 const client = new Client({
 intents: [
-GatewayIntentBits.Guilds,
-GatewayIntentBits.GuildMessages,
-GatewayIntentBits.MessageContent,
-GatewayIntentBits.GuildMembers,
-GatewayIntentBits.DirectMessages
-],
+  GatewayIntentBits.Guilds,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.MessageContent,
+  GatewayIntentBits.GuildMembers,
+  GatewayIntentBits.DirectMessages,
+  GatewayIntentBits.GuildVoiceStates
+]
 partials: ["CHANNEL"]
 });
 // BD
