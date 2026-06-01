@@ -13,6 +13,7 @@
     "axios": "^1.11.0",
     "canvas": "^3.1.0", 
     "@discordjs/voice": "^0.17.0",
-  "play-dl": "^1.9.7"
+"play-dl": "^1.9.7",
+"ffmpeg-static": "^5.2.0"
   }
 }
