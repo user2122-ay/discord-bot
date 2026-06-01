@@ -49,11 +49,14 @@ module.exports = {
 
                 const info = await play.video_basic_info(query);
 
-                song = {
-                    title: info.video_details.title,
-                    url: query
-                };
+                const video = results[0];
 
+console.log("RESULTADO:", video);
+
+song = {
+    title: video.title,
+    url: video.url || video.video_url
+};
             } else {
 
                 // Buscar por nombre
@@ -85,18 +88,13 @@ module.exports = {
         if (!queues.has(interaction.guild.id)) {
 
             const player = createAudioPlayer({
-                behaviors: {
-                    noSubscriber: NoSubscriberBehavior.Pause
-                }
-            });
-            //logs error 
-            queue.player.on("error", error => {
-    console.error("❌ Error del reproductor:");
-    console.error(error);
+    behaviors: {
+        noSubscriber: NoSubscriberBehavior.Pause
+    }
 });
 
-queue.connection?.on?.("error", error => {
-    console.error("❌ Error de conexión:");
+player.on("error", error => {
+    console.error("❌ Error del reproductor:");
     console.error(error);
 });
 
@@ -162,8 +160,8 @@ queue.connection.subscribe(queue.player);
                     console.log("✅ Conectado al canal");
                 }
 
-                console.log("🎵 Intentando reproducir:", current.url);
-
+                console.log("🎵 Título:", current.title);
+console.log("🔗 URL:", current.url);
 const stream = await play.stream(current.url);
 
 console.log("✅ Stream obtenido");
