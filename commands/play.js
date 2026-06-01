@@ -158,6 +158,11 @@ queue.connection.subscribe(queue.player);
 
                 console.log("🎵 Título:", current.title);
 console.log("🔗 URL:", current.url);
+                console.log("URL ANTES DEL STREAM:", current.url);
+
+const info = await play.video_info(current.url);
+
+console.log("VIDEO INFO OK:", info.video_details.title);
 const stream = await play.stream(current.url);
 
 console.log("✅ Stream obtenido");
