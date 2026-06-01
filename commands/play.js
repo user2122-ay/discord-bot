@@ -163,7 +163,9 @@ console.log("🔗 URL:", current.url);
 const info = await play.video_info(current.url);
 
 console.log("VIDEO INFO OK:", info.video_details.title);
-const stream = await play.stream(current.url);
+const stream = await play.stream(current.url, {
+    quality: 2
+});
 
 console.log("✅ Stream obtenido");
 
