@@ -19,6 +19,11 @@ const RobloxVerificadoSchema = new mongoose.Schema({
     required: true
   },
 
+  avatarUrl: {
+    type: String,
+    default: null
+  },
+
   fecha: {
     type: Date,
     default: Date.now
