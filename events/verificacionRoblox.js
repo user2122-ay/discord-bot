@@ -311,7 +311,7 @@ const usuarioRoblox = datos.slice(3).join("_");
         .catch(() => {});
 
       const avatarResponse = await axios.get(
-  `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${robloxUserId}&size=420x420&format=Png&isCircular=false`
+  `https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${robloxUserId}&size=420x420&format=Png&isCircular=false`
 );
 
 const avatarUrl =
