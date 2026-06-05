@@ -42,6 +42,28 @@ const ciudadanoSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true
+  },
+
+  // 📸 Avatar Roblox usado en la cédula
+  avatarRoblox: {
+    type: String,
+    default: null
+  },
+
+  // 📅 Fecha emisión
+  fecha_emision: {
+    type: Date,
+    default: Date.now
+  },
+
+  // ⏳ Fecha expiración
+  fecha_expiracion: {
+    type: Date,
+    default: () => {
+      const fecha = new Date();
+      fecha.setMonth(fecha.getMonth() + 3);
+      return fecha;
+    }
   }
 
 }, {
