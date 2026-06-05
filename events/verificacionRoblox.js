@@ -310,10 +310,18 @@ const usuarioRoblox = datos.slice(3).join("_");
         .add(ROL_VERIFICADO)
         .catch(() => {});
 
-      await RobloxVerificado.create({
+      const avatarResponse = await axios.get(
+  `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${robloxUserId}&size=420x420&format=Png&isCircular=false`
+);
+
+const avatarUrl =
+  avatarResponse.data.data[0]?.imageUrl || null;
+
+await RobloxVerificado.create({
   discordId: miembro.id,
   robloxId: robloxUserId,
-  robloxUser: usuarioRoblox
+  robloxUser: usuarioRoblox,
+  avatarUrl
 });
 
       await miembro.roles.remove(ROL_NO_VERIFICADO).catch(() => {});
