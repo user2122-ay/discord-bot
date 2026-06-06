@@ -1,5 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  AttachmentBuilder
+} = require("discord.js");
+
 const Ciudadano = require("../models/Ciudadano");
+const RobloxVerificado = require("../models/RobloxVerificado");
+const generarCedula = require("../utils/generarCedula");
 
 // 🧾 ROL QUE SE DA AL CREAR DNI
 const ROL_DNI = "1451018398874996966";
@@ -25,10 +31,29 @@ module.exports = {
     .setName("crearcedula")
     .setDescription("Crear cédula Panamá RP V2")
 
-    .addStringOption(o => o.setName("nombre").setDescription("Nombre IC").setRequired(true))
-    .addStringOption(o => o.setName("apellido").setDescription("Apellido IC").setRequired(true))
-    .addIntegerOption(o => o.setName("edad").setDescription("Edad IC").setRequired(true))
-    .addStringOption(o => o.setName("nacimiento").setDescription("Fecha de nacimiento").setRequired(true))
+    .addStringOption(o =>
+      o.setName("nombre")
+        .setDescription("Nombre IC")
+        .setRequired(true)
+    )
+
+    .addStringOption(o =>
+      o.setName("apellido")
+        .setDescription("Apellido IC")
+        .setRequired(true)
+    )
+
+    .addIntegerOption(o =>
+      o.setName("edad")
+        .setDescription("Edad IC")
+        .setRequired(true)
+    )
+
+    .addStringOption(o =>
+      o.setName("nacimiento")
+        .setDescription("Fecha de nacimiento")
+        .setRequired(true)
+    )
 
     .addStringOption(o =>
       o.setName("sangre")
@@ -73,82 +98,102 @@ module.exports = {
     const sangre = interaction.options.getString("sangre");
     const provincia = interaction.options.getString("provincia");
 
-    // 🔍 Verificar si ya tiene cédula
     try {
 
-  const check = await Ciudadano.findOne({
-    discord_id: interaction.user.id
-  });
+      // 🔍 Ya tiene cédula
+      const existe = await Ciudadano.findOne({
+        discord_id: interaction.user.id
+      });
 
-  if (check) {
-    return interaction.reply({
-      content: "❌ Ya tienes una cédula registrada.",
-      ephemeral: true
-    });
-  }
+      if (existe) {
+        return interaction.reply({
+          content: "❌ Ya tienes una cédula registrada.",
+          ephemeral: true
+        });
+      }
 
-} catch (err) {
+      // 🔍 Buscar Roblox verificado
+      const roblox = await RobloxVerificado.findOne({
+        discordId: interaction.user.id
+      });
 
-  console.error(err);
+      if (!roblox) {
+        return interaction.reply({
+          content: "❌ Debes verificar Roblox primero.",
+          ephemeral: true
+        });
+      }
 
-  return interaction.reply({
-    content: "❌ Error verificando datos",
-    ephemeral: true
-  });
+      // 🔢 Generar número de cédula
+      const tomo = Math.floor(100 + Math.random() * 900);
+      const asiento = Math.floor(1000 + Math.random() * 9000);
 
-}
+      const cedula = `${provincia}-${tomo}-${asiento}`;
 
-    // 🔢 Generar cédula
-    const tomo = Math.floor(100 + Math.random() * 900);
-    const asiento = Math.floor(1000 + Math.random() * 9000);
-    const cedula = `${provincia}-${tomo}-${asiento}`;
+      // 📅 Fechas
+      const fechaEmision = new Date();
 
-    // 💾 Guardar en DB
-    try {
-      await Ciudadano.create({
-  discord_id: interaction.user.id,
-  nombre_ic: nombre,
-  apellido_ic: apellido,
-  edad_ic: edad,
-  nacimiento_ic: nacimiento,
-  tipo_sangre: sangre,
-  provincia_codigo: provincia,
-  numero_cedula: cedula
-});
+      const fechaExpiracion = new Date();
+      fechaExpiracion.setMonth(
+        fechaExpiracion.getMonth() + 3
+      );
+
+      // 💾 Guardar ciudadano
+      const ciudadano = await Ciudadano.create({
+        discord_id: interaction.user.id,
+        nombre_ic: nombre,
+        apellido_ic: apellido,
+        edad_ic: edad,
+        nacimiento_ic: nacimiento,
+        tipo_sangre: sangre,
+        provincia_codigo: provincia,
+        numero_cedula: cedula,
+
+        avatarRoblox: roblox.avatarUrl,
+
+        fecha_emision: fechaEmision,
+        fecha_expiracion: fechaExpiracion
+      });
+
+      // 🎭 Dar rol
+      if (!interaction.member.roles.cache.has(ROL_DNI)) {
+        await interaction.member.roles.add(ROL_DNI)
+          .catch(() => {});
+      }
+
+      // 🖼️ Generar imagen
+      const buffer = await generarCedula({
+        nombre,
+        apellido,
+        edad,
+        nacimiento,
+        sangre,
+        provincia: PROVINCIAS[provincia],
+        cedula,
+        avatar: roblox.avatarUrl,
+        fechaEmision,
+        fechaExpiracion
+      });
+
+      const archivo = new AttachmentBuilder(
+        buffer,
+        { name: "cedula.png" }
+      );
+
+      await interaction.reply({
+        content: "✅ Cédula creada correctamente.",
+        files: [archivo]
+      });
+
     } catch (err) {
+
       console.error(err);
+
       return interaction.reply({
-        content: "❌ Error guardando la cédula",
+        content: "❌ Error creando la cédula.",
         ephemeral: true
       });
+
     }
-
-    // 🎭 Dar rol
-    if (!interaction.member.roles.cache.has(ROL_DNI)) {
-      await interaction.member.roles.add(ROL_DNI).catch(() => {});
-    }
-
-    // 📄 Embed
-    const embed = new EmbedBuilder()
-      .setTitle("🪪 Cédula de Identidad - Panamá RP V2")
-      .setColor("#2b2d31")
-      .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-      .setDescription(`# 📄 Documento Oficial\n\n> Registro ciudadano completado correctamente`)
-      .addFields(
-        { name: "👤 Nombre", value: nombre, inline: true },
-        { name: "👤 Apellido", value: apellido, inline: true },
-        { name: "🎂 Edad", value: `${edad}`, inline: true },
-        { name: "📅 Nacimiento", value: nacimiento, inline: true },
-        { name: "🩸 Sangre", value: sangre, inline: true },
-        { name: "🌎 Provincia", value: PROVINCIAS[provincia], inline: true },
-        { name: "🆔 Cédula", value: cedula, inline: true }
-      )
-      .setFooter({
-        text: "Gobierno de Panamá RP V2",
-        iconURL: interaction.guild.iconURL({ dynamic: true })
-      })
-      .setTimestamp();
-
-    await interaction.reply({ embeds: [embed] });
   }
 };
