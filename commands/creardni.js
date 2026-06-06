@@ -1,6 +1,5 @@
 const {
-  SlashCommandBuilder,
-  AttachmentBuilder
+  SlashCommandBuilder
 } = require("discord.js");
 
 const Ciudadano = require("../models/Ciudadano");
@@ -162,29 +161,24 @@ module.exports = {
       }
 
       // 🖼️ Generar imagen
-      const buffer = await generarCedula({
-        nombre,
-        apellido,
-        edad,
-        nacimiento,
-        sangre,
-        provincia: PROVINCIAS[provincia],
-        cedula,
-        avatar: roblox.avatarUrl,
-        fechaEmision,
-        fechaExpiracion
-      });
+      const archivo = await generarCedula({
+  nombre,
+  apellido,
+  nacimiento,
+  sangre,
+  provincia: PROVINCIAS[provincia],
+  cedula,
+  avatarUrl: roblox.avatarUrl,
+  fechaEmision: fechaEmision.toLocaleDateString("es-PA"),
+  fechaExpiracion: fechaExpiracion.toLocaleDateString("es-PA")
+});
 
-      const archivo = new AttachmentBuilder(
-        buffer,
-        { name: "cedula.png" }
-      );
+await interaction.reply({
+  content: "✅ Cédula creada correctamente.",
+  files: [archivo]
+});
 
-      await interaction.reply({
-        content: "✅ Cédula creada correctamente.",
-        files: [archivo]
-      });
-
+     
     } catch (err) {
 
       console.error(err);
