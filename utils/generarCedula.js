@@ -70,14 +70,13 @@ module.exports = async ({
 
   // Texto
 
-  ctx.fillStyle = "#111111";
+ctx.fillStyle = "#000000";
 ctx.textBaseline = "middle";
-
-ctx.font = "bold 42px Arial";
+ctx.font = "42px sans-serif";
 
 // Nombre
 ctx.fillText(
-  "PRUEBA",
+  `${nombre} ${apellido}`,
   610,
   290
 );
@@ -117,7 +116,7 @@ ctx.fillText(
 );
 
 // Cédula
-ctx.font = "bold 54px Arial";
+ctx.font = "34px sans-serif";
 
 ctx.fillText(
   String(cedula),
