@@ -82,69 +82,69 @@ module.exports = async ({
 ctx.fillStyle = "#0c0c0c";
 ctx.textBaseline = "top";
 
-// 1. NOMBRE USUAL — la etiqueta termina ~aprox x:700, y:268
+// 1. NOMBRE USUAL — empieza justo después de la etiqueta (termina en x:724)
 ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   `${nombre} ${apellido}`,
-  700,   // justo después de "NOMBRE USUAL:"
-  268
+  735,   // +11px después del fin de "NOMBRE USUAL:"
+  278    // centrado en y:292
 );
 
-// 2. NOMBRE LEGAL — etiqueta en y~340
+// 2. NOMBRE LEGAL — etiqueta termina en x:720
 ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   `${nombre} ${apellido}`,
-  700,   // alineado con nombre usual
-  340
+  735,   // mismo X que nombre usual
+  341    // centrado en y:355
 );
 
-// 3. FECHA DE NACIMIENTO — etiqueta en y~420
+// 3. FECHA DE NACIMIENTO — etiqueta termina en x:804
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(nacimiento),
-  760,   // después de "FECHA DE NACIMIENTO:"
-  420
+  815,   // +11px después del fin de "FECHA DE NACIMIENTO:"
+  416    // centrado en y:430
 );
 
-// 4. LUGAR DE NACIMIENTO — etiqueta en y~468
+// 4. LUGAR DE NACIMIENTO — etiqueta termina en x:803
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(provincia),
-  760,   // después de "LUGAR DE NACIMIENTO:"
-  468
+  815,   // mismo X que fecha
+  469    // centrado en y:483
 );
 
-// 6. TIPO DE SANGRE — misma fila que SEXO, más a la derecha
+// 6. TIPO DE SANGRE — misma fila que SEXO
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(sangre),
-  870,   // después de "TIPO DE SANGRE:"
-  530
+  870,
+  534
 );
 
-// 7. EXPEDIDA — etiqueta en y~590
+// 7. EXPEDIDA — etiqueta termina ~x:620
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaEmision),
-  630,   // después de "EXPEDIDA:"
-  590
+  635,
+  539
 );
 
-// 8. EXPIRA — etiqueta en y~645
+// 8. EXPIRA — etiqueta termina en x:662
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaExpiracion),
-  610,   // después de "EXPIRA:"
-  645
+  675,
+  601
 );
 
-// 9. NÚMERO DE CÉDULA — parte inferior izquierda
+// 9. NÚMERO DE CÉDULA — alineado con logo TE (a su derecha, misma altura)
 ctx.font = '800 42px "Noto Sans Condensed Black", sans-serif';
 ctx.fillStyle = "#000000";
 ctx.fillText(
   String(cedula),
-  60,    // margen izquierdo bajo la foto
-  880
+  200,   // a la derecha del logo TE
+  820    // altura del logo TE
 );
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
