@@ -79,75 +79,81 @@ module.exports = async ({
 );
   }
 // Configuración global de estilo
-ctx.fillStyle = "#0c0c0c"; // Un negro nítido pero realista para impresión
+ctx.fillStyle = "#0c0c0c";
 ctx.textBaseline = "top";
 
-// 1. NOMBRE USUAL (Alineado a la derecha de la etiqueta "NOMBRE USUAL:")
-ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 28px
+// 1. NOMBRE USUAL — la etiqueta termina ~aprox x:700, y:268
+ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   `${nombre} ${apellido}`,
-  520, // Movido a la derecha para no pisar la etiqueta
-  280  // Centrado verticalmente con la línea de la etiqueta
+  700,   // justo después de "NOMBRE USUAL:"
+  268
 );
 
-// 2. NOMBRE LEGAL (Alineado a la derecha de la etiqueta "NOMBRE LEGAL:")
-ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 28px
+// 2. NOMBRE LEGAL — etiqueta en y~340
+ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
-  `${nombre} ${apellido}`, 
-  520, // Alineado con el nombre usual
-  350  
+  `${nombre} ${apellido}`,
+  700,   // alineado con nombre usual
+  340
 );
 
-// 3. FECHA DE NACIMIENTO (Abajo de la etiqueta "FECHA DE NACIMIENTO:")
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 26px
+// 3. FECHA DE NACIMIENTO — etiqueta en y~420
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(nacimiento),
-  345, // Alineado a la izquierda del bloque de texto
-  450  // Bajado para que quede DEBAJO de la etiqueta "FECHA DE NACIMIENTO:"
+  760,   // después de "FECHA DE NACIMIENTO:"
+  420
 );
 
-// 4. LUGAR DE NACIMIENTO (Abajo de la etiqueta "LUGAR DE NACIMIENTO:")
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 26px
+// 4. LUGAR DE NACIMIENTO — etiqueta en y~468
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(provincia),
-  345, // Mismo margen izquierdo
-  520  // Bajado para que quede DEBAJO de la etiqueta "LUGAR DE NACIMIENTO:"
+  760,   // después de "LUGAR DE NACIMIENTO:"
+  468
 );
 
+// 5. SEXO — etiqueta en y~530, x corto
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
+ctx.fillText(
+  String(sexo),
+  590,   // después de "SEXO:"
+  530
+);
 
-// 6. TIPO DE SANGRE (Abajo de la etiqueta "TIPO DE SANGRE:")
+// 6. TIPO DE SANGRE — misma fila que SEXO, más a la derecha
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(sangre),
-  480, // Desplazado a la derecha para que caiga justo bajo "TIPO DE SANGRE:"
-  590  // Misma altura horizontal que el Sexo
+  870,   // después de "TIPO DE SANGRE:"
+  530
 );
 
-// 7. EXPEDIDA (Alineado a la derecha de la etiqueta "EXPEDIDA:")
+// 7. EXPEDIDA — etiqueta en y~590
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaEmision),
-  470, // Movido a la derecha de la palabra "EXPEDIDA:"
-  625  
+  630,   // después de "EXPEDIDA:"
+  590
 );
 
-// 8. EXPIRA (Alineado a la derecha de la etiqueta "EXPIRA:")
+// 8. EXPIRA — etiqueta en y~645
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaExpiracion),
-  440, // Movido a la derecha de la palabra "EXPIRA:"
-  675  
+  610,   // después de "EXPIRA:"
+  645
 );
 
-// 9. NÚMERO DE CÉDULA (Grande y destacado abajo a la izquierda)
-ctx.font = '800 42px "Noto Sans Condensed Black", sans-serif'; // Subido a 42px
-ctx.fillStyle = "#000000"; // Negro puro
+// 9. NÚMERO DE CÉDULA — parte inferior izquierda
+ctx.font = '800 42px "Noto Sans Condensed Black", sans-serif';
+ctx.fillStyle = "#000000";
 ctx.fillText(
   String(cedula),
-  115, // Ajustado a la izquierda para que empiece limpio bajo la foto
-  850  // Bajado para respetar el holograma redondo de la esquina inferior
+  60,    // margen izquierdo bajo la foto
+  880
 );
-
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
     {
