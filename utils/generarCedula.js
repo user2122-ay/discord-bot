@@ -77,11 +77,10 @@ ctx.font = "bold 42px Arial";
 
 // Nombre
 ctx.fillText(
-  `${nombre} ${apellido}`,
+  "PRUEBA",
   610,
   290
 );
-
 // Nacimiento
 ctx.fillText(
   String(nacimiento),
