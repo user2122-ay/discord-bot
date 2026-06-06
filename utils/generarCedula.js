@@ -80,64 +80,82 @@ module.exports = async ({
   }
 
 // Configuración global de estilo
-ctx.fillStyle = "#000000";
-ctx.textBaseline = "top"; // Cambiado a "top" para controlar mejor la alineación vertical con las líneas impresas
+ctx.fillStyle = "#0a0a0a"; // Un negro ligeramente más suave y realista para impresión
+ctx.textBaseline = "top";
 
-// 1. Nombre y Apellido (Debe alinearse al lado de NOMBRE USUAL)
-ctx.font = '700 24px "Noto Sans Condensed Black"'; // Reducido un poco para que no choque con el diseño
+// 1. NOMBRE USUAL (Línea superior del bloque de nombres)
+ctx.font = '700 24px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   `${nombre} ${apellido}`,
-  490, // Coordenada X ajustada a la derecha de las etiquetas fijas
-  315  // Coordenada Y alineada visualmente
+  490, // Posición X al lado de "NOMBRE USUAL:"
+  315  // Posición Y ajustada
 );
 
-// 2. Fecha de nacimiento
-ctx.font = '700 22px "Noto Sans Condensed Black"';
+// 2. NOMBRE LEGAL (Línea justo debajo del nombre usual)
+ctx.font = '700 24px "Noto Sans Condensed Black", sans-serif';
+ctx.fillText(
+  `${nombre} ${apellido}`, // O usa la variable correspondiente si difieren
+  490, // Misma alineación X que el de arriba
+  382  // Bajado para alinearse perfectamente con la etiqueta "NOMBRE LEGAL:"
+);
+
+// 3. FECHA DE NACIMIENTO
+ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(nacimiento),
-  490, // Misma alineación X que el nombre
+  560, // Movido más a la derecha para no chocar con "FECHA DE NACIMIENTO:"
   450  
 );
 
-// 3. Lugar de nacimiento / Provincia
-ctx.font = '700 22px "Noto Sans Condensed Black"';
+// 4. LUGAR DE NACIMIENTO
+ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(provincia),
-  490, 
+  560, // Movido a la derecha para dejar espacio a "LUGAR DE NACIMIENTO:"
   518  
 );
 
-// 4. Tipo de Sangre (Va más a la derecha, debajo de TIPO DE SANGRE:)
-ctx.font = '700 22px "Noto Sans Condensed Black"';
+// 5. SEXO (¡Faltaba en tu código! Se alinea debajo de "SEXO:")
+ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
-  String(sangre),
-  630, // Movido a la izquierda respecto a tu código para que cuadre bajo su etiqueta
+  String(sexo), // Asegúrate de pasar esta variable (ej: "M" o "F")
+  430, // Posición horizontal debajo del texto "SEXO:"
   585  
 );
 
-// 5. Fecha de Emisión (Expedida)
-ctx.font = '700 22px "Noto Sans Condensed Black"';
+// 6. TIPO DE SANGRE
+ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
-  String(fechaEmision),
-  490, 
-  650  
+  String(sangre),
+  695, // Movido horizontalmente a la derecha para que caiga justo bajo "TIPO DE SANGRE:"
+  585  // Misma altura que el Sexo
 );
 
-// 6. Fecha de Expiración (Expira)
-ctx.font = '700 22px "Noto Sans Condensed Black"';
+// 7. EXPEDIDA (Fecha de Emisión)
+ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
+ctx.fillText(
+  String(fechaEmision),
+  430, // Ajustado a la izquierda para alinearse bajo el texto "EXPEDIDA:"
+  652  
+);
+
+// 8. EXPIRA (Fecha de Expiración)
+ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaExpiracion),
-  490, 
+  410, // Ajustado a la izquierda para alinearse bajo el texto "EXPIRA:"
   735  
 );
 
-// 7. Número de Cédula (Ubicado abajo a la izquierda, más grande)
-ctx.font = '700 34px "Noto Sans Condensed Black"'; // Aumentado el tamaño según tu petición
+// 9. NÚMERO DE CÉDULA (Más grande, estilizado y limpio)
+ctx.font = '800 38px "Noto Sans Condensed Black", sans-serif'; // Subido a grosor 800 y tamaño 38px para que resalte
+ctx.fillStyle = "#000000"; // Negro puro para máxima legibilidad
 ctx.fillText(
   String(cedula),
-  195, // Centrado de mejor manera en la parte inferior izquierda
-  825  
+  175, // Centrado de forma óptima debajo de la foto, sin tocar el sello holográfico "TE"
+  845  // Bajado sutilmente para darle un aspecto simétrico con el borde inferior
 );
+
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
     {
