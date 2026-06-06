@@ -3,6 +3,19 @@ const { AttachmentBuilder } = require("discord.js");
 const axios = require("axios");
 const path = require("path");
 
+// 🔥 Registrar fuente personalizada
+Canvas.registerFont(
+  path.join(
+    process.cwd(),
+    "assets",
+    "fonts",
+    "NotoSans_Condensed-Black.ttf"
+  ),
+  {
+    family: "NotoSans"
+  }
+);
+
 module.exports = async ({
   nombre,
   apellido,
@@ -22,8 +35,7 @@ module.exports = async ({
 
   const ctx = canvas.getContext("2d");
 
-  // Fondo
-
+  // 🖼️ Fondo
   const fondo = await Canvas.loadImage(
     path.join(
       process.cwd(),
@@ -40,8 +52,7 @@ module.exports = async ({
     canvas.height
   );
 
-  // Avatar Roblox
-
+  // 👤 Avatar Roblox
   if (avatarUrl) {
 
     const avatarResponse =
@@ -61,75 +72,74 @@ module.exports = async ({
 
     ctx.drawImage(
       avatar,
-      85,
-      205,
-      410,
-      500
+      95,
+      220,
+      320,
+      420
     );
   }
 
-  // Texto
+  // ✍️ Texto
+  ctx.fillStyle = "#000000";
+  ctx.textBaseline = "middle";
 
-ctx.fillStyle = "#000000";
-ctx.textBaseline = "middle";
-ctx.font = "42px sans-serif";
+  ctx.font = "42px NotoSans";
 
-// Nombre
-ctx.fillText(
-  `${nombre} ${apellido}`,
-  610,
-  290
-);
-// Nacimiento
-ctx.fillText(
-  String(nacimiento),
-  610,
-  455
-);
+  // Nombre
+  ctx.fillText(
+    `${nombre} ${apellido}`,
+    760,
+    290
+  );
 
-// Provincia
-ctx.fillText(
-  String(provincia),
-  610,
-  535
-);
+  // Nacimiento
+  ctx.fillText(
+    String(nacimiento),
+    760,
+    450
+  );
 
-// Sangre
-ctx.fillText(
-  String(sangre),
-  880,
-  615
-);
+  // Provincia
+  ctx.fillText(
+    String(provincia),
+    760,
+    535
+  );
 
-// Emisión
-ctx.fillText(
-  String(fechaEmision),
-  610,
-  690
-);
+  // Sangre
+  ctx.fillText(
+    String(sangre),
+    980,
+    620
+  );
 
-// Expiración
-ctx.fillText(
-  String(fechaExpiracion),
-  610,
-  785
-);
+  // Emisión
+  ctx.fillText(
+    String(fechaEmision),
+    760,
+    710
+  );
 
-// Cédula
-ctx.font = "34px sans-serif";
+  // Expiración
+  ctx.fillText(
+    String(fechaExpiracion),
+    760,
+    800
+  );
 
-ctx.fillText(
-  String(cedula),
-  280,
-  885
-);
-  const attachment =
-    new AttachmentBuilder(
-      canvas.toBuffer("image/png"),
-      {
-        name: "cedula.png"
-      }
-    );
+  // Número de cédula
+  ctx.font = "54px NotoSans";
 
-  return attachment;
+  ctx.fillText(
+    String(cedula),
+    300,
+    885
+  );
+
+  return new AttachmentBuilder(
+    canvas.toBuffer("image/png"),
+    {
+      name: "cedula.png"
+    }
+  );
 };
