@@ -82,70 +82,70 @@ module.exports = async ({
 ctx.fillStyle = "#0c0c0c";
 ctx.textBaseline = "top";
 
-// 1. NOMBRE USUAL — empieza justo después de la etiqueta (termina en x:724)
+// 1. NOMBRE USUAL
 ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   `${nombre} ${apellido}`,
-  735,   // +11px después del fin de "NOMBRE USUAL:"
-  278    // centrado en y:292
+  735,
+  278
 );
 
-// 2. NOMBRE LEGAL — etiqueta termina en x:720
+// 2. NOMBRE LEGAL
 ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   `${nombre} ${apellido}`,
-  735,   // mismo X que nombre usual
-  341    // centrado en y:355
+  735,
+  341
 );
 
-// 3. FECHA DE NACIMIENTO — etiqueta termina en x:804
+// 3. FECHA DE NACIMIENTO
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(nacimiento),
-  815,   // +11px después del fin de "FECHA DE NACIMIENTO:"
-  416    // centrado en y:430
+  815,
+  416
 );
 
-// 4. LUGAR DE NACIMIENTO — etiqueta termina en x:803
+// 4. LUGAR DE NACIMIENTO
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(provincia),
-  815,   // mismo X que fecha
-  469    // centrado en y:483
+  815,
+  469
 );
 
-// 6. TIPO DE SANGRE — misma fila que SEXO
+// 5. TIPO DE SANGRE
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(sangre),
   870,
-  534
+  520
 );
 
-// 7. EXPEDIDA — etiqueta termina ~x:620
+// 6. EXPEDIDA
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaEmision),
   635,
-  539
+  570
 );
 
-// 8. EXPIRA — etiqueta termina en x:662
+// 7. EXPIRA
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaExpiracion),
-  675,
-  601
+  610,
+  620
 );
 
-// 9. NÚMERO DE CÉDULA — alineado con logo TE (a su derecha, misma altura)
+// 8. NÚMERO DE CÉDULA
 ctx.font = '800 42px "Noto Sans Condensed Black", sans-serif';
 ctx.fillStyle = "#000000";
 ctx.fillText(
   String(cedula),
-  200,   // a la derecha del logo TE
-  820    // altura del logo TE
-);
+  230,
+  790
+); 
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
     {
