@@ -71,55 +71,60 @@ module.exports = async ({
   // Texto
 
   ctx.fillStyle = "#111111";
+ctx.textBaseline = "middle";
 
-  ctx.font =
-    "bold 34px Arial";
+ctx.font = "bold 42px Arial";
 
-  ctx.fillText(
-    `${nombre} ${apellido}`,
-    550,
-    290
-  );
+// Nombre
+ctx.fillText(
+  `${nombre} ${apellido}`,
+  610,
+  290
+);
 
-  ctx.fillText(
-    nacimiento,
-    550,
-    390
-  );
+// Nacimiento
+ctx.fillText(
+  String(nacimiento),
+  610,
+  455
+);
 
-  ctx.fillText(
-    provincia,
-    550,
-    490
-  );
+// Provincia
+ctx.fillText(
+  String(provincia),
+  610,
+  535
+);
 
-  ctx.fillText(
-    sangre,
-    820,
-    590
-  );
+// Sangre
+ctx.fillText(
+  String(sangre),
+  880,
+  615
+);
 
-  ctx.fillText(
-    fechaEmision,
-    550,
-    700
-  );
+// Emisión
+ctx.fillText(
+  String(fechaEmision),
+  610,
+  690
+);
 
-  ctx.fillText(
-    fechaExpiracion,
-    550,
-    790
-  );
+// Expiración
+ctx.fillText(
+  String(fechaExpiracion),
+  610,
+  785
+);
 
-  ctx.font =
-    "bold 52px Arial";
+// Cédula
+ctx.font = "bold 54px Arial";
 
-  ctx.fillText(
-    cedula,
-    300,
-    870
-  );
-
+ctx.fillText(
+  String(cedula),
+  280,
+  885
+);
   const attachment =
     new AttachmentBuilder(
       canvas.toBuffer("image/png"),
