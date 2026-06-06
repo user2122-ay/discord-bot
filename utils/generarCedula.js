@@ -79,60 +79,64 @@ module.exports = async ({
 );
   }
 
-  // ✍️ Texto
-  ctx.fillStyle = "#000000";
-ctx.textBaseline = "middle";
+// Configuración global de estilo
+ctx.fillStyle = "#000000";
+ctx.textBaseline = "top"; // Cambiado a "top" para controlar mejor la alineación vertical con las líneas impresas
 
-// Nombre
-ctx.font = '32px "Noto Sans Condensed Black"';
+// 1. Nombre y Apellido (Debe alinearse al lado de NOMBRE USUAL)
+ctx.font = '700 24px "Noto Sans Condensed Black"'; // Reducido un poco para que no choque con el diseño
 ctx.fillText(
   `${nombre} ${apellido}`,
-  760,
-  320
+  490, // Coordenada X ajustada a la derecha de las etiquetas fijas
+  315  // Coordenada Y alineada visualmente
 );
 
-// Fecha nacimiento
-ctx.font = '28px "Noto Sans Condensed Black"';
+// 2. Fecha de nacimiento
+ctx.font = '700 22px "Noto Sans Condensed Black"';
 ctx.fillText(
   String(nacimiento),
-  760,
-  455
+  490, // Misma alineación X que el nombre
+  450  
 );
 
-// Provincia
+// 3. Lugar de nacimiento / Provincia
+ctx.font = '700 22px "Noto Sans Condensed Black"';
 ctx.fillText(
   String(provincia),
-  760,
-  520
+  490, 
+  518  
 );
 
-// Sangre
+// 4. Tipo de Sangre (Va más a la derecha, debajo de TIPO DE SANGRE:)
+ctx.font = '700 22px "Noto Sans Condensed Black"';
 ctx.fillText(
   String(sangre),
-  980,
-  585
+  630, // Movido a la izquierda respecto a tu código para que cuadre bajo su etiqueta
+  585  
 );
 
-// Emisión
+// 5. Fecha de Emisión (Expedida)
+ctx.font = '700 22px "Noto Sans Condensed Black"';
 ctx.fillText(
   String(fechaEmision),
-  760,
-  650
+  490, 
+  650  
 );
 
-// Expiración
+// 6. Fecha de Expiración (Expira)
+ctx.font = '700 22px "Noto Sans Condensed Black"';
 ctx.fillText(
   String(fechaExpiracion),
-  760,
-  735
+  490, 
+  735  
 );
 
-// Cédula
-ctx.font = '30px "Noto Sans Condensed Black"';
+// 7. Número de Cédula (Ubicado abajo a la izquierda, más grande)
+ctx.font = '700 34px "Noto Sans Condensed Black"'; // Aumentado el tamaño según tu petición
 ctx.fillText(
   String(cedula),
-  300,
-  820
+  195, // Centrado de mejor manera en la parte inferior izquierda
+  825  
 );
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
