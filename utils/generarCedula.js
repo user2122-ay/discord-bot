@@ -115,14 +115,6 @@ ctx.fillText(
   518  
 );
 
-// 5. SEXO (¡Faltaba en tu código! Se alinea debajo de "SEXO:")
-ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  String(sexo), // Asegúrate de pasar esta variable (ej: "M" o "F")
-  430, // Posición horizontal debajo del texto "SEXO:"
-  585  
-);
-
 // 6. TIPO DE SANGRE
 ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
