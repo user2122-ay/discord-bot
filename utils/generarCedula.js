@@ -71,71 +71,69 @@ module.exports = async ({
       );
 
     ctx.drawImage(
-      avatar,
-      95,
-      220,
-      320,
-      420
-    );
+  avatar,
+  100,
+  200,
+  390,
+  500
+);
   }
 
   // ✍️ Texto
   ctx.fillStyle = "#000000";
-  ctx.textBaseline = "middle";
+ctx.textBaseline = "middle";
 
-  ctx.font = "42px NotoSans";
+// Nombre
+ctx.font = '32px "Noto Sans Condensed Black"';
+ctx.fillText(
+  `${nombre} ${apellido}`,
+  760,
+  320
+);
 
-  // Nombre
-  ctx.fillText(
-    `${nombre} ${apellido}`,
-    760,
-    290
-  );
+// Fecha nacimiento
+ctx.font = '28px "Noto Sans Condensed Black"';
+ctx.fillText(
+  String(nacimiento),
+  760,
+  455
+);
 
-  // Nacimiento
-  ctx.fillText(
-    String(nacimiento),
-    760,
-    450
-  );
+// Provincia
+ctx.fillText(
+  String(provincia),
+  760,
+  520
+);
 
-  // Provincia
-  ctx.fillText(
-    String(provincia),
-    760,
-    535
-  );
+// Sangre
+ctx.fillText(
+  String(sangre),
+  980,
+  585
+);
 
-  // Sangre
-  ctx.fillText(
-    String(sangre),
-    980,
-    620
-  );
+// Emisión
+ctx.fillText(
+  String(fechaEmision),
+  760,
+  650
+);
 
-  // Emisión
-  ctx.fillText(
-    String(fechaEmision),
-    760,
-    710
-  );
+// Expiración
+ctx.fillText(
+  String(fechaExpiracion),
+  760,
+  735
+);
 
-  // Expiración
-  ctx.fillText(
-    String(fechaExpiracion),
-    760,
-    800
-  );
-
-  // Número de cédula
-  ctx.font = "54px NotoSans";
-
-  ctx.fillText(
-    String(cedula),
-    300,
-    885
-  );
-
+// Cédula
+ctx.font = '30px "Noto Sans Condensed Black"';
+ctx.fillText(
+  String(cedula),
+  300,
+  820
+);
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
     {
