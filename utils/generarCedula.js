@@ -78,74 +78,74 @@ module.exports = async ({
   500
 );
   }
-
 // Configuración global de estilo
-ctx.fillStyle = "#0a0a0a"; // Un negro ligeramente más suave y realista para impresión
+ctx.fillStyle = "#0c0c0c"; // Un negro nítido pero realista para impresión
 ctx.textBaseline = "top";
 
-// 1. NOMBRE USUAL (Línea superior del bloque de nombres)
-ctx.font = '700 24px "Noto Sans Condensed Black", sans-serif';
+// 1. NOMBRE USUAL (Alineado a la derecha de la etiqueta "NOMBRE USUAL:")
+ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 28px
 ctx.fillText(
   `${nombre} ${apellido}`,
-  490, // Posición X al lado de "NOMBRE USUAL:"
-  315  // Posición Y ajustada
+  520, // Movido a la derecha para no pisar la etiqueta
+  280  // Centrado verticalmente con la línea de la etiqueta
 );
 
-// 2. NOMBRE LEGAL (Línea justo debajo del nombre usual)
-ctx.font = '700 24px "Noto Sans Condensed Black", sans-serif';
+// 2. NOMBRE LEGAL (Alineado a la derecha de la etiqueta "NOMBRE LEGAL:")
+ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 28px
 ctx.fillText(
-  `${nombre} ${apellido}`, // O usa la variable correspondiente si difieren
-  490, // Misma alineación X que el de arriba
-  382  // Bajado para alinearse perfectamente con la etiqueta "NOMBRE LEGAL:"
+  `${nombre} ${apellido}`, 
+  520, // Alineado con el nombre usual
+  350  
 );
 
-// 3. FECHA DE NACIMIENTO
-ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
+// 3. FECHA DE NACIMIENTO (Abajo de la etiqueta "FECHA DE NACIMIENTO:")
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 26px
 ctx.fillText(
   String(nacimiento),
-  560, // Movido más a la derecha para no chocar con "FECHA DE NACIMIENTO:"
-  450  
+  345, // Alineado a la izquierda del bloque de texto
+  450  // Bajado para que quede DEBAJO de la etiqueta "FECHA DE NACIMIENTO:"
 );
 
-// 4. LUGAR DE NACIMIENTO
-ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
+// 4. LUGAR DE NACIMIENTO (Abajo de la etiqueta "LUGAR DE NACIMIENTO:")
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif'; // Aumentado a 26px
 ctx.fillText(
   String(provincia),
-  560, // Movido a la derecha para dejar espacio a "LUGAR DE NACIMIENTO:"
-  518  
+  345, // Mismo margen izquierdo
+  520  // Bajado para que quede DEBAJO de la etiqueta "LUGAR DE NACIMIENTO:"
 );
 
-// 6. TIPO DE SANGRE
-ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
+
+// 6. TIPO DE SANGRE (Abajo de la etiqueta "TIPO DE SANGRE:")
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(sangre),
-  695, // Movido horizontalmente a la derecha para que caiga justo bajo "TIPO DE SANGRE:"
-  585  // Misma altura que el Sexo
+  480, // Desplazado a la derecha para que caiga justo bajo "TIPO DE SANGRE:"
+  590  // Misma altura horizontal que el Sexo
 );
 
-// 7. EXPEDIDA (Fecha de Emisión)
-ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
+// 7. EXPEDIDA (Alineado a la derecha de la etiqueta "EXPEDIDA:")
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaEmision),
-  430, // Ajustado a la izquierda para alinearse bajo el texto "EXPEDIDA:"
-  652  
+  470, // Movido a la derecha de la palabra "EXPEDIDA:"
+  625  
 );
 
-// 8. EXPIRA (Fecha de Expiración)
-ctx.font = '700 22px "Noto Sans Condensed Black", sans-serif';
+// 8. EXPIRA (Alineado a la derecha de la etiqueta "EXPIRA:")
+ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
   String(fechaExpiracion),
-  410, // Ajustado a la izquierda para alinearse bajo el texto "EXPIRA:"
-  735  
+  440, // Movido a la derecha de la palabra "EXPIRA:"
+  675  
 );
 
-// 9. NÚMERO DE CÉDULA (Más grande, estilizado y limpio)
-ctx.font = '800 38px "Noto Sans Condensed Black", sans-serif'; // Subido a grosor 800 y tamaño 38px para que resalte
-ctx.fillStyle = "#000000"; // Negro puro para máxima legibilidad
+// 9. NÚMERO DE CÉDULA (Grande y destacado abajo a la izquierda)
+ctx.font = '800 42px "Noto Sans Condensed Black", sans-serif'; // Subido a 42px
+ctx.fillStyle = "#000000"; // Negro puro
 ctx.fillText(
   String(cedula),
-  175, // Centrado de forma óptima debajo de la foto, sin tocar el sello holográfico "TE"
-  845  // Bajado sutilmente para darle un aspecto simétrico con el borde inferior
+  115, // Ajustado a la izquierda para que empiece limpio bajo la foto
+  850  // Bajado para respetar el holograma redondo de la esquina inferior
 );
 
   return new AttachmentBuilder(
