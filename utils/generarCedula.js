@@ -114,14 +114,6 @@ ctx.fillText(
   468
 );
 
-// 5. SEXO — etiqueta en y~530, x corto
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  String(sexo),
-  590,   // después de "SEXO:"
-  530
-);
-
 // 6. TIPO DE SANGRE — misma fila que SEXO, más a la derecha
 ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
 ctx.fillText(
