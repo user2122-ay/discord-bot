@@ -98,40 +98,61 @@ module.exports = (client) => {
     const addedRoles   = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
     const removedRoles = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
 
+    // ✅ UN solo mensaje con todos los roles añadidos
     if (addedRoles.size > 0) {
       const executor = await getExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
-      for (const role of addedRoles.values()) {
-        await sendLog(newMember.guild, log({
-          color:    0x2ecc71,
-          titulo:   "➕ Rol añadido",
-          guild:    newMember.guild,
-          avatarUrl: newMember.user.displayAvatarURL({ extension: "png", size: 256 }),
-          fields: [
-            { name: "👤 Usuario",      value: `<@${newMember.id}> (${newMember.user.tag})` },
-            { name: "🏷️ Rol",         value: `<@&${role.id}> (${role.name})` },
-            { name: "🛡️ Responsable", value: executor ? `${executor.tag} (<@${executor.id}>)` : "Desconocido" }
-          ]
-        }));
-      }
+      await sendLog(newMember.guild, log({
+        color:    0x2ecc71,
+        titulo:   `➕ Rol${addedRoles.size > 1 ? "es" : ""} añadido${addedRoles.size > 1 ? "s" : ""}`,
+        guild:    newMember.guild,
+        avatarUrl: newMember.user.displayAvatarURL({ extension: "png", size: 256 }),
+        fields: [
+          { name: "👤 Usuario",      value: `<@${newMember.id}> (${newMember.user.tag})` },
+          { name: `🏷️ Rol${addedRoles.size > 1 ? "es" : ""}`, value: addedRoles.map(r => `<@&${r.id}>`).join(", ") },
+          { name: "🛡️ Responsable", value: executor ? `${executor.tag} (<@${executor.id}>)` : "Desconocido" }
+        ]
+      }));
     }
 
+    // ✅ UN solo mensaje con todos los roles removidos
     if (removedRoles.size > 0) {
       const executor = await getExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
-      for (const role of removedRoles.values()) {
-        await sendLog(newMember.guild, log({
-          color:    0xe74c3c,
-          titulo:   "➖ Rol removido",
-          guild:    newMember.guild,
-          avatarUrl: newMember.user.displayAvatarURL({ extension: "png", size: 256 }),
-          fields: [
-            { name: "👤 Usuario",      value: `<@${newMember.id}> (${newMember.user.tag})` },
-            { name: "🏷️ Rol",         value: `<@&${role.id}> (${role.name})` },
-            { name: "🛡️ Responsable", value: executor ? `${executor.tag} (<@${executor.id}>)` : "Desconocido" }
-          ]
-        }));
-      }
+      await sendLog(newMember.guild, log({
+        color:    0xe74c3c,
+        titulo:   `➖ Rol${removedRoles.size > 1 ? "es" : ""} removido${removedRoles.size > 1 ? "s" : ""}`,
+        guild:    newMember.guild,
+        avatarUrl: newMember.user.displayAvatarURL({ extension: "png", size: 256 }),
+        fields: [
+          { name: "👤 Usuario",      value: `<@${newMember.id}> (${newMember.user.tag})` },
+          { name: `🏷️ Rol${removedRoles.size > 1 ? "es" : ""}`, value: removedRoles.map(r => `<@&${r.id}>`).join(", ") },
+          { name: "🛡️ Responsable", value: executor ? `${executor.tag} (<@${executor.id}>)` : "Desconocido" }
+        ]
+      }));
     }
 
+    // ✅ Si hubo ambos (añadidos Y removidos) al mismo tiempo — UN solo mensaje
+    // Esto cubre el caso de bots que intercambian roles en bloque
+    if (addedRoles.size > 0 && removedRoles.size > 0) {
+      // Ya se enviaron arriba por separado, pero si prefieres uno solo
+      // puedes comentar los dos bloques de arriba y usar este:
+      /*
+      const executor = await getExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
+      await sendLog(newMember.guild, log({
+        color:    0xf1c40f,
+        titulo:   "🔄 Roles actualizados",
+        guild:    newMember.guild,
+        avatarUrl: newMember.user.displayAvatarURL({ extension: "png", size: 256 }),
+        fields: [
+          { name: "👤 Usuario",   value: `<@${newMember.id}> (${newMember.user.tag})` },
+          { name: "➕ Añadidos",  value: addedRoles.map(r => `<@&${r.id}>`).join(", ") || "Ninguno" },
+          { name: "➖ Removidos", value: removedRoles.map(r => `<@&${r.id}>`).join(", ") || "Ninguno" },
+          { name: "🛡️ Responsable", value: executor ? `${executor.tag} (<@${executor.id}>)` : "Desconocido" }
+        ]
+      }));
+      */
+    }
+
+    // Apodo
     if (oldMember.nickname !== newMember.nickname) {
       const executor = await getExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
       await sendLog(newMember.guild, log({
@@ -148,7 +169,7 @@ module.exports = (client) => {
       }));
     }
 
-    // 🔇 Timeout aplicado/removido
+    // Timeout aplicado
     const oldTimeout = oldMember.communicationDisabledUntil;
     const newTimeout = newMember.communicationDisabledUntil;
 
