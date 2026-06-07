@@ -40,42 +40,42 @@ module.exports = async ({
   ctx.fillStyle = "#0c0c0c";
   ctx.textBaseline = "top";
 
-  // 1. NOMBRE USUAL — etiqueta termina en x~714, dato va a la derecha
+  // 1. NOMBRE USUAL (etiqueta termina en x~714)
   ctx.font = '700 28px NotoSans';
   ctx.fillText(`${nombre} ${apellido}`, 725, 272);
 
-  // 2. NOMBRE LEGAL — etiqueta termina en x~698
+  // 2. NOMBRE LEGAL (etiqueta termina en x~698)
   ctx.font = '700 28px NotoSans';
   ctx.fillText(`${nombre} ${apellido}`, 725, 338);
 
-  // 3. FECHA DE NACIMIENTO — etiqueta termina en x~773
+  // 3. FECHA DE NACIMIENTO (etiqueta termina en x~773)
   ctx.font = '700 26px NotoSans';
   ctx.fillText(String(nacimiento), 785, 412);
 
-  // 4. LUGAR DE NACIMIENTO — etiqueta termina en x~772
+  // 4. LUGAR DE NACIMIENTO (etiqueta termina en x~772)
   ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(provincia), 785, 463);
+  ctx.fillText(String(provincia), 785, 460);
 
-  // 5. SEXO — etiqueta "SEXO:" termina en x~602, dato va justo después
+  // 5. SEXO (etiqueta "SEXO:" termina en canvas x~656, y~483)
   ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(sexo), 612, 470);
+  ctx.fillText(String(sexo), 665, 471);
 
-  // 6. TIPO DE SANGRE — etiqueta empieza en x~660, dato va después de "TIPO DE SANGRE:"
+  // 6. TIPO DE SANGRE (etiqueta termina en canvas x~778, dato va después)
   ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(sangre), 870, 470);
+  ctx.fillText(String(sangre), 788, 471);
 
-  // 7. EXPEDIDA — etiqueta termina en x~585, dato va a la derecha en la MISMA fila
+  // 7. EXPEDIDA (etiqueta termina en canvas x~584, y~539)
   ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(fechaEmision), 600, 526);
+  ctx.fillText(String(fechaEmision), 595, 526);
 
-  // 8. EXPIRA — etiqueta termina en x~642
+  // 8. EXPIRA (etiqueta termina en canvas x~641, y~603)
   ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(fechaExpiracion), 655, 590);
+  ctx.fillText(String(fechaExpiracion), 652, 590);
 
-  // 9. NÚMERO DE CÉDULA — alineado con logo TE
+  // 9. NÚMERO DE CÉDULA (más a la derecha del logo TE)
   ctx.font = '800 42px NotoSans';
   ctx.fillStyle = "#000000";
-  ctx.fillText(String(cedula), 230, 790);
+  ctx.fillText(String(cedula), 290, 790);
 
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
