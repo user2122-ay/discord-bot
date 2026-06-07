@@ -1,7 +1,22 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  SeparatorSpacingSize,
+  MessageFlags
+} = require("discord.js");
 
-// 📍 MAPEO DE PROVINCIAS
-const provincias = {
+const Ciudadano = require("../models/Ciudadano");
+const generarCedula = require("../utils/generarCedula");
+
+const PROVINCIAS = {
   "1": "Bocas del Toro",
   "2": "Coclé",
   "3": "Colón",
@@ -20,7 +35,7 @@ module.exports = {
     .setDescription("Ver cédula de un usuario")
     .addUserOption(o =>
       o.setName("usuario")
-        .setDescription("Usuario")
+        .setDescription("Usuario a consultar")
         .setRequired(true)
     ),
 
@@ -28,55 +43,127 @@ module.exports = {
 
   async execute(interaction) {
 
+    await interaction.deferReply();
+
     const user = interaction.options.getUser("usuario");
 
     try {
-      const Ciudadano = require("../models/Ciudadano");
 
-const result = await Ciudadano.findOne({
-  discord_id: user.id
-});
+      const d = await Ciudadano.findOne({ discord_id: user.id });
 
-if (!result) {
-        return interaction.reply({
+      if (!d) {
+        return interaction.editReply({
           content: "❌ Ese usuario no tiene cédula registrada.",
-          ephemeral: true
         });
       }
 
-      const d = result;
+      const provinciaNombre = PROVINCIAS[d.provincia_codigo] || "Desconocida";
 
-      // 🔥 AQUÍ ESTÁ EL FIX
-      const provinciaNombre = provincias[d.provincia_codigo] || "Desconocida";
+      const fechaEmision     = new Date(d.fecha_emision).toLocaleDateString("es-PA");
+      const fechaExpiracion  = new Date(d.fecha_expiracion).toLocaleDateString("es-PA");
 
-      const embed = new EmbedBuilder()
-        .setTitle("🪪 Cédula - Panamá RP V2")
-        .setColor("#2b2d31")
-        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setDescription(`📄 Información oficial del ciudadano`)
-        .addFields(
-          { name: "👤 Nombre", value: d.nombre_ic, inline: true },
-          { name: "👤 Apellido", value: d.apellido_ic, inline: true },
-          { name: "🎂 Edad", value: `${d.edad_ic}`, inline: true },
-          { name: "📅 Nacimiento", value: d.nacimiento_ic, inline: true },
-          { name: "🩸 Sangre", value: d.tipo_sangre, inline: true },
-          { name: "🌎 Provincia", value: provinciaNombre, inline: true }, // ✅ FIX
-          { name: "🆔 Cédula", value: d.numero_cedula, inline: true }
+      // 🖼️ Regenerar imagen de la cédula
+      const archivo = await generarCedula({
+        nombre:          d.nombre_ic,
+        apellido:        d.apellido_ic,
+        nacimiento:      d.nacimiento_ic,
+        sangre:          d.tipo_sangre,
+        sexo:            d.sexo_ic,
+        provincia:       provinciaNombre,
+        cedula:          d.numero_cedula,
+        avatarUrl:       d.avatarRoblox,
+        fechaEmision,
+        fechaExpiracion
+      });
+
+      // 🧱 Construir Components V2
+      const container = new ContainerBuilder()
+
+        // — Encabezado
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            "## 🪪 Cédula de Identidad\n-# República de Panamá RP V2"
+          )
         )
-        .setFooter({
-          text: "Gobierno de Panamá RP V2",
-          iconURL: interaction.guild.iconURL({ dynamic: true })
-        })
-        .setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(true)
+        )
+
+        // — Sección: info básica + thumbnail avatar Discord
+        .addSectionComponents(
+          new SectionBuilder()
+            .addTextDisplayComponents(
+              new TextDisplayBuilder().setContent(
+                `**👤 Nombre:** ${d.nombre_ic} ${d.apellido_ic}\n` +
+                `**🆔 Cédula:** ${d.numero_cedula}\n` +
+                `**🎂 Edad:** ${d.edad_ic} años\n` +
+                `**📅 Nacimiento:** ${d.nacimiento_ic}\n` +
+                `**🌎 Provincia:** ${provinciaNombre}\n` +
+                `**🩸 Sangre:** ${d.tipo_sangre}\n` +
+                `**⚧ Sexo:** ${d.sexo_ic === "M" ? "Masculino" : "Femenino"}`
+              )
+            )
+            .setThumbnailAccessory(
+              new ThumbnailBuilder().setURL(
+                user.displayAvatarURL({ extension: "png", size: 256 })
+              )
+            )
+        )
+
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(true)
+        )
+
+        // — Fechas
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `📋 **Expedida:** ${fechaEmision}  ·  ⏳ **Expira:** ${fechaExpiracion}`
+          )
+        )
+
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(true)
+        )
+
+        // — Imagen de la cédula
+        .addMediaGalleryComponents(
+          new MediaGalleryBuilder().addItems(
+            new MediaGalleryItemBuilder()
+              .setURL("attachment://cedula.png")
+              .setDescription("Cédula de Identidad Personal")
+          )
+        )
+
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(false)
+        )
+
+        // — Footer con botón decorativo
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            "-# 🏛️ Tribunal Electoral · Gobierno de Panamá RP V2"
+          )
+        );
+
+      await interaction.editReply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [container],
+        files: [archivo]
+      });
 
     } catch (error) {
       console.error(error);
-
-      await interaction.reply({
-        content: "❌ Error obteniendo la cédula",
-        ephemeral: true
+      await interaction.editReply({
+        content: "❌ Error obteniendo la cédula."
       });
     }
   }
