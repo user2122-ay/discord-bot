@@ -37,24 +37,55 @@ const ROLES_SANCION = {
 };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🧱 Construir vista
+// 🧱 Vista principal
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function buildContainer(user, registro, esStaff) {
+function buildContainer(user, registro) {
 
   const sanciones = registro?.sanciones_acumuladas ?? 0;
-  const strikes   = registro?.strikes_actuales ?? 0;
-  const historial = registro?.historial ?? [];
-  const baneado   = registro?.baneado ?? false;
+  const strikes   = registro?.strikes_actuales     ?? 0;
+  const acciones  = registro?.acciones             ?? [];
+  const baneado   = registro?.baneado              ?? false;
 
-  const barraStrikes   = ["🟡","🟡","🟡"].map((_, i) => i < strikes   ? "🟡" : "⬛").join(" ");
+  const barraStrikes   = Array.from({ length: 3 }, (_, i) => i < strikes   ? "🟡" : "⬛").join(" ");
   const barraSanciones = Array.from({ length: 6 }, (_, i) => i < sanciones ? "🔴" : "⬛").join(" ");
 
-  const ultimasAcciones = historial.slice(-5).reverse().map(h => {
-    const fecha = new Date(h.fecha).toLocaleDateString("es-PA");
-    const icono = h.tipo === "strike" ? "⚡" : "🚨";
-    const nombre = h.tipo === "strike" ? `Strike ${h.numero}` : `Sanción ${h.numero}`;
-    return `${icono} **${nombre}** — ${h.motivo} · \`${fecha}\` · por ${h.staff_tag}`;
-  }).join("\n") || "Sin acciones registradas.";
+  // Strikes activos
+  const strikesActivos = acciones
+    .filter(a => a.tipo === "strike" && !a.removido)
+    .map(a => {
+      const fecha = new Date(a.fecha).toLocaleDateString("es-PA");
+      return (
+        `⚡ **Strike ${a.numero}** · \`${a.codigo}\`\n` +
+        `> 📝 ${a.motivo}\n` +
+        `> 🛡️ ${a.staff_tag} · 📅 ${fecha}`
+      );
+    }).join("\n\n") || "Sin strikes activos.";
+
+  // Sanciones activas
+  const sancionesActivas = acciones
+    .filter(a => a.tipo === "sancion" && !a.removido)
+    .map(a => {
+      const fecha = new Date(a.fecha).toLocaleDateString("es-PA");
+      return (
+        `🚨 **Sanción ${a.numero}** · \`${a.codigo}\`\n` +
+        `> 📝 ${a.motivo}\n` +
+        `> ⏱️ ${a.duracion_timeout || "Ban permanente"} · 🛡️ ${a.staff_tag} · 📅 ${fecha}`
+      );
+    }).join("\n\n") || "Sin sanciones activas.";
+
+  // Historial removidos (últimos 3)
+  const removidos = acciones
+    .filter(a => a.removido)
+    .slice(-3)
+    .reverse()
+    .map(a => {
+      const fecha = new Date(a.removido_fecha).toLocaleDateString("es-PA");
+      const icono = a.tipo === "strike" ? "⚡" : "🚨";
+      return (
+        `${icono} **${a.tipo === "strike" ? `Strike ${a.numero}` : `Sanción ${a.numero}`}** · ~~\`${a.codigo}\`~~\n` +
+        `> 📝 ${a.removido_razon} · 🛡️ ${a.removido_por_tag} · 📅 ${fecha}`
+      );
+    }).join("\n\n") || "Ninguno.";
 
   const color = baneado     ? 0x992d22
     : sanciones >= 4        ? 0xe74c3c
@@ -62,7 +93,7 @@ function buildContainer(user, registro, esStaff) {
     : strikes > 0           ? 0xf1c40f
     : 0x2ecc71;
 
-  const container = new ContainerBuilder()
+  return new ContainerBuilder()
     .setAccentColor(color)
 
     .addSectionComponents(
@@ -84,10 +115,11 @@ function buildContainer(user, registro, esStaff) {
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     )
 
+    // Resumen
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `**⚡ Strikes actuales:** ${barraStrikes} (${strikes}/3)\n` +
-        `**🚨 Sanciones acumuladas:** ${barraSanciones} (${sanciones}/6)\n` +
+        `**⚡ Strikes:** ${barraStrikes} (${strikes}/3)\n` +
+        `**🚨 Sanciones:** ${barraSanciones} (${sanciones}/6)\n` +
         `**🚫 Estado:** ${baneado ? "Baneado permanentemente" : sanciones === 6 ? "⚠️ Límite máximo" : "✅ Activo"}`
       )
     )
@@ -96,9 +128,32 @@ function buildContainer(user, registro, esStaff) {
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     )
 
+    // Strikes activos
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `**📜 Últimas acciones:**\n${ultimasAcciones}`
+        `**⚡ Strikes activos:**\n${strikesActivos}`
+      )
+    )
+
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+
+    // Sanciones activas
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `**🚨 Sanciones activas:**\n${sancionesActivas}`
+      )
+    )
+
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+
+    // Removidos
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `**🗑️ Últimas acciones removidas:**\n${removidos}`
       )
     )
 
@@ -111,33 +166,13 @@ function buildContainer(user, registro, esStaff) {
         `-# © Panamá RP V2 · ${new Date().toLocaleString("es-PA")}`
       )
     );
-
-  return container;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🔘 Botones staff
+// 📩 Log canal moderación
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function buildBotones(userId, registro) {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`qs_${userId}`)   // quitar strike
-      .setLabel("➖ Quitar Strike")
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled((registro?.strikes_actuales ?? 0) === 0),
+async function enviarLog(guild, staffUser, targetUser, accion, razon, registro) {
 
-    new ButtonBuilder()
-      .setCustomId(`qsan_${userId}`) // quitar sanción
-      .setLabel("🗑️ Quitar Sanción")
-      .setStyle(ButtonStyle.Danger)
-      .setDisabled((registro?.sanciones_acumuladas ?? 0) === 0)
-  );
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 📩 Log al canal
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function enviarLog(guild, staffUser, targetUser, tipo, razon, registro) {
   const canal = guild.channels.cache.get(CANAL_LOGS);
   if (!canal) return;
 
@@ -146,7 +181,7 @@ async function enviarLog(guild, staffUser, targetUser, tipo, razon, registro) {
 
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `## 🗑️ ${tipo === "strike" ? "Strike" : "Sanción"} removido\n` +
+        `## 🗑️ ${accion.tipo === "strike" ? "Strike" : "Sanción"} removido\n` +
         `-# Por ${staffUser.tag}`
       )
     )
@@ -159,6 +194,7 @@ async function enviarLog(guild, staffUser, targetUser, tipo, razon, registro) {
       new TextDisplayBuilder().setContent(
         `**👤 Usuario:** <@${targetUser.id}> (${targetUser.tag ?? targetUser.id})\n` +
         `**🛡️ Staff:** <@${staffUser.id}> (${staffUser.tag})\n` +
+        `**🔑 Código:** \`${accion.codigo}\`\n` +
         `**📝 Razón:** ${razon}\n` +
         `**⚡ Strikes restantes:** ${registro.strikes_actuales}/3\n` +
         `**🚨 Sanciones restantes:** ${registro.sanciones_acumuladas}/6`
@@ -203,6 +239,7 @@ module.exports = {
     const esStaff    = interaction.member.roles.cache.has(ROL_STAFF);
     const userTarget = interaction.options.getUser("usuario") ?? interaction.user;
 
+    // 🔒 Solo staff puede ver de otros
     if (userTarget.id !== interaction.user.id && !esStaff) {
       return interaction.editReply({
         content: "❌ Solo puedes ver tu propio expediente."
@@ -210,11 +247,24 @@ module.exports = {
     }
 
     const registro  = await Sancion.findOne({ discord_id: userTarget.id });
-    const container = buildContainer(userTarget, registro, esStaff);
+    const container = buildContainer(userTarget, registro);
     const components = [container];
 
+    // Botones solo para staff
     if (esStaff) {
-      components.push(buildBotones(userTarget.id, registro));
+      components.push(
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`qs_${userTarget.id}`)
+            .setLabel("➖ Quitar Strike")
+            .setStyle(ButtonStyle.Secondary),
+
+          new ButtonBuilder()
+            .setCustomId(`qsan_${userTarget.id}`)
+            .setLabel("🗑️ Quitar Sanción")
+            .setStyle(ButtonStyle.Danger)
+        )
+      );
     }
 
     await interaction.editReply({
@@ -224,7 +274,7 @@ module.exports = {
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 🎯 EVENTOS — se llama desde index.cjs
+  // 🎯 EVENTOS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   registerEvents(client) {
 
@@ -235,57 +285,41 @@ module.exports = {
       // ━━━━━━━━━━━━━━━━━━━━
       if (interaction.isButton()) {
 
-        // ➖ Quitar Strike
-        if (interaction.customId.startsWith("qs_")) {
+        if (
+          !interaction.customId.startsWith("qs_") &&
+          !interaction.customId.startsWith("qsan_")
+        ) return;
 
-          if (!interaction.member.roles.cache.has(ROL_STAFF)) {
-            return interaction.reply({ content: "❌ Sin permisos.", ephemeral: true });
-          }
-
-          const userId = interaction.customId.replace("qs_", "");
-
-          const modal = new ModalBuilder()
-            .setCustomId(`mqs_${userId}`)
-            .setTitle("➖ Quitar Strike");
-
-          modal.addComponents(
-            new ActionRowBuilder().addComponents(
-              new TextInputBuilder()
-                .setCustomId("razon")
-                .setLabel("Razón para quitar el strike")
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true)
-            )
-          );
-
-          return interaction.showModal(modal);
+        if (!interaction.member.roles.cache.has(ROL_STAFF)) {
+          return interaction.reply({ content: "❌ Sin permisos.", ephemeral: true });
         }
 
-        // 🗑️ Quitar Sanción
-        if (interaction.customId.startsWith("qsan_")) {
+        const esStrike = interaction.customId.startsWith("qs_");
+        const userId   = interaction.customId.replace(esStrike ? "qs_" : "qsan_", "");
 
-          if (!interaction.member.roles.cache.has(ROL_STAFF)) {
-            return interaction.reply({ content: "❌ Sin permisos.", ephemeral: true });
-          }
+        const modal = new ModalBuilder()
+          .setCustomId(esStrike ? `mqs_${userId}` : `mqsan_${userId}`)
+          .setTitle(esStrike ? "➖ Quitar Strike" : "🗑️ Quitar Sanción");
 
-          const userId = interaction.customId.replace("qsan_", "");
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("codigo")
+              .setLabel("Código de la acción")
+              .setStyle(TextInputStyle.Short)
+              .setPlaceholder(esStrike ? "STK-XXXXXX" : "SAN-XXXXXX")
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("razon")
+              .setLabel("Razón para quitar")
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          )
+        );
 
-          const modal = new ModalBuilder()
-            .setCustomId(`mqsan_${userId}`)
-            .setTitle("🗑️ Quitar Sanción");
-
-          modal.addComponents(
-            new ActionRowBuilder().addComponents(
-              new TextInputBuilder()
-                .setCustomId("razon")
-                .setLabel("Razón para quitar la sanción")
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true)
-            )
-          );
-
-          return interaction.showModal(modal);
-        }
+        return interaction.showModal(modal);
       }
 
       // ━━━━━━━━━━━━━━━━━━━━
@@ -293,128 +327,140 @@ module.exports = {
       // ━━━━━━━━━━━━━━━━━━━━
       if (interaction.isModalSubmit()) {
 
-        // ➖ MODAL QUITAR STRIKE
-        if (interaction.customId.startsWith("mqs_")) {
+        if (
+          !interaction.customId.startsWith("mqs_") &&
+          !interaction.customId.startsWith("mqsan_")
+        ) return;
 
-          const userId = interaction.customId.replace("mqs_", "");
-          const razon  = interaction.fields.getTextInputValue("razon");
+        const esStrike = interaction.customId.startsWith("mqs_");
+        const userId   = interaction.customId.replace(esStrike ? "mqs_" : "mqsan_", "");
+        const codigo   = interaction.fields.getTextInputValue("codigo").trim().toUpperCase();
+        const razon    = interaction.fields.getTextInputValue("razon").trim();
 
-          await interaction.deferUpdate();
+        await interaction.deferUpdate();
 
-          const registro = await Sancion.findOne({ discord_id: userId });
+        // 🔍 Buscar por código en la BD
+        const resultado = await Sancion.buscarPorCodigo(codigo);
 
-          if (!registro || registro.strikes_actuales === 0) {
-            return interaction.followUp({
-              content: "❌ Este usuario no tiene strikes registrados.",
-              ephemeral: true
-            });
-          }
-
-          const miembro  = await interaction.guild.members.fetch(userId).catch(() => null);
-          const userObj  = miembro?.user ?? await interaction.client.users.fetch(userId).catch(() => null);
-          const strikeAnterior = registro.strikes_actuales;
-
-          // 🏷️ Quitar rol strike actual
-          if (miembro) {
-            await miembro.roles.remove(ROLES_STRIKE[strikeAnterior]).catch(() => {});
-            // Poner rol anterior si existe
-            if (strikeAnterior - 1 > 0) {
-              await miembro.roles.add(ROLES_STRIKE[strikeAnterior - 1]).catch(() => {});
-            }
-          }
-
-          registro.strikes_actuales = Math.max(0, strikeAnterior - 1);
-
-          registro.historial.push({
-            tipo:      "strike",
-            numero:    registro.strikes_actuales,
-            motivo:    `[REMOVIDO] ${razon}`,
-            staff_id:  interaction.user.id,
-            staff_tag: interaction.user.tag
-          });
-
-          await registro.save();
-
-          // 📩 Log
-          await enviarLog(interaction.guild, interaction.user, userObj, "strike", razon, registro);
-
-          // 🔄 Actualizar mensaje
-          const containerActualizado = buildContainer(userObj, registro, true);
-          const botonesActualizados  = buildBotones(userId, registro);
-
-          await interaction.editReply({
-            flags: MessageFlags.IsComponentsV2,
-            components: [containerActualizado, botonesActualizados]
-          });
-
-          await interaction.followUp({
-            content: `✅ Strike removido a <@${userId}>. Strikes restantes: ${registro.strikes_actuales}/3`,
+        // ❌ Código no existe
+        if (!resultado) {
+          return interaction.followUp({
+            content: `❌ El código \`${codigo}\` no existe en la base de datos.`,
             ephemeral: true
           });
         }
 
-        // 🗑️ MODAL QUITAR SANCIÓN
-        if (interaction.customId.startsWith("mqsan_")) {
+        const { registro, accion } = resultado;
 
-          const userId = interaction.customId.replace("mqsan_", "");
-          const razon  = interaction.fields.getTextInputValue("razon");
+        // ❌ No pertenece al usuario
+        if (registro.discord_id !== userId) {
+          return interaction.followUp({
+            content: `❌ El código \`${codigo}\` no pertenece a este usuario.`,
+            ephemeral: true
+          });
+        }
 
-          await interaction.deferUpdate();
+        // ❌ Tipo incorrecto
+        if (esStrike && accion.tipo !== "strike") {
+          return interaction.followUp({
+            content: `❌ El código \`${codigo}\` es de una sanción, no de un strike.`,
+            ephemeral: true
+          });
+        }
+        if (!esStrike && accion.tipo !== "sancion") {
+          return interaction.followUp({
+            content: `❌ El código \`${codigo}\` es de un strike, no de una sanción.`,
+            ephemeral: true
+          });
+        }
 
-          const registro = await Sancion.findOne({ discord_id: userId });
+        // ❌ Ya removido
+        if (accion.removido) {
+          return interaction.followUp({
+            content: `❌ El código \`${codigo}\` ya fue removido anteriormente.`,
+            ephemeral: true
+          });
+        }
 
-          if (!registro || registro.sanciones_acumuladas === 0) {
-            return interaction.followUp({
-              content: "❌ Este usuario no tiene sanciones registradas.",
-              ephemeral: true
-            });
+        // ✅ Marcar como removido
+        accion.removido         = true;
+        accion.removido_por_id  = interaction.user.id;
+        accion.removido_por_tag = interaction.user.tag;
+        accion.removido_razon   = razon;
+        accion.removido_fecha   = new Date();
+
+        const miembro = await interaction.guild.members.fetch(userId).catch(() => null);
+        const userObj = miembro?.user ?? await interaction.client.users.fetch(userId).catch(() => null);
+
+        // ━━━━━━━━━━━━━━━━━━━━
+        // ⚡ QUITAR STRIKE
+        // ━━━━━━━━━━━━━━━━━━━━
+        if (esStrike) {
+
+          registro.strikes_actuales = Math.max(0, registro.strikes_actuales - 1);
+
+          if (miembro) {
+            // Quitar todos los roles de strike
+            for (let i = 1; i <= 3; i++) {
+              await miembro.roles.remove(ROLES_STRIKE[i]).catch(() => {});
+            }
+            // Poner el rol del strike actual si quedan
+            if (registro.strikes_actuales > 0) {
+              await miembro.roles.add(ROLES_STRIKE[registro.strikes_actuales]).catch(() => {});
+            }
           }
 
-          const miembro  = await interaction.guild.members.fetch(userId).catch(() => null);
-          const userObj  = miembro?.user ?? await interaction.client.users.fetch(userId).catch(() => null);
-          const sancionAnterior = registro.sanciones_acumuladas;
+        // ━━━━━━━━━━━━━━━━━━━━
+        // 🗑️ QUITAR SANCIÓN
+        // ━━━━━━━━━━━━━━━━━━━━
+        } else {
 
-          // 🏷️ Quitar rol sanción actual
+          registro.sanciones_acumuladas = Math.max(0, registro.sanciones_acumuladas - 1);
+          if (registro.baneado) registro.baneado = false;
+
           if (miembro) {
-            await miembro.roles.remove(ROLES_SANCION[sancionAnterior]).catch(() => {});
-            // Poner rol sanción anterior si existe
-            if (sancionAnterior - 1 > 0) {
-              await miembro.roles.add(ROLES_SANCION[sancionAnterior - 1]).catch(() => {});
+            // Quitar rol de sanción actual
+            await miembro.roles.remove(ROLES_SANCION[accion.numero]).catch(() => {});
+            // Poner rol de sanción anterior si existe
+            if (registro.sanciones_acumuladas > 0) {
+              await miembro.roles.add(ROLES_SANCION[registro.sanciones_acumuladas]).catch(() => {});
             }
             // Quitar timeout
             await miembro.timeout(null).catch(() => {});
           }
-
-          registro.sanciones_acumuladas = Math.max(0, sancionAnterior - 1);
-          if (registro.baneado) registro.baneado = false;
-
-          registro.historial.push({
-            tipo:      "sancion",
-            numero:    registro.sanciones_acumuladas,
-            motivo:    `[REMOVIDA] ${razon}`,
-            staff_id:  interaction.user.id,
-            staff_tag: interaction.user.tag
-          });
-
-          await registro.save();
-
-          // 📩 Log
-          await enviarLog(interaction.guild, interaction.user, userObj, "sancion", razon, registro);
-
-          // 🔄 Actualizar mensaje
-          const containerActualizado = buildContainer(userObj, registro, true);
-          const botonesActualizados  = buildBotones(userId, registro);
-
-          await interaction.editReply({
-            flags: MessageFlags.IsComponentsV2,
-            components: [containerActualizado, botonesActualizados]
-          });
-
-          await interaction.followUp({
-            content: `✅ Sanción removida a <@${userId}>. Sanciones restantes: ${registro.sanciones_acumuladas}/6`,
-            ephemeral: true
-          });
         }
+
+        await registro.save();
+
+        // 📩 Log
+        await enviarLog(interaction.guild, interaction.user, userObj, accion, razon, registro);
+
+        // 🔄 Actualizar vista
+        const containerActualizado = buildContainer(userObj, registro);
+
+        const botonesActualizados = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`qs_${userId}`)
+            .setLabel("➖ Quitar Strike")
+            .setStyle(ButtonStyle.Secondary),
+
+          new ButtonBuilder()
+            .setCustomId(`qsan_${userId}`)
+            .setLabel("🗑️ Quitar Sanción")
+            .setStyle(ButtonStyle.Danger)
+        );
+
+        await interaction.editReply({
+          flags: MessageFlags.IsComponentsV2,
+          components: [containerActualizado, botonesActualizados]
+        });
+
+        await interaction.followUp({
+          content:
+            `✅ ${esStrike ? "Strike" : "Sanción"} con código \`${codigo}\` removido correctamente.\n` +
+            `**⚡ Strikes:** ${registro.strikes_actuales}/3 · **🚨 Sanciones:** ${registro.sanciones_acumuladas}/6`,
+          ephemeral: true
+        });
       }
     });
   }
