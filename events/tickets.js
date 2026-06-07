@@ -117,9 +117,10 @@ module.exports = (client) => {
         )
       );
 
+    // ✅ Menú FUERA del container (Discord no permite ActionRow dentro de container)
     const menu = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId("ticket_select")
+        .setCustomId("ticketv2_select")  // ✅ customId único
         .setPlaceholder("📂 Selecciona una categoría...")
         .addOptions([
           { label: "Soporte General",   value: "soporte",   emoji: "🟦" },
@@ -143,7 +144,8 @@ module.exports = (client) => {
   // ==============================
   client.on("interactionCreate", async interaction => {
 
-    if (interaction.isStringSelectMenu() && interaction.customId === "ticket_select") {
+    // ✅ customId actualizado
+    if (interaction.isStringSelectMenu() && interaction.customId === "ticketv2_select") {
 
       const user  = interaction.user;
       const guild = interaction.guild;
@@ -309,17 +311,17 @@ module.exports = (client) => {
 
         await interaction.reply({ content: "🔒 Cerrando ticket...", ephemeral: true });
 
-        // 📄 TRANSCRIPCIÓN PRO
+        // 📄 TRANSCRIPCIÓN
         const messages = await canal.messages.fetch({ limit: 100 });
-        const ordenados = [...messages.values()].reverse();
-        const abiertoPor = ordenados.find(m => !m.author.bot)?.author.tag ?? "Desconocido";
+        const ordenados     = [...messages.values()].reverse();
+        const abiertoPor    = ordenados.find(m => !m.author.bot)?.author.tag ?? "Desconocido";
         const fechaApertura = ordenados[0]
           ? new Date(ordenados[0].createdTimestamp).toLocaleString("es-PA")
           : "—";
         const fechaCierre = new Date().toLocaleString("es-PA");
 
         const filas = ordenados.map(msg => {
-          const hora     = new Date(msg.createdTimestamp).toLocaleString("es-PA");
+          const hora      = new Date(msg.createdTimestamp).toLocaleString("es-PA");
           const contenido = msg.content
             ? msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")
             : `<span class="sin-texto">— sin texto —</span>`;
@@ -329,8 +331,8 @@ module.exports = (client) => {
           const embeds = msg.embeds.length
             ? `<span class="embed-badge">📦 ${msg.embeds.length} embed(s)</span>`
             : "";
-          const claseAutor = msg.author.bot ? "autor bot" : "autor";
-          const claseMensaje = msg.author.bot ? "msg bot" : "msg";
+          const claseAutor   = msg.author.bot ? "autor bot" : "autor";
+          const claseMensaje = msg.author.bot ? "msg bot"   : "msg";
 
           return `
           <div class="${claseMensaje}">
@@ -356,23 +358,17 @@ module.exports = (client) => {
   <title>Transcript · ${canal.name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #1e1f22; color: #dbdee1; padding: 0; }
-
-    /* HEADER */
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #1e1f22; color: #dbdee1; }
     .header { background: #111214; border-bottom: 3px solid #5865F2; padding: 24px 32px; display: flex; align-items: center; gap: 20px; }
     .header-icon { font-size: 36px; }
     .header-info h1 { font-size: 20px; color: #fff; font-weight: 700; }
     .header-info p  { font-size: 13px; color: #949ba4; margin-top: 4px; }
-
-    /* STATS */
     .stats { display: flex; gap: 12px; padding: 16px 32px; background: #2b2d31; border-bottom: 1px solid #3d4045; flex-wrap: wrap; }
     .stat { background: #1e1f22; border-radius: 8px; padding: 10px 16px; flex: 1; min-width: 160px; }
     .stat-label { font-size: 11px; color: #949ba4; text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-value { font-size: 14px; color: #fff; font-weight: 600; margin-top: 2px; }
-
-    /* MENSAJES */
     .mensajes { padding: 24px 32px; max-width: 900px; margin: 0 auto; }
-    .msg { display: flex; gap: 14px; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: #2b2d31; border-left: 3px solid #3d4045; transition: background 0.1s; }
+    .msg { display: flex; gap: 14px; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: #2b2d31; border-left: 3px solid #3d4045; }
     .msg:hover { background: #313338; }
     .msg.bot { border-left-color: #5865F2; }
     .avatar { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
@@ -380,22 +376,19 @@ module.exports = (client) => {
     .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
     .autor { font-weight: 700; color: #dbdee1; font-size: 14px; }
     .autor.bot { color: #5865F2; }
-    .badge-bot { background: #5865F2; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.3px; }
+    .badge-bot { background: #5865F2; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
     .hora { font-size: 11px; color: #6d6f78; }
     .contenido { font-size: 14px; line-height: 1.6; color: #dbdee1; word-break: break-word; white-space: pre-wrap; }
     .sin-texto { color: #4e5058; font-style: italic; font-size: 13px; }
     .adjuntos { margin-top: 6px; }
     .adjunto { color: #00aff4; font-size: 13px; margin-right: 8px; text-decoration: none; }
     .adjunto:hover { text-decoration: underline; }
-    .embed-badge { display: inline-block; background: #2b2d31; border: 1px solid #3d4045; color: #949ba4; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
-
-    /* FOOTER */
+    .embed-badge { display: inline-block; background: #1e1f22; border: 1px solid #3d4045; color: #949ba4; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
     footer { text-align: center; padding: 24px; font-size: 12px; color: #4e5058; border-top: 1px solid #3d4045; margin-top: 16px; }
     footer span { color: #5865F2; }
   </style>
 </head>
 <body>
-
   <div class="header">
     <div class="header-icon">🎫</div>
     <div class="header-info">
@@ -403,44 +396,23 @@ module.exports = (client) => {
       <p>${interaction.guild.name}</p>
     </div>
   </div>
-
   <div class="stats">
-    <div class="stat">
-      <div class="stat-label">Abierto por</div>
-      <div class="stat-value">${abiertoPor}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Cerrado por</div>
-      <div class="stat-value">${interaction.user.tag}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Apertura</div>
-      <div class="stat-value">${fechaApertura}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Cierre</div>
-      <div class="stat-value">${fechaCierre}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Mensajes</div>
-      <div class="stat-value">${ordenados.length}</div>
-    </div>
+    <div class="stat"><div class="stat-label">Abierto por</div><div class="stat-value">${abiertoPor}</div></div>
+    <div class="stat"><div class="stat-label">Cerrado por</div><div class="stat-value">${interaction.user.tag}</div></div>
+    <div class="stat"><div class="stat-label">Apertura</div><div class="stat-value">${fechaApertura}</div></div>
+    <div class="stat"><div class="stat-label">Cierre</div><div class="stat-value">${fechaCierre}</div></div>
+    <div class="stat"><div class="stat-label">Mensajes</div><div class="stat-value">${ordenados.length}</div></div>
   </div>
-
-  <div class="mensajes">
-    ${filas}
-  </div>
-
-  <footer>
-    © <span>Panamá RP V2</span> · Transcript generado automáticamente
-  </footer>
-
+  <div class="mensajes">${filas}</div>
+  <footer>© <span>Panamá RP V2</span> · Transcript generado automáticamente</footer>
 </body>
 </html>`;
 
         const logChannel = interaction.guild.channels.cache.get("1456786442071314442");
 
         if (logChannel) {
+
+          // ✅ Cajón info primero
           const logContainer = new ContainerBuilder()
             .setAccentColor(0x5865F2)
             .addTextDisplayComponents(
@@ -466,7 +438,11 @@ module.exports = (client) => {
 
           await logChannel.send({
             flags: MessageFlags.IsComponentsV2,
-            components: [logContainer],
+            components: [logContainer]
+          });
+
+          // ✅ Archivo en mensaje separado (Components V2 no acepta files)
+          await logChannel.send({
             files: [{
               attachment: Buffer.from(html, "utf-8"),
               name: `transcript-${canal.name}.html`
