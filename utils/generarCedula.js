@@ -3,17 +3,9 @@ const { AttachmentBuilder } = require("discord.js");
 const axios = require("axios");
 const path = require("path");
 
-// 🔥 Registrar fuente personalizada
 Canvas.registerFont(
-  path.join(
-    process.cwd(),
-    "assets",
-    "fonts",
-    "NotoSans_Condensed-Black.ttf"
-  ),
-  {
-    family: "NotoSans"
-  }
+  path.join(process.cwd(), "assets", "fonts", "NotoSans_Condensed-Black.ttf"),
+  { family: "NotoSans" }
 );
 
 module.exports = async ({
@@ -21,6 +13,7 @@ module.exports = async ({
   apellido,
   nacimiento,
   sangre,
+  sexo,
   provincia,
   cedula,
   avatarUrl,
@@ -28,128 +21,64 @@ module.exports = async ({
   fechaExpiracion
 }) => {
 
-  const canvas = Canvas.createCanvas(
-    1536,
-    975
-  );
-
+  const canvas = Canvas.createCanvas(1536, 975);
   const ctx = canvas.getContext("2d");
 
   // 🖼️ Fondo
   const fondo = await Canvas.loadImage(
-    path.join(
-      process.cwd(),
-      "assets",
-      "cedulapanama.png"
-    )
+    path.join(process.cwd(), "assets", "cedulapanama.png")
   );
-
-  ctx.drawImage(
-    fondo,
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
+  ctx.drawImage(fondo, 0, 0, canvas.width, canvas.height);
 
   // 👤 Avatar Roblox
   if (avatarUrl) {
-
-    const avatarResponse =
-      await axios.get(
-        avatarUrl,
-        {
-          responseType: "arraybuffer"
-        }
-      );
-
-    const avatar =
-      await Canvas.loadImage(
-        Buffer.from(
-          avatarResponse.data
-        )
-      );
-
-    ctx.drawImage(
-  avatar,
-  100,
-  200,
-  390,
-  500
-);
+    const avatarResponse = await axios.get(avatarUrl, { responseType: "arraybuffer" });
+    const avatar = await Canvas.loadImage(Buffer.from(avatarResponse.data));
+    ctx.drawImage(avatar, 100, 200, 390, 500);
   }
-// Configuración global de estilo
-ctx.fillStyle = "#0c0c0c";
-ctx.textBaseline = "top";
 
-// 1. NOMBRE USUAL
-ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  `${nombre} ${apellido}`,
-  735,
-  278
-);
+  ctx.fillStyle = "#0c0c0c";
+  ctx.textBaseline = "top";
 
-// 2. NOMBRE LEGAL
-ctx.font = '700 28px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  `${nombre} ${apellido}`,
-  735,
-  341
-);
+  // 1. NOMBRE USUAL — etiqueta termina en x~714, dato va a la derecha
+  ctx.font = '700 28px NotoSans';
+  ctx.fillText(`${nombre} ${apellido}`, 725, 272);
 
-// 3. FECHA DE NACIMIENTO
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  String(nacimiento),
-  815,
-  416
-);
+  // 2. NOMBRE LEGAL — etiqueta termina en x~698
+  ctx.font = '700 28px NotoSans';
+  ctx.fillText(`${nombre} ${apellido}`, 725, 338);
 
-// 4. LUGAR DE NACIMIENTO
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  String(provincia),
-  815,
-  469
-);
+  // 3. FECHA DE NACIMIENTO — etiqueta termina en x~773
+  ctx.font = '700 26px NotoSans';
+  ctx.fillText(String(nacimiento), 785, 412);
 
-// 5. TIPO DE SANGRE
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  String(sangre),
-  870,
-  520
-);
+  // 4. LUGAR DE NACIMIENTO — etiqueta termina en x~772
+  ctx.font = '700 26px NotoSans';
+  ctx.fillText(String(provincia), 785, 463);
 
-// 6. EXPEDIDA
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  String(fechaEmision),
-  635,
-  570
-);
+  // 5. SEXO — etiqueta "SEXO:" termina en x~602, dato va justo después
+  ctx.font = '700 26px NotoSans';
+  ctx.fillText(String(sexo), 612, 470);
 
-// 7. EXPIRA
-ctx.font = '700 26px "Noto Sans Condensed Black", sans-serif';
-ctx.fillText(
-  String(fechaExpiracion),
-  610,
-  620
-);
+  // 6. TIPO DE SANGRE — etiqueta empieza en x~660, dato va después de "TIPO DE SANGRE:"
+  ctx.font = '700 26px NotoSans';
+  ctx.fillText(String(sangre), 870, 470);
 
-// 8. NÚMERO DE CÉDULA
-ctx.font = '800 42px "Noto Sans Condensed Black", sans-serif';
-ctx.fillStyle = "#000000";
-ctx.fillText(
-  String(cedula),
-  230,
-  790
-); 
+  // 7. EXPEDIDA — etiqueta termina en x~585, dato va a la derecha en la MISMA fila
+  ctx.font = '700 26px NotoSans';
+  ctx.fillText(String(fechaEmision), 600, 526);
+
+  // 8. EXPIRA — etiqueta termina en x~642
+  ctx.font = '700 26px NotoSans';
+  ctx.fillText(String(fechaExpiracion), 655, 590);
+
+  // 9. NÚMERO DE CÉDULA — alineado con logo TE
+  ctx.font = '800 42px NotoSans';
+  ctx.fillStyle = "#000000";
+  ctx.fillText(String(cedula), 230, 790);
+
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
-    {
-      name: "cedula.png"
-    }
+    { name: "cedula.png" }
   );
 };
