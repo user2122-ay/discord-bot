@@ -1,19 +1,34 @@
 const mongoose = require("mongoose");
 
 const accionSchema = new mongoose.Schema({
+
+  // 🔑 Código único de la acción
+  codigo: {
+    type: String,
+    required: true,
+    unique: true
+  },
+
+  // Tipo de acción
   tipo: {
     type: String,
-    enum: ["strike", "sancion", "ban"],
+    enum: ["strike", "sancion"],
     required: true
   },
+
+  // Número (strike 1-3 / sanción 1-6)
   numero: {
-    type: Number, // Strike 1-3 / Sanción 1-6
+    type: Number,
     required: true
   },
+
+  // Motivo
   motivo: {
     type: String,
     required: true
   },
+
+  // Staff que aplicó
   staff_id: {
     type: String,
     required: true
@@ -22,16 +37,20 @@ const accionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+
+  // Fecha
   fecha: {
     type: Date,
     default: Date.now
   },
-  // ⏱ Si hubo timeout, cuánto duró
+
+  // ⏱ Duración timeout (solo sanciones)
   duracion_timeout: {
     type: String,
     default: null
   },
-  // 🎮 Si se ejecutó comando en ERLC
+
+  // 🎮 ERLC
   erlc_ejecutado: {
     type: Boolean,
     default: false
@@ -39,7 +58,30 @@ const accionSchema = new mongoose.Schema({
   erlc_respuesta: {
     type: String,
     default: null
+  },
+
+  // 🗑️ Estado de la acción
+  removido: {
+    type: Boolean,
+    default: false
+  },
+  removido_por_id: {
+    type: String,
+    default: null
+  },
+  removido_por_tag: {
+    type: String,
+    default: null
+  },
+  removido_razon: {
+    type: String,
+    default: null
+  },
+  removido_fecha: {
+    type: Date,
+    default: null
   }
+
 });
 
 const sancionSchema = new mongoose.Schema({
@@ -50,7 +92,7 @@ const sancionSchema = new mongoose.Schema({
     unique: true
   },
 
-  // 🎯 Strikes actuales (se resetean al llegar a 3)
+  // Contadores activos (no removidos)
   strikes_actuales: {
     type: Number,
     default: 0,
@@ -58,7 +100,6 @@ const sancionSchema = new mongoose.Schema({
     max: 3
   },
 
-  // ⚠️ Sanciones acumuladas (máx 6)
   sanciones_acumuladas: {
     type: Number,
     default: 0,
@@ -66,17 +107,37 @@ const sancionSchema = new mongoose.Schema({
     max: 6
   },
 
-  // 🔨 Si está baneado permanentemente
   baneado: {
     type: Boolean,
     default: false
   },
 
-  // 📋 Historial completo de acciones
-  historial: [accionSchema]
+  // 📋 Todas las acciones (strikes y sanciones)
+  acciones: [accionSchema]
 
 }, {
   timestamps: true
 });
+
+// 🔑 Generar código único
+sancionSchema.statics.generarCodigo = function(tipo) {
+  const prefijo = tipo === "strike" ? "STK" : "SAN";
+  const chars   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const random  = Array.from({ length: 6 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join("");
+  return `${prefijo}-${random}`;
+};
+
+// 🔍 Buscar acción por código
+sancionSchema.statics.buscarPorCodigo = async function(codigo) {
+  const registro = await this.findOne({
+    "acciones.codigo": codigo
+  });
+  if (!registro) return null;
+
+  const accion = registro.acciones.find(a => a.codigo === codigo);
+  return { registro, accion };
+};
 
 module.exports = mongoose.model("SANCIONES_PTY", sancionSchema);
