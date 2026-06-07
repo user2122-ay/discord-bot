@@ -1,5 +1,24 @@
-const { EmbedBuilder } = require("discord.js");
+const {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  SectionBuilder,
+  ThumbnailBuilder,
+  MessageFlags
+} = require("discord.js");
+
 const { afkUsers } = require("../commands/afk");
+
+// ⏱ Formatear tiempo bonito
+function formatTiempo(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s} segundos`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ${s % 60}s`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}min`;
+}
 
 module.exports = (client) => {
 
@@ -9,52 +28,123 @@ module.exports = (client) => {
 
     const userId = message.author.id;
 
-    // 🔓 Quitar AFK
+    // ==============================
+    // 🔓 QUITAR AFK
+    // ==============================
     if (afkUsers.has(userId)) {
-      const data = afkUsers.get(userId);
+
+      const data   = afkUsers.get(userId);
       afkUsers.delete(userId);
+      const tiempo = formatTiempo(Date.now() - data.tiempo);
 
-      const tiempo = Math.floor((Date.now() - data.tiempo) / 1000);
+      try { await message.member.setNickname(data.nickOriginal); } catch {}
 
-      // 🔄 RESTAURAR NICKNAME
-      try {
-        await message.member.setNickname(data.nickOriginal);
-      } catch {}
+      const container = new ContainerBuilder()
+        .setAccentColor(0x57f287)
 
-      const embed = new EmbedBuilder()
-        .setColor("#57f287")
-        .setTitle("👋 Bienvenido de vuelta")
-        .setDescription("Ya no estás en modo AFK")
-        .addFields(
-          { name: "⏱ Tiempo AFK", value: `${tiempo}s` }
+        .addSectionComponents(
+          new SectionBuilder()
+            .addTextDisplayComponents(
+              new TextDisplayBuilder().setContent(
+                `## 👋 ¡Bienvenido de vuelta!\n` +
+                `-# Ya no estás en modo AFK, <@${userId}>`
+              )
+            )
+            .setThumbnailAccessory(
+              new ThumbnailBuilder().setURL(
+                message.author.displayAvatarURL({ extension: "png", size: 256 })
+              )
+            )
         )
-        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
-        .setTimestamp();
 
-      message.reply({ embeds: [embed] });
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(true)
+        )
+
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `⏱ **Tiempo AFK:** ${tiempo}`
+          )
+        )
+
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(false)
+        )
+
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `-# ${new Date().toLocaleString("es-PA")}`
+          )
+        );
+
+      await message.reply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [container]
+      });
     }
 
-    // 🔔 Avisar AFK
-    message.mentions.users.forEach(user => {
-      if (afkUsers.has(user.id)) {
+    // ==============================
+    // 🔔 AVISAR AFK
+    // ==============================
+    for (const user of message.mentions.users.values()) {
 
-        const data = afkUsers.get(user.id);
-        const tiempo = Math.floor((Date.now() - data.tiempo) / 1000);
+      if (!afkUsers.has(user.id)) continue;
 
-        const embed = new EmbedBuilder()
-          .setColor("#f1c40f")
-          .setTitle("🌙 Usuario AFK")
-          .setDescription(`<@${user.id}> está ausente`)
-          .addFields(
-            { name: "📝 Motivo", value: data.motivo },
-            { name: "⏱ Tiempo", value: `${tiempo}s` }
+      const data   = afkUsers.get(user.id);
+      const tiempo = formatTiempo(Date.now() - data.tiempo);
+
+      const container = new ContainerBuilder()
+        .setAccentColor(0xf1c40f)
+
+        .addSectionComponents(
+          new SectionBuilder()
+            .addTextDisplayComponents(
+              new TextDisplayBuilder().setContent(
+                `## 🌙 Usuario AFK\n` +
+                `-# <@${user.id}> está ausente en este momento`
+              )
+            )
+            .setThumbnailAccessory(
+              new ThumbnailBuilder().setURL(
+                user.displayAvatarURL({ extension: "png", size: 256 })
+              )
+            )
+        )
+
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(true)
+        )
+
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `📝 **Motivo:** ${data.motivo}\n` +
+            `⏱ **Ausente hace:** ${tiempo}`
           )
-          .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-          .setTimestamp();
+        )
 
-        message.reply({ embeds: [embed] });
-      }
-    });
+        .addSeparatorComponents(
+          new SeparatorBuilder()
+            .setSpacing(SeparatorSpacingSize.Small)
+            .setDivider(false)
+        )
+
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `-# Intenta contactarlo más tarde`
+          )
+        );
+
+      await message.reply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [container]
+      });
+    }
 
   });
 
