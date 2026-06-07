@@ -6,16 +6,12 @@ const {
   SeparatorSpacingSize,
   SectionBuilder,
   ThumbnailBuilder,
-  MessageFlags,
-  PermissionFlagsBits
+  MessageFlags
 } = require("discord.js");
 
 const axios   = require("axios");
 const Sancion = require("../models/Sancion");
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🎭 ROLES
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const ROL_STAFF = "1451018406537986168";
 
 const ROLES_STRIKE = {
@@ -33,20 +29,17 @@ const ROLES_SANCION = {
   6: "1451018442529570906"
 };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ⏱ DURACIONES DE TIMEOUT (ms)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const TIMEOUTS = {
-  1: { ms: 60 * 60 * 1000,          texto: "1 hora" },
-  2: { ms: 3 * 60 * 60 * 1000,      texto: "3 horas" },
-  3: { ms: 6 * 60 * 60 * 1000,      texto: "6 horas" },
-  4: { ms: 12 * 60 * 60 * 1000,     texto: "12 horas" },
-  5: { ms: 24 * 60 * 60 * 1000,     texto: "24 horas" },
-  6: null // ban permanente
+  1: { ms: 1  * 60 * 60 * 1000, texto: "1 hora" },
+  2: { ms: 3  * 60 * 60 * 1000, texto: "3 horas" },
+  3: { ms: 6  * 60 * 60 * 1000, texto: "6 horas" },
+  4: { ms: 12 * 60 * 60 * 1000, texto: "12 horas" },
+  5: { ms: 24 * 60 * 60 * 1000, texto: "24 horas" },
+  6: null
 };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🎮 ERLC API
+// 🎮 ERLC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function ejecutarERLC(comando) {
   try {
@@ -67,59 +60,97 @@ async function ejecutarERLC(comando) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🔨 APLICAR SANCIÓN
+// 🔨 Aplicar sanción en Discord + ERLC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function aplicarSancion(miembro, numSancion, motivo, staff, guild, registro) {
+async function aplicarSancion(miembro, numSancion, motivo, guild) {
 
-  const resultado = {
-    timeout:  null,
-    ban:      false,
-    erlc:     { ok: false, respuesta: null }
-  };
+  const resultado = { timeout: null, ban: false, erlc: { ok: false } };
 
-  // ── Quitar roles de sanciones anteriores ──
+  // Quitar roles de sanciones anteriores
   for (const [num, rolId] of Object.entries(ROLES_SANCION)) {
     if (parseInt(num) < numSancion) {
       await miembro.roles.remove(rolId).catch(() => {});
     }
   }
 
-  // ── Agregar rol de sanción actual ──
+  // Agregar rol de sanción actual
   await miembro.roles.add(ROLES_SANCION[numSancion]).catch(() => {});
 
   if (numSancion === 6) {
-    // 🚫 Ban permanente
     await guild.members.ban(miembro.id, { reason: motivo }).catch(() => {});
     resultado.ban = true;
 
-    // ERLC ban
     const erlc = await ejecutarERLC(`:ban ${miembro.user.username}`);
     resultado.erlc = { ok: erlc.ok, respuesta: JSON.stringify(erlc.data || erlc.error) };
 
   } else {
-    // ⏱ Timeout
     const timeout = TIMEOUTS[numSancion];
     await miembro.timeout(timeout.ms, motivo).catch(() => {});
     resultado.timeout = timeout.texto;
 
-    // ERLC kick + mensaje
     const erlc = await ejecutarERLC(`:kick ${miembro.user.username}`);
     resultado.erlc = { ok: erlc.ok, respuesta: JSON.stringify(erlc.data || erlc.error) };
   }
 
-  // ── Guardar en historial ──
-  registro.historial.push({
-    tipo:              "sancion",
-    numero:            numSancion,
-    motivo,
-    staff_id:          staff.id,
-    staff_tag:         staff.tag,
-    duracion_timeout:  resultado.timeout,
-    erlc_ejecutado:    resultado.erlc.ok,
-    erlc_respuesta:    resultado.erlc.respuesta
-  });
-
   return resultado;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🧱 Cajón de confirmación
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildConfirmacion({ color, titulo, user, staff, campos, codigo }) {
+  return new ContainerBuilder()
+    .setAccentColor(color)
+
+    .addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `## ${titulo}\n` +
+            `-# Aplicado por ${staff.tag}`
+          )
+        )
+        .setThumbnailAccessory(
+          new ThumbnailBuilder().setURL(
+            user.displayAvatarURL({ extension: "png", size: 256 })
+          )
+        )
+    )
+
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `**👤 Usuario:** <@${user.id}> (${user.tag})\n` +
+        `**🛡️ Staff:** <@${staff.id}>\n\n` +
+        campos.map(c => `**${c.name}:** ${c.value}`).join("\n")
+      )
+    )
+
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+
+    // 🔑 Código solo y fácil de copiar
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `**🔑 Código de la acción:**\n` +
+        `\`\`\`\n${codigo}\n\`\`\``
+      )
+    )
+
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
+    )
+
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `-# Guarda este código — es necesario para revertir la acción\n` +
+        `-# ${new Date().toLocaleString("es-PA")}`
+      )
+    );
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -141,19 +172,19 @@ module.exports = {
         .setDescription("Tipo de sanción")
         .setRequired(true)
         .addChoices(
-          { name: "⚡ Strike",           value: "strike" },
-          { name: "⚠️ Sanción directa",  value: "sancion" }
+          { name: "⚡ Strike",          value: "strike" },
+          { name: "🚨 Sanción directa", value: "sancion" }
         )
     )
     .addStringOption(o =>
       o.setName("motivo")
-        .setDescription("Motivo de la sanción")
+        .setDescription("Motivo")
         .setRequired(true)
     ),
 
   async execute(interaction) {
 
-    // 🔒 Verificar rol staff
+    // 🔒 Solo staff
     if (!interaction.member.roles.cache.has(ROL_STAFF)) {
       return interaction.reply({
         content: "❌ No tienes permisos para usar este comando.",
@@ -180,23 +211,15 @@ module.exports = {
       registro = new Sancion({ discord_id: userTarget.id });
     }
 
-    // 🚫 Ya baneado
     if (registro.baneado) {
       return interaction.editReply({ content: "❌ Este usuario ya está baneado permanentemente." });
     }
 
-    // 🚫 Ya tiene 6 sanciones
     if (registro.sanciones_acumuladas >= 6) {
-      return interaction.editReply({
-        content: "❌ Este usuario ya tiene el máximo de sanciones (6). Debe ser baneado."
-      });
+      return interaction.editReply({ content: "❌ Este usuario ya tiene el máximo de sanciones (6)." });
     }
 
-    let descripcionAccion = "";
-    let colorContainer    = 0xe67e22;
-    let tituloContainer   = "";
-    let camposExtra       = [];
-    let sancionAplicada   = null;
+    let container;
 
     // ━━━━━━━━━━━━━━━━━━━━
     // ⚡ STRIKE
@@ -206,31 +229,26 @@ module.exports = {
       registro.strikes_actuales++;
       const numStrike = registro.strikes_actuales;
 
-      // Quitar strike anterior y poner el nuevo
+      // Quitar roles de strikes anteriores y poner el actual
       for (let i = 1; i <= 3; i++) {
         await miembro.roles.remove(ROLES_STRIKE[i]).catch(() => {});
       }
       await miembro.roles.add(ROLES_STRIKE[numStrike]).catch(() => {});
 
-      // Guardar en historial
-      registro.historial.push({
-        tipo:     "strike",
-        numero:   numStrike,
+      // 🔑 Generar código
+      const codigo = Sancion.generarCodigo("strike");
+
+      // Guardar acción
+      registro.acciones.push({
+        codigo,
+        tipo:      "strike",
+        numero:    numStrike,
         motivo,
-        staff_id: staff.id,
+        staff_id:  staff.id,
         staff_tag: staff.tag
       });
 
-      colorContainer  = 0xf1c40f;
-      tituloContainer = `⚡ Strike ${numStrike} aplicado`;
-      descripcionAccion = `Strike **${numStrike}/3** registrado.`;
-
-      camposExtra = [
-        { name: "⚡ Strike actual",      value: `${numStrike}/3` },
-        { name: "⚠️ Sanciones totales", value: `${registro.sanciones_acumuladas}/6` }
-      ];
-
-      // 🔄 Al llegar a 3 strikes → sanción automática
+      // ¿Llegó a 3 strikes? → sanción automática
       if (numStrike === 3) {
 
         // Limpiar strikes
@@ -242,146 +260,138 @@ module.exports = {
         registro.sanciones_acumuladas++;
         const numSancion = registro.sanciones_acumuladas;
 
-        const resultadoSancion = await aplicarSancion(
-          miembro, numSancion, `3 strikes acumulados — ${motivo}`, staff, guild, registro
+        const resultado = await aplicarSancion(
+          miembro, numSancion, `3 strikes acumulados — ${motivo}`, guild
         );
 
         if (numSancion === 6) registro.baneado = true;
 
-        colorContainer  = 0xe74c3c;
-        tituloContainer = `⚡ Strike 3 → 🚨 Sanción ${numSancion} automática`;
-        descripcionAccion =
-          `Al acumular **3 strikes**, se aplicó automáticamente la **Sanción ${numSancion}**.\n` +
-          `Los strikes fueron reiniciados.`;
+        // 🔑 Código para la sanción automática
+        const codigoSancion = Sancion.generarCodigo("sancion");
 
-        camposExtra = [
-          { name: "⚡ Strikes",           value: "Reiniciados a 0" },
-          { name: "🚨 Sanción aplicada",  value: `Sanción **${numSancion}/6**` },
-          { name: "⏱️ Aislamiento",       value: resultadoSancion.timeout || "Ban permanente" },
-          { name: "🎮 ERLC",              value: resultadoSancion.erlc.ok ? "✅ Ejecutado" : "❌ Error" },
-          { name: "⚠️ Sanciones totales", value: `${numSancion}/6` }
-        ];
+        registro.acciones.push({
+          codigo:           codigoSancion,
+          tipo:             "sancion",
+          numero:           numSancion,
+          motivo:           `3 strikes acumulados — ${motivo}`,
+          staff_id:         staff.id,
+          staff_tag:        staff.tag,
+          duracion_timeout: resultado.timeout,
+          erlc_ejecutado:   resultado.erlc.ok,
+          erlc_respuesta:   resultado.erlc.respuesta ?? null
+        });
 
-        sancionAplicada = numSancion;
+        await registro.save();
+
+        container = buildConfirmacion({
+          color:  0xe74c3c,
+          titulo: `⚡ Strike 3 → 🚨 Sanción ${numSancion} automática`,
+          user:   userTarget,
+          staff,
+          codigo: `${codigo}  (strike)\n${codigoSancion}  (sanción automática)`,
+          campos: [
+            { name: "⚡ Strikes",          value: "Reiniciados a 0" },
+            { name: "🚨 Sanción aplicada", value: `Sanción **${numSancion}/6**` },
+            { name: "⏱️ Aislamiento",      value: resultado.timeout || "Ban permanente" },
+            { name: "🎮 ERLC",             value: resultado.erlc.ok ? "✅ Ejecutado" : "❌ Error" },
+            { name: "📝 Motivo",           value: motivo }
+          ]
+        });
+
+      } else {
+
+        await registro.save();
+
+        container = buildConfirmacion({
+          color:  0xf1c40f,
+          titulo: `⚡ Strike ${numStrike} aplicado`,
+          user:   userTarget,
+          staff,
+          codigo,
+          campos: [
+            { name: "⚡ Strike actual",     value: `${numStrike}/3` },
+            { name: "🚨 Sanciones totales", value: `${registro.sanciones_acumuladas}/6` },
+            { name: "📝 Motivo",            value: motivo }
+          ]
+        });
       }
 
     // ━━━━━━━━━━━━━━━━━━━━
-    // ⚠️ SANCIÓN DIRECTA
+    // 🚨 SANCIÓN DIRECTA
     // ━━━━━━━━━━━━━━━━━━━━
-    } else if (tipo === "sancion") {
+    } else {
 
       registro.sanciones_acumuladas++;
       const numSancion = registro.sanciones_acumuladas;
 
-      const resultadoSancion = await aplicarSancion(
-        miembro, numSancion, motivo, staff, guild, registro
-      );
+      const resultado = await aplicarSancion(miembro, numSancion, motivo, guild);
 
       if (numSancion === 6) registro.baneado = true;
 
-      colorContainer  = 0xe74c3c;
-      tituloContainer = `🚨 Sanción ${numSancion} aplicada`;
-      descripcionAccion =
-        numSancion === 6
-          ? `Se aplicó la **Sanción 6** — Ban permanente.`
-          : `Se aplicó la **Sanción ${numSancion}** — Aislamiento de ${TIMEOUTS[numSancion].texto}.`;
+      // 🔑 Generar código
+      const codigo = Sancion.generarCodigo("sancion");
 
-      camposExtra = [
-        { name: "🚨 Sanción",            value: `${numSancion}/6` },
-        { name: "⏱️ Aislamiento",        value: resultadoSancion.timeout || "Ban permanente" },
-        { name: "🎮 ERLC",               value: resultadoSancion.erlc.ok ? "✅ Ejecutado" : "❌ Error" },
-        { name: "⚠️ Sanciones totales",  value: `${registro.sanciones_acumuladas}/6` },
-        { name: "⚡ Strikes actuales",   value: `${registro.strikes_actuales}/3` }
-      ];
+      registro.acciones.push({
+        codigo,
+        tipo:             "sancion",
+        numero:           numSancion,
+        motivo,
+        staff_id:         staff.id,
+        staff_tag:        staff.tag,
+        duracion_timeout: resultado.timeout,
+        erlc_ejecutado:   resultado.erlc.ok,
+        erlc_respuesta:   resultado.erlc.respuesta ?? null
+      });
 
-      sancionAplicada = numSancion;
+      await registro.save();
+
+      container = buildConfirmacion({
+        color:  0xe74c3c,
+        titulo: `🚨 Sanción ${numSancion} aplicada`,
+        user:   userTarget,
+        staff,
+        codigo,
+        campos: [
+          { name: "🚨 Sanción",           value: `${numSancion}/6` },
+          { name: "⏱️ Aislamiento",       value: resultado.timeout || "Ban permanente" },
+          { name: "🎮 ERLC",              value: resultado.erlc.ok ? "✅ Ejecutado" : "❌ Error" },
+          { name: "⚡ Strikes actuales",  value: `${registro.strikes_actuales}/3` },
+          { name: "📝 Motivo",            value: motivo }
+        ]
+      });
     }
-
-    // 💾 Guardar
-    await registro.save();
-
-    // ━━━━━━━━━━━━━━━━━━━━
-    // 🧱 Respuesta
-    // ━━━━━━━━━━━━━━━━━━━━
-    const container = new ContainerBuilder()
-      .setAccentColor(colorContainer)
-
-      .addSectionComponents(
-        new SectionBuilder()
-          .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-              `## ${tituloContainer}\n` +
-              `-# Aplicado por ${staff.tag}`
-            )
-          )
-          .setThumbnailAccessory(
-            new ThumbnailBuilder().setURL(
-              userTarget.displayAvatarURL({ extension: "png", size: 256 })
-            )
-          )
-      )
-
-      .addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-          .setDivider(true)
-      )
-
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `**👤 Usuario:** <@${userTarget.id}> (${userTarget.tag})\n` +
-          `**📝 Motivo:** ${motivo}\n` +
-          `**🛡️ Staff:** <@${staff.id}>\n\n` +
-          camposExtra.map(f => `**${f.name}:** ${f.value}`).join("\n")
-        )
-      )
-
-      .addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-          .setDivider(false)
-      )
-
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `-# ${new Date().toLocaleString("es-PA")}`
-        )
-      );
 
     await interaction.editReply({
       flags: MessageFlags.IsComponentsV2,
       components: [container]
     });
 
-    // 📩 DM al usuario sancionado
+    // 📩 DM al usuario
     const dmContainer = new ContainerBuilder()
-      .setAccentColor(colorContainer)
+      .setAccentColor(0xe74c3c)
 
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          `## ${tituloContainer}\n` +
+          `## ⚠️ Has recibido una sanción\n` +
           `-# Panamá RP V2`
         )
       )
 
       .addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-          .setDivider(true)
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
       )
 
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `**📝 Motivo:** ${motivo}\n` +
-          camposExtra.map(f => `**${f.name}:** ${f.value}`).join("\n") +
-          `\n\n> Si crees que esta sanción fue injusta, abre un ticket en el servidor.`
+          `**⚡ Strikes:** ${registro.strikes_actuales}/3\n` +
+          `**🚨 Sanciones:** ${registro.sanciones_acumuladas}/6\n\n` +
+          `> Si crees que esta sanción fue injusta, abre un ticket en el servidor.`
         )
       )
 
       .addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-          .setDivider(false)
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
       )
 
       .addTextDisplayComponents(
