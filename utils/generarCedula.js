@@ -52,31 +52,31 @@ module.exports = async ({
   ctx.font = '700 26px NotoSans';
   ctx.fillText(String(nacimiento), 785, 412);
 
-  // 4. LUGAR DE NACIMIENTO (etiqueta termina en x~772)
-  ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(provincia), 785, 460);
+  // 4. LUGAR DE NACIMIENTO — canvas_y=475, dato después de x=773
+ctx.font = '700 26px NotoSans';
+ctx.fillText(String(provincia), 785, 462);
 
-  // 5. SEXO (etiqueta "SEXO:" termina en canvas x~656, y~483)
-  ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(sexo), 665, 471);
+// 5. SEXO — canvas_y=544, SEXO: termina en x=586
+ctx.font = '700 26px NotoSans';
+ctx.fillText(String(sexo), 596, 531);
 
-  // 6. TIPO DE SANGRE (etiqueta termina en canvas x~778, dato va después)
-  ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(sangre), 788, 471);
+// 6. TIPO DE SANGRE — canvas_y=544, etiqueta termina en x=906
+ctx.font = '700 26px NotoSans';
+ctx.fillText(String(sangre), 916, 531);
 
-  // 7. EXPEDIDA (etiqueta termina en canvas x~584, y~539)
-  ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(fechaEmision), 595, 526);
+// 7. EXPEDIDA — canvas_y=607, etiqueta termina en x=634
+ctx.font = '700 26px NotoSans';
+ctx.fillText(String(fechaEmision), 644, 594);
 
-  // 8. EXPIRA (etiqueta termina en canvas x~641, y~603)
-  ctx.font = '700 26px NotoSans';
-  ctx.fillText(String(fechaExpiracion), 652, 590);
+// 8. EXPIRA — canvas_y=664, etiqueta termina en x=605
+ctx.font = '700 26px NotoSans';
+ctx.fillText(String(fechaExpiracion), 615, 651);
 
-  // 9. NÚMERO DE CÉDULA (más a la derecha del logo TE)
-  ctx.font = '800 42px NotoSans';
-  ctx.fillStyle = "#000000";
-  ctx.fillText(String(cedula), 290, 790);
-
+// 9. NÚMERO DE CÉDULA — más grande
+ctx.font = '800 52px NotoSans';
+ctx.fillStyle = "#000000";
+ctx.fillText(String(cedula), 290, 790);
+  
   return new AttachmentBuilder(
     canvas.toBuffer("image/png"),
     { name: "cedula.png" }
