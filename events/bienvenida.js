@@ -15,18 +15,17 @@ module.exports = (client) => {
 
   const CANAL_BIENVENIDA = "1451018651351384199";
 
-  // 🎨 Colores que varían por miembro
   const COLORES = [
-    0x5865F2, // Blurple
-    0x2ecc71, // Verde
-    0xe74c3c, // Rojo
-    0xe67e22, // Naranja
-    0x9b59b6, // Morado
-    0x1abc9c, // Turquesa
-    0xf1c40f, // Amarillo
-    0xe91e63, // Rosa
-    0x3498db, // Azul
-    0xff5722, // Naranja oscuro
+    0x5865F2,
+    0x2ecc71,
+    0xe74c3c,
+    0xe67e22,
+    0x9b59b6,
+    0x1abc9c,
+    0xf1c40f,
+    0xe91e63,
+    0x3498db,
+    0xff5722,
   ];
 
   client.on("guildMemberAdd", async (member) => {
@@ -34,10 +33,8 @@ module.exports = (client) => {
     const canal = await member.guild.channels.fetch(CANAL_BIENVENIDA).catch(() => null);
     if (!canal) return;
 
-    // 🎨 Color aleatorio por miembro
     const color = COLORES[Math.floor(Math.random() * COLORES.length)];
 
-    // 🔘 Botones
     const botones = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setLabel("✅ Verificarse")
@@ -55,11 +52,9 @@ module.exports = (client) => {
         .setURL("https://discord.com/channels/1345956472986796183/1451771796918636697")
     );
 
-    // 🧱 Cajón principal
     const container = new ContainerBuilder()
       .setAccentColor(color)
 
-      // Banner
       .addMediaGalleryComponents(
         new MediaGalleryBuilder().addItems(
           new MediaGalleryItemBuilder()
@@ -74,7 +69,6 @@ module.exports = (client) => {
           .setDivider(true)
       )
 
-      // Título y bienvenida
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `## 👋 ¡Bienvenido/a a Panamá RP V2! 🌴\n` +
@@ -89,7 +83,6 @@ module.exports = (client) => {
           .setDivider(true)
       )
 
-      // Recomendaciones
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `📌 **Antes de comenzar:**\n` +
@@ -105,7 +98,6 @@ module.exports = (client) => {
           .setDivider(true)
       )
 
-      // Texto botones
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `🔽 **Usa los botones para comenzar tu experiencia:**`
@@ -118,15 +110,14 @@ module.exports = (client) => {
           .setDivider(false)
       )
 
-      // Footer
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `-# © Panamá RP V2 | Todos los derechos reservados®`
         )
       );
 
+    // ✅ Sin "content" — no es compatible con IsComponentsV2
     await canal.send({
-      content: `¡<@${member.id}> ingresó al servidor! 🎉`,
       flags: MessageFlags.IsComponentsV2,
       components: [container, botones]
     });
