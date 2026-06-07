@@ -1,10 +1,14 @@
 const {
   SlashCommandBuilder,
-  EmbedBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  PermissionFlagsBits
+  PermissionFlagsBits,
+  MessageFlags
 } = require("discord.js");
 
 module.exports = {
@@ -18,31 +22,61 @@ module.exports = {
 
   async execute(interaction) {
 
-    const embed = new EmbedBuilder()
-      .setColor("#2b2d31")
-      .setTitle("✅ Verificación Roblox")
-      .setDescription(
-        [
-          "# Panamá RP V2",
-          "",
-          "Para verificar tu cuenta sigue los pasos:",
-          "",
-          "1. Pulsa el botón de verificación.",
-          "2. Escribe tu usuario de Roblox.",
-          "3. Recibe tu código único.",
-          "4. Coloca el código en tu descripción de Roblox.",
-          "5. Pulsa comprobar.",
-          "6. Espera la aprobación del staff.",
-          "",
-          "> Una vez aprobada tu solicitud recibirás acceso al servidor."
-        ].join("\n")
-      )
-      .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
-      .setFooter({
-        text: "Sistema de Verificación • Panamá RP V2"
-      });
+    const container = new ContainerBuilder()
+      .setAccentColor(0x57f287)
 
-    const row = new ActionRowBuilder().addComponents(
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `## ✅ Verificación Roblox\n` +
+          `# Panamá RP V2\n` +
+          `-# Sistema Oficial de Verificación`
+        )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder()
+          .setSpacing(SeparatorSpacingSize.Small)
+          .setDivider(true)
+      )
+
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `Para acceder al servidor debes vincular tu cuenta de Roblox.\n` +
+          `Sigue los pasos a continuación:\n\n` +
+          `> **1.** Pulsa el botón **Verificar Cuenta**\n` +
+          `> **2.** Escribe tu usuario de Roblox\n` +
+          `> **3.** Responde algunas preguntas rápidas\n` +
+          `> **4.** Recibirás un código único\n` +
+          `> **5.** Coloca el código en tu **descripción de Roblox**\n` +
+          `> **6.** Pulsa **Comprobar** y espera aprobación del staff`
+        )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder()
+          .setSpacing(SeparatorSpacingSize.Small)
+          .setDivider(true)
+      )
+
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `> ⚠️ Una vez aprobada tu solicitud recibirás acceso completo al servidor.`
+        )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder()
+          .setSpacing(SeparatorSpacingSize.Small)
+          .setDivider(false)
+      )
+
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `-# © Panamá RP V2 | Sistema de Verificación`
+        )
+      );
+
+    const boton = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("roblox_verificar")
         .setLabel("Verificar Cuenta")
@@ -51,8 +85,8 @@ module.exports = {
     );
 
     await interaction.channel.send({
-      embeds: [embed],
-      components: [row]
+      flags: MessageFlags.IsComponentsV2,
+      components: [container, boton]
     });
 
     await interaction.reply({
