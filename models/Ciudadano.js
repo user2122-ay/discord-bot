@@ -37,6 +37,11 @@ const ciudadanoSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  sexo_ic: {
+  type: String,
+  required: true,
+  enum: ["M", "F"]  // solo acepta M o F
+},
 
   numero_cedula: {
     type: String,
