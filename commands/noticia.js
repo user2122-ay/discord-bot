@@ -1,51 +1,82 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  SectionBuilder,
+  ThumbnailBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  MessageFlags
+} = require("discord.js");
 
-// 🔧 CONFIGURACIÓN
-const ROL_AUTORIZADO = "1451018389127434342";
+const ROL_AUTORIZADO  = "1451018389127434342";
 const CANAL_PERMITIDO = "1451018729063452695";
-const ROL_PING = "1451018420861538467";
+const ROL_PING        = "1451018420861538467";
+
+const CONFIGS_TIPO = {
+  leve: {
+    color:  0x2ecc71,
+    emoji:  "🟢",
+    label:  "LEVE",
+    ping:   false
+  },
+  mediano: {
+    color:  0xf1c40f,
+    emoji:  "🟡",
+    label:  "RELEVANTE",
+    ping:   false
+  },
+  urgente: {
+    color:  0xe74c3c,
+    emoji:  "🔴",
+    label:  "🚨 URGENTE — ÚLTIMA HORA",
+    ping:   true
+  }
+};
 
 module.exports = {
+  permisos:  "📰 Noticieros",
+  categoria: "rol",
+
   data: new SlashCommandBuilder()
     .setName("noticia")
     .setDescription("Publicar una noticia RP")
 
+    // ✅ REQUIRED PRIMERO
     .addStringOption(o =>
       o.setName("tipo")
         .setDescription("Nivel de la noticia")
         .setRequired(true)
         .addChoices(
-          { name: "🟢 Leve", value: "leve" },
+          { name: "🟢 Leve",    value: "leve" },
           { name: "🟡 Mediano", value: "mediano" },
           { name: "🔴 Urgente", value: "urgente" }
         )
     )
-
     .addStringOption(o =>
       o.setName("canal")
         .setDescription("Nombre del canal de noticias")
         .setRequired(true)
     )
-
     .addStringOption(o =>
       o.setName("informacion")
         .setDescription("Información de la noticia")
         .setRequired(true)
     )
-
     .addAttachmentOption(o =>
       o.setName("logo")
-        .setDescription("Logo del canal (imagen)")
+        .setDescription("Logo del canal de noticias")
         .setRequired(true)
     )
 
+    // ✅ OPTIONAL AL FINAL
     .addAttachmentOption(o =>
-      o.setName("imagenes")
-        .setDescription("Imágenes de los hechos (opcional)")
+      o.setName("imagen")
+        .setDescription("Imagen de los hechos (opcional)")
         .setRequired(false)
     ),
-
-  permisos: "📰 Noticieros",
 
   async execute(interaction) {
 
@@ -65,37 +96,81 @@ module.exports = {
       });
     }
 
-    // 📥 Datos
-    const tipo = interaction.options.getString("tipo");
-    const canal = interaction.options.getString("canal");
-    const info = interaction.options.getString("informacion");
-    const logo = interaction.options.getAttachment("logo");
-    const imagenes = interaction.options.getAttachment("imagenes");
+    const tipo   = interaction.options.getString("tipo");
+    const canal  = interaction.options.getString("canal");
+    const info   = interaction.options.getString("informacion");
+    const logo   = interaction.options.getAttachment("logo");
+    const imagen = interaction.options.getAttachment("imagen");
+    const hora   = `<t:${Math.floor(Date.now() / 1000)}:F>`;
 
-    // 📰 Embed (SIN mostrar el tipo)
-    const embed = new EmbedBuilder()
-      .setTitle(`📰 ${canal}`)
-      .setDescription(info)
-      .setColor(0xe67e22)
-      .setThumbnail(logo.url)
-      .setFooter({
-        text: `Publicado por ${interaction.user.tag}`,
-        iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-      })
-      .setTimestamp();
+    const config = CONFIGS_TIPO[tipo];
 
-    if (imagenes) {
-      embed.setImage(imagenes.url);
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🧱 Container
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const container = new ContainerBuilder()
+      .setAccentColor(config.color);
+
+    // 🔴 Ping urgente dentro del container
+    if (config.ping) {
+      container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`<@&${ROL_PING}>`)
+      );
     }
 
-    // 🎯 SOLO PING SI ES URGENTE
-    const contenido = tipo === "urgente" ? `<@&${ROL_PING}>` : null;
+    // 🖼️ Imagen de los hechos (si hay)
+    if (imagen) {
+      container.addMediaGalleryComponents(
+        new MediaGalleryBuilder().addItems(
+          new MediaGalleryItemBuilder()
+            .setURL(imagen.url)
+            .setDescription(`Imágenes — ${canal}`)
+        )
+      );
+    }
 
-    // 📢 ENVIAR
+    container
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      )
+
+      // Encabezado con logo
+      .addSectionComponents(
+        new SectionBuilder()
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+              `## 📰 ${canal}\n` +
+              `-# ${config.emoji} ${config.label} · ${hora}`
+            )
+          )
+          .setThumbnailAccessory(
+            new ThumbnailBuilder().setURL(logo.url)
+          )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      )
+
+      // Contenido de la noticia
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(info)
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      )
+
+      // Footer
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `-# 📡 Publicado por ${interaction.user.tag} · ${canal} · Panamá RP V2`
+        )
+      );
+
     await interaction.reply({
-      content: contenido,
-      embeds: [embed],
-      allowedMentions: tipo === "urgente" ? { roles: [ROL_PING] } : {}
+      flags: MessageFlags.IsComponentsV2,
+      components: [container]
     });
   }
 };
