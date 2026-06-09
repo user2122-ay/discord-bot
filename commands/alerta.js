@@ -102,7 +102,7 @@ const ALERTAS = {
 };
 
 module.exports = {
-  permisos: "🛡️ Staff",
+  permisos:  "🛡️ Staff",
   categoria: "staff",
 
   data: new SlashCommandBuilder()
@@ -113,9 +113,9 @@ module.exports = {
         .setDescription("Nivel de alerta")
         .setRequired(true)
         .addChoices(
-          { name: "🟢 Verde  — Nivel Bajo",    value: "verde" },
-          { name: "🟡 Amarilla — Nivel Medio", value: "amarilla" },
-          { name: "🔴 Roja — Nivel Crítico",   value: "roja" }
+          { name: "🟢 Verde — Nivel Bajo",      value: "verde" },
+          { name: "🟡 Amarilla — Nivel Medio",  value: "amarilla" },
+          { name: "🔴 Roja — Nivel Crítico",    value: "roja" }
         )
     )
     .addStringOption(o =>
@@ -141,18 +141,22 @@ module.exports = {
     const tipo  = interaction.options.getString("tipo");
     const razon = interaction.options.getString("razon");
     const zona  = interaction.options.getString("zona") || "Ciudad completa";
+    const hora  = `<t:${Math.floor(Date.now() / 1000)}:F>`;
 
-    const alerta = ALERTAS[tipo];
-    const hora   = `<t:${Math.floor(Date.now() / 1000)}:F>`;
-
+    const alerta       = ALERTAS[tipo];
     const canalAlertas = interaction.guild.channels.cache.get(CANAL_ALERTAS);
     const canalLogs    = interaction.guild.channels.cache.get(CANAL_LOGS);
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 🧱 Cajón principal de alerta
+    // 🧱 Container principal
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const container = new ContainerBuilder()
       .setAccentColor(alerta.color)
+
+      // ✅ Mención dentro del container
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`<@&${ROL_PING}>`)
+      )
 
       // 🖼️ Banner
       .addMediaGalleryComponents(
@@ -232,22 +236,21 @@ module.exports = {
         )
       );
 
-    // Botón de reconocimiento
+    // Botón enterado
     const botones = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`alerta_ack_${interaction.user.id}`)
         .setLabel("✅ Enterado")
         .setStyle(
-          tipo === "verde"    ? ButtonStyle.Success  :
-          tipo === "amarilla" ? ButtonStyle.Primary  :
+          tipo === "verde"    ? ButtonStyle.Success :
+          tipo === "amarilla" ? ButtonStyle.Primary :
           ButtonStyle.Danger
         )
     );
 
-    // 📢 Enviar al canal de alertas
+    // 📢 Enviar al canal de alertas — sin content
     if (canalAlertas) {
       await canalAlertas.send({
-        content: `<@&${ROL_PING}>`,
         flags: MessageFlags.IsComponentsV2,
         components: [container, botones]
       });
