@@ -108,6 +108,9 @@ module.exports = {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 🧱 Container
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (config.ping) {
+  await interaction.channel.send(`<@&${ROL_PING}>`);
+    }
     const container = new ContainerBuilder()
       .setAccentColor(config.color);
 
@@ -161,12 +164,6 @@ module.exports = {
         )
       );
 
-    // Solo para urgente — mensaje normal con ping ANTES del container
-if (config.ping) {
-  await interaction.channel.send(`<@&${ROL_PING}>`);
-}
-
-// Luego el container
 await interaction.reply({
   flags: MessageFlags.IsComponentsV2,
   components: [container]
