@@ -111,13 +111,6 @@ module.exports = {
     const container = new ContainerBuilder()
       .setAccentColor(config.color);
 
-    // 🔴 Ping urgente dentro del container
-    if (config.ping) {
-      container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`<@&${ROL_PING}>`)
-      );
-    }
-
     // 🖼️ Imagen de los hechos (si hay)
     if (imagen) {
       container.addMediaGalleryComponents(
@@ -168,9 +161,15 @@ module.exports = {
         )
       );
 
-    await interaction.reply({
-      flags: MessageFlags.IsComponentsV2,
-      components: [container]
-    });
+    // Solo para urgente — mensaje normal con ping ANTES del container
+if (config.ping) {
+  await interaction.channel.send(`<@&${ROL_PING}>`);
+}
+
+// Luego el container
+await interaction.reply({
+  flags: MessageFlags.IsComponentsV2,
+  components: [container]
+});
   }
 };
