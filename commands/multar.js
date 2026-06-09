@@ -1,51 +1,73 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const fs = require("fs");
+const {
+  SlashCommandBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  SectionBuilder,
+  ThumbnailBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  MessageFlags
+} = require("discord.js");
+
+const User  = require("../models/User");
+const Multa = require("../models/Multa");
 
 const ROLES_AUTORIZADOS = [
   "1451018375286226957",
-  "1451018385801351219", 
+  "1451018385801351219"
 ];
 
 module.exports = {
+  permisos:  "👮 Fuerza Pública",
+  categoria: "rol",
+
   data: new SlashCommandBuilder()
     .setName("multar")
     .setDescription("Registrar una multa vehicular")
 
-    // 🔥 REQUIRED PRIMERO (IMPORTANTE)
+    // ✅ REQUIRED PRIMERO
     .addStringOption(o =>
-      o.setName("placa").setDescription("Placa del vehículo").setRequired(true)
+      o.setName("placa")
+        .setDescription("Placa del vehículo")
+        .setRequired(true)
     )
     .addUserOption(o =>
-      o.setName("usuario").setDescription("Usuario multado").setRequired(true)
+      o.setName("usuario")
+        .setDescription("Usuario multado")
+        .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName("oficial").setDescription("Oficial que impone la multa").setRequired(true)
+      o.setName("lugar")
+        .setDescription("Lugar de la infracción")
+        .setRequired(true)
     )
     .addStringOption(o =>
-      o.setName("lugar").setDescription("Lugar de la infracción").setRequired(true)
-    )
-    .addStringOption(o =>
-      o.setName("motivo").setDescription("Motivo de la multa").setRequired(true)
+      o.setName("motivo")
+        .setDescription("Motivo de la multa")
+        .setRequired(true)
     )
     .addIntegerOption(o =>
-      o.setName("monto").setDescription("Monto de la multa").setRequired(true)
+      o.setName("monto")
+        .setDescription("Monto de la multa en $")
+        .setRequired(true)
     )
     .addAttachmentOption(o =>
-      o.setName("imagen").setDescription("Imagen de evidencia").setRequired(true)
+      o.setName("imagen")
+        .setDescription("Imagen de evidencia")
+        .setRequired(true)
     )
 
-    // ✅ OPCIONAL AL FINAL
+    // ✅ OPTIONAL AL FINAL
     .addUserOption(o =>
       o.setName("companero")
         .setDescription("Compañero en el operativo")
         .setRequired(false)
     ),
 
-  permisos: "👮 Fuerza Pública",
-
   async execute(interaction) {
 
-    // 🔒 Verificar roles
     if (!interaction.member.roles.cache.some(r => ROLES_AUTORIZADOS.includes(r.id))) {
       return interaction.reply({
         content: "⛔ No tienes permisos para usar este comando.",
@@ -53,96 +75,159 @@ module.exports = {
       });
     }
 
-    // 📦 Obtener datos
-    const placa = interaction.options.getString("placa");
-    const usuario = interaction.options.getUser("usuario");
-    const oficial = interaction.options.getString("oficial");
-    const lugar = interaction.options.getString("lugar");
-    const motivo = interaction.options.getString("motivo");
-    const monto = interaction.options.getInteger("monto");
-    const imagen = interaction.options.getAttachment("imagen");
-    const companeroUser = interaction.options.getUser("companero");
+    await interaction.deferReply();
 
-    // 🧠 Leer JSON sin crashear
-    let data = {};
-    try {
-      if (fs.existsSync("./multasData.json")) {
-        data = JSON.parse(fs.readFileSync("./multasData.json", "utf8"));
-      }
-    } catch (err) {
-      console.error("Error leyendo JSON:", err);
-      data = {};
+    const placa       = interaction.options.getString("placa").toUpperCase();
+    const userTarget  = interaction.options.getUser("usuario");
+    const lugar       = interaction.options.getString("lugar");
+    const motivo      = interaction.options.getString("motivo");
+    const monto       = interaction.options.getInteger("monto");
+    const imagen      = interaction.options.getAttachment("imagen");
+    const companero   = interaction.options.getUser("companero");
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 💰 Descontar del banco del multado
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const userMultado = await User.findOne({ discordId: userTarget.id });
+    if (userMultado) {
+      userMultado.banco -= monto; // ✅ permite negativo
+      await userMultado.save();
     }
 
-    const multa = {
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 💾 Guardar en MongoDB
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    await Multa.create({
+      discord_id:   userTarget.id,
       placa,
-      usuario: usuario.id,
-      oficial,
-      companero: companeroUser ? companeroUser.id : null,
+      oficial_id:   interaction.user.id,
+      oficial_tag:  interaction.user.tag,
+      companero_id:  companero?.id        ?? null,
+      companero_tag: companero?.tag       ?? null,
       lugar,
       motivo,
       monto,
-      imagen: imagen.url,
-      fecha: new Date().toLocaleString()
-    };
+      imagen_url:   imagen.url
+    });
 
-    // 💾 Guardar en JSON
-    if (!data[usuario.id]) data[usuario.id] = [];
-    data[usuario.id].push(multa);
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🧱 Container
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const container = new ContainerBuilder()
+      .setAccentColor(0xe67e22)
 
-    fs.writeFileSync("./multasData.json", JSON.stringify(data, null, 2));
-
-    console.log("✅ Multa guardada:", multa);
-
-    // 🗄️ GUARDAR EN POSTGRES (opcional)
-    try {
-      await interaction.pool.query(
-        `INSERT INTO "MULTAS_LS"
-        (user_id, placa, oficial, lugar, motivo, monto, imagen, fecha)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          multa.usuario,
-          multa.placa,
-          multa.oficial,
-          multa.lugar,
-          multa.motivo,
-          multa.monto,
-          multa.imagen,
-          multa.fecha
-        ]
-      );
-    } catch (err) {
-      console.error("❌ Error guardando en DB:", err);
-      return interaction.reply({
-        content: "❌ Error guardando la multa en la base de datos",
-        ephemeral: true
-      });
-    }
-
-    // 📢 EMBED
-    const embed = new EmbedBuilder()
-      .setTitle("🚨 Multa Registrada")
-      .setColor(0xe67e22)
-      .setImage(multa.imagen)
-      .addFields(
-        { name: "🚗 Placa", value: multa.placa, inline: true },
-        { name: "👤 Usuario", value: `<@${multa.usuario}>`, inline: true },
-        { name: "👮 Oficial", value: multa.oficial, inline: true },
-        { 
-          name: "👮‍♂️ Compañero", 
-          value: multa.companero ? `<@${multa.companero}>` : "No asignado", 
-          inline: true 
-        },
-        { name: "📍 Lugar", value: multa.lugar, inline: true },
-        { name: "📝 Motivo", value: multa.motivo, inline: false },
-        { name: "💰 Monto", value: `$${multa.monto}`, inline: true }
+      // 🖼️ Evidencia
+      .addMediaGalleryComponents(
+        new MediaGalleryBuilder().addItems(
+          new MediaGalleryItemBuilder()
+            .setURL(imagen.url)
+            .setDescription(`Evidencia — Multa ${placa}`)
+        )
       )
-      .setFooter({
-        text: `Gobierno de Panamá RP V2 | ${multa.fecha}`,
-        iconURL: interaction.guild.iconURL({ dynamic: true })
-      })
-      .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      )
+
+      // Encabezado
+      .addSectionComponents(
+        new SectionBuilder()
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+              `## 🚨 Multa Registrada\n` +
+              `-# ${new Date().toLocaleString("es-PA")}`
+            )
+          )
+          .setThumbnailAccessory(
+            new ThumbnailBuilder().setURL(
+              userTarget.displayAvatarURL({ extension: "png", size: 256 })
+            )
+          )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      )
+
+      // Info de la multa
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `**🚗 Placa:** \`${placa}\`\n` +
+          `**👤 Multado:** <@${userTarget.id}> (${userTarget.tag})\n` +
+          `**👮 Oficial:** <@${interaction.user.id}> (${interaction.user.tag})\n` +
+          (companero
+            ? `**👮‍♂️ Compañero:** <@${companero.id}> (${companero.tag})\n`
+            : ""
+          ) +
+          `**📍 Lugar:** ${lugar}\n` +
+          `**📝 Motivo:** ${motivo}`
+        )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      )
+
+      // Monto
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `**💰 Monto:** $${monto.toLocaleString()} descontados del banco`
+        )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
+      )
+
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `-# © Panamá RP V2 · Registro de Tránsito Oficial`
+        )
+      );
+
+    await interaction.editReply({
+      flags: MessageFlags.IsComponentsV2,
+      components: [container]
+    });
+
+    // 📩 DM al multado
+    const dmContainer = new ContainerBuilder()
+      .setAccentColor(0xe67e22)
+
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `## 🚨 Has recibido una multa\n` +
+          `-# Panamá RP V2 · Tránsito`
+        )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      )
+
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `**🚗 Placa:** \`${placa}\`\n` +
+          `**📍 Lugar:** ${lugar}\n` +
+          `**📝 Motivo:** ${motivo}\n` +
+          `**💰 Monto:** $${monto.toLocaleString()} descontados de tu banco\n\n` +
+          `> Si consideras que esta multa fue injusta, abre un ticket en el servidor.`
+        )
+      )
+
+      .addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
+      )
+
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `-# © Panamá RP V2 · ${new Date().toLocaleString("es-PA")}`
+        )
+      );
+
+    await userTarget.send({
+      flags: MessageFlags.IsComponentsV2,
+      components: [dmContainer]
+    }).catch(() => {});
   }
 };
