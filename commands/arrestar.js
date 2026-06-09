@@ -113,21 +113,21 @@ const DELITOS = {
 };
 
 const CHOICES = [
-  { name: "🔴 Homicidio (Art. 131 CP)",                  value: "homicidio" },
-  { name: "🔴 Secuestro (Art. 152 CP)",                  value: "secuestro" },
-  { name: "🔴 Tráfico de drogas (Art. 310 CP)",          value: "trafico_drogas" },
-  { name: "🔴 Robo agravado (Art. 213 CP)",              value: "robo_agravado" },
-  { name: "🔴 Terrorismo (Art. 264 CP)",                 value: "terrorismo" },
-  { name: "🟠 Robo simple (Art. 212 CP)",                value: "robo_simple" },
-  { name: "🟠 Lesiones personales (Art. 136 CP)",        value: "lesiones" },
-  { name: "🟠 Portación ilegal armas (Art. 311 CP)",     value: "portacion_ilegal" },
-  { name: "🟠 Extorsión (Art. 215 CP)",                  value: "extorsion" },
-  { name: "🟠 Estafa (Art. 218 CP)",                     value: "estafa" },
-  { name: "🟡 Desacato a la autoridad (Art. 345 CP)",    value: "desacato" },
+  { name: "🔴 Homicidio (Art. 131 CP)",                    value: "homicidio" },
+  { name: "🔴 Secuestro (Art. 152 CP)",                    value: "secuestro" },
+  { name: "🔴 Tráfico de drogas (Art. 310 CP)",            value: "trafico_drogas" },
+  { name: "🔴 Robo agravado (Art. 213 CP)",                value: "robo_agravado" },
+  { name: "🔴 Terrorismo (Art. 264 CP)",                   value: "terrorismo" },
+  { name: "🟠 Robo simple (Art. 212 CP)",                  value: "robo_simple" },
+  { name: "🟠 Lesiones personales (Art. 136 CP)",          value: "lesiones" },
+  { name: "🟠 Portación ilegal armas (Art. 311 CP)",       value: "portacion_ilegal" },
+  { name: "🟠 Extorsión (Art. 215 CP)",                    value: "extorsion" },
+  { name: "🟠 Estafa (Art. 218 CP)",                       value: "estafa" },
+  { name: "🟡 Desacato a la autoridad (Art. 345 CP)",      value: "desacato" },
   { name: "🟡 Alteración del orden público (Art. 346 CP)", value: "alteracion_orden" },
-  { name: "🟡 Conducción temeraria (Art. 168 CP)",       value: "conduccion_temeraria" },
-  { name: "🟡 Resistencia a la autoridad (Art. 344 CP)", value: "resistencia_autoridad" },
-  { name: "🟡 Posesión de drogas (Art. 303 CP)",         value: "posesion_drogas" }
+  { name: "🟡 Conducción temeraria (Art. 168 CP)",         value: "conduccion_temeraria" },
+  { name: "🟡 Resistencia a la autoridad (Art. 344 CP)",   value: "resistencia_autoridad" },
+  { name: "🟡 Posesión de drogas (Art. 303 CP)",           value: "posesion_drogas" }
 ];
 
 const COLORES_CATEGORIA = {
@@ -142,7 +142,6 @@ const EMOJIS_CATEGORIA = {
   leve:     "🟡"
 };
 
-// Opción de delito reutilizable
 function delitoOption(o, nombre, requerido) {
   return o
     .setName(nombre)
@@ -159,17 +158,13 @@ module.exports = {
     .setName("arrestar")
     .setDescription("Registrar un arresto")
 
+    // ✅ REQUIRED PRIMERO
     .addUserOption(o =>
       o.setName("usuario")
         .setDescription("Usuario arrestado")
         .setRequired(true)
     )
     .addStringOption(o => delitoOption(o, "delito1", true))
-    .addStringOption(o => delitoOption(o, "delito2", false))
-    .addStringOption(o => delitoOption(o, "delito3", false))
-    .addStringOption(o => delitoOption(o, "delito4", false))
-    .addStringOption(o => delitoOption(o, "delito5", false))
-
     .addIntegerOption(o =>
       o.setName("condena")
         .setDescription("Tiempo de condena en horas RP")
@@ -192,7 +187,13 @@ module.exports = {
       o.setName("imagen")
         .setDescription("Imagen/evidencia del arresto")
         .setRequired(true)
-    ),
+    )
+
+    // ✅ OPTIONAL AL FINAL
+    .addStringOption(o => delitoOption(o, "delito2", false))
+    .addStringOption(o => delitoOption(o, "delito3", false))
+    .addStringOption(o => delitoOption(o, "delito4", false))
+    .addStringOption(o => delitoOption(o, "delito5", false)),
 
   async execute(interaction) {
 
@@ -213,9 +214,7 @@ module.exports = {
     const lugar        = interaction.options.getString("lugar");
     const imagen       = interaction.options.getAttachment("imagen");
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 📋 Recopilar delitos
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Recopilar delitos y filtrar undefined
     const delitosKeys = [
       interaction.options.getString("delito1"),
       interaction.options.getString("delito2"),
@@ -225,8 +224,11 @@ module.exports = {
     ].filter(Boolean);
 
     const delitosData = delitosKeys.map(k => DELITOS[k]).filter(Boolean);
+
     if (delitosData.length === 0) {
-  return interaction.editReply({ content: "❌ No se reconocieron los delitos seleccionados." });
+      return interaction.editReply({
+        content: "❌ No se reconocieron los delitos seleccionados."
+      });
     }
 
     // Totales
@@ -234,7 +236,7 @@ module.exports = {
     const recompensaTotal = delitosData.reduce((acc, d) => acc + d.recompensa, 0);
 
     // Categoría más grave
-    const prioridad    = { grave: 3, moderado: 2, leve: 1 };
+    const prioridad = { grave: 3, moderado: 2, leve: 1 };
     const categoriaPrincipal = delitosData.reduce((prev, curr) =>
       prioridad[curr.categoria] > prioridad[prev.categoria] ? curr : prev
     ).categoria;
@@ -242,15 +244,12 @@ module.exports = {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 💰 Economía
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    // Multa al arrestado — ✅ permite negativo
     const userArrestado = await User.findOne({ discordId: userTarget.id });
     if (userArrestado) {
-      userArrestado.saldo -= multaTotal; // ✅ puede quedar negativo
+      userArrestado.saldo -= multaTotal; // permite negativo
       await userArrestado.save();
     }
 
-    // Recompensa al oficial — suma al banco
     const userOficial = await User.findOne({ discordId: interaction.user.id });
     if (userOficial) {
       userOficial.banco += recompensaTotal;
@@ -279,7 +278,6 @@ module.exports = {
     const color = COLORES_CATEGORIA[categoriaPrincipal];
     const emoji = EMOJIS_CATEGORIA[categoriaPrincipal];
 
-    // Lista de delitos formateada
     const listaDelitos = delitosData.map((d, i) =>
       `> ${EMOJIS_CATEGORIA[d.categoria]} **${i + 1}.** ${d.label} — Multa: $${d.multa.toLocaleString()}`
     ).join("\n");
@@ -291,7 +289,7 @@ module.exports = {
         new MediaGalleryBuilder().addItems(
           new MediaGalleryItemBuilder()
             .setURL(imagen.url)
-            .setDescription(`Evidencia — Arresto`)
+            .setDescription("Evidencia — Arresto")
         )
       )
 
@@ -318,7 +316,6 @@ module.exports = {
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
       )
 
-      // Info arresto
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `**👤 Arrestado:** <@${userTarget.id}> (${userTarget.tag})\n` +
@@ -332,7 +329,6 @@ module.exports = {
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
       )
 
-      // Delitos
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `**⚖️ Delito${delitosData.length > 1 ? "s" : ""} (${delitosData.length}):**\n` +
@@ -344,7 +340,6 @@ module.exports = {
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
       )
 
-      // Economía — sin saldos actuales
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
           `**💸 Multa total:** $${multaTotal.toLocaleString()} descontados del saldo\n` +
