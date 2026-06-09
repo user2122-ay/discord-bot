@@ -225,6 +225,9 @@ module.exports = {
     ].filter(Boolean);
 
     const delitosData = delitosKeys.map(k => DELITOS[k]).filter(Boolean);
+    if (delitosData.length === 0) {
+  return interaction.editReply({ content: "❌ No se reconocieron los delitos seleccionados." });
+    }
 
     // Totales
     const multaTotal      = delitosData.reduce((acc, d) => acc + d.multa, 0);
