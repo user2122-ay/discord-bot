@@ -224,7 +224,7 @@ module.exports = {
       interaction.options.getString("delito5")
     ].filter(Boolean);
 
-    const delitosData = delitosKeys.map(k => DELITOS[k]);
+    const delitosData = delitosKeys.map(k => DELITOS[k]).filter(Boolean);
 
     // Totales
     const multaTotal      = delitosData.reduce((acc, d) => acc + d.multa, 0);
