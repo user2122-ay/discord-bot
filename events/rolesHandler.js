@@ -149,7 +149,7 @@ function buildBotones(tipo, usuarioId, rolId) {
 function buildDmContainer(rolNombre, accion, tipo) {
   const container = new ContainerBuilder();
 
-  const esAceptado = accion === "aceptado";
+  const esAceptado = accion === "aceptar";
   const emoji = esAceptado ? "✅" : "❌";
   const titulo = tipo === "solicitud"
     ? `${emoji} Solicitud de Rol ${esAceptado ? "Aceptada" : "Rechazada"}`
