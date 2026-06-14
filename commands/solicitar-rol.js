@@ -4,20 +4,10 @@ const {
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ContainerBuilder,
-  TextDisplayBuilder,
-  SeparatorBuilder,
-  SeparatorSpacingSize,
   MessageFlags
 } = require("discord.js");
 
-// ─── CONFIGURACIÓN ───────────────────────────────────────
-const CANAL_SOLICITUDES   = "1451018688965771305";
-const ROL_STAFF_LIMITE    = "1451218164330401884"; // Roles desde aquí en adelante son Staff
-const ROL_STAFF_REVISOR   = "1451218164330401884"; // Rol que puede aceptar/rechazar
-// ─────────────────────────────────────────────────────────
+const ROL_STAFF_LIMITE = "1451218164330401884";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,12 +21,8 @@ module.exports = {
 
   async execute(interaction) {
     const rolSolicitado = interaction.options.getRole("rol");
-    const guild         = interaction.guild;
+    const guild = interaction.guild;
 
-    // ── Verificar que no sea rol Staff o superior ──────
-    const rolesServidor = await guild.roles.fetch();
-
-    // Posición del rol límite Staff
     const rolLimite = guild.roles.cache.get(ROL_STAFF_LIMITE);
     if (!rolLimite) {
       return interaction.reply({ content: "❌ Error interno: rol límite no encontrado.", flags: MessageFlags.Ephemeral });
@@ -49,7 +35,6 @@ module.exports = {
       });
     }
 
-    // ── Abrir Modal para razón + pruebas ──────────────
     const modal = new ModalBuilder()
       .setCustomId(`solicitar_modal_${rolSolicitado.id}`)
       .setTitle("📋 Solicitud de Rol");
@@ -77,4 +62,3 @@ module.exports = {
     await interaction.showModal(modal);
   }
 };
-
