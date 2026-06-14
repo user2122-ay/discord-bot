@@ -7,10 +7,7 @@ const {
   MessageFlags
 } = require("discord.js");
 
-// ─── CONFIGURACIÓN ───────────────────────────────────────
-const CANAL_RETIROS    = "1451018690748219504";
 const ROL_STAFF_LIMITE = "1451218164330401884";
-// ─────────────────────────────────────────────────────────
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,7 +21,7 @@ module.exports = {
 
   async execute(interaction) {
     const rolSolicitado = interaction.options.getRole("rol");
-    const guild         = interaction.guild;
+    const guild = interaction.guild;
 
     const rolLimite = guild.roles.cache.get(ROL_STAFF_LIMITE);
     if (!rolLimite) {
@@ -57,4 +54,3 @@ module.exports = {
     await interaction.showModal(modal);
   }
 };
-
