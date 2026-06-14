@@ -49,6 +49,7 @@ require("./events/proteccionFundacion")(client);
 require("./events/afk.js")(client);
 require("./commands/sanciones").registerEvents(client);
 require("./events/rolesHandler")(client);
+require("./events/sugerenciasHandler")(client);
 // ==============================
 // 📦 COMANDOS
 // ==============================
