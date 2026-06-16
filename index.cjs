@@ -51,6 +51,7 @@ require("./commands/sanciones").registerEvents(client);
 require("./events/rolesHandler")(client);
 require("./events/sugerenciasHandler")(client);
 require("./events/redesHandler")(client);
+require("./events/apelaciones")(client);
 // ==============================
 // 📦 COMANDOS
 // ==============================
