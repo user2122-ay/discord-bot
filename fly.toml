@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for bot-panama-rp on 2026-05-25T01:30:23Z
+# fly.toml app configuration file generated for bot-panama-rp on 2026-05-25T02:24:24Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -17,7 +17,8 @@ primary_region = 'lax'
   processes = ['app']
 
 [[vm]]
-  memory = '1gb'
+  memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 256
+  memory_mb = 512
+  size = 'shared-cpu-1x'
