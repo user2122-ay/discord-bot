@@ -396,6 +396,12 @@ module.exports = (client) => {
         ]
       });
 
+      // ── Ping al usuario y Staff ────────────────────────
+      await canal.send({
+        content: `<@${usuario.id}> <@&${ROL_STAFF}>`,
+        allowedMentions: { users: [usuario.id], roles: [ROL_STAFF] }
+      });
+
       // ── Panel del ticket ───────────────────────────────
       const miembro = await guild.members.fetch(usuario.id).catch(() => null);
       const panelContainer = buildPanelTicket(usuario, tipo, idSancion, razon, null);
@@ -767,4 +773,3 @@ async function cerrarYTranscribir(interaction, canal, data, client) {
     await canal.delete().catch(() => {});
   }, 5000);
 }
-
